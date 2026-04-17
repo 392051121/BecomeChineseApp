@@ -1,0 +1,585 @@
+[
+  {
+    "id": "xia",
+    "name": "Xia Dynasty",
+    "chineseName": "夏朝",
+    "period": "c. 2070-1600 BC",
+    "founder": "Yu the Great",
+    "capital": "Yangcheng (disputed)",
+    "description": "The Xia Dynasty is traditionally considered China's first dynasty, though its historical existence is debated. It marks the transition from tribal society to state organization.",
+    "chineseDescription": "夏朝被认为是中国第一个朝代，虽然其历史存在仍有争议。它标志着从部落社会向国家组织的过渡。",
+    "achievements": [
+      "Established hereditary monarchy system",
+      "Developed early bronze casting",
+      "Created irrigation and flood control systems",
+      "Formed early state structure",
+      "Developed calendar system"
+    ],
+    "notableEmperors": [
+      {
+        "name": "Yu the Great",
+        "chineseName": "大禹",
+        "reign": "c. 2070-2061 BC",
+        "accomplishments": "Founded Xia Dynasty, famous for flood control, established hereditary rule"
+      },
+      {
+        "name": "Qi",
+        "chineseName": "启",
+        "reign": "c. 2061-2051 BC",
+        "accomplishments": "First hereditary ruler, consolidated dynastic power"
+      },
+      {
+        "name": "Jie",
+        "chineseName": "桀",
+        "reign": "c. 1600 BC",
+        "accomplishments": "Last Xia ruler, known for tyranny, overthrown by Shang"
+      }
+    ]
+  },
+  {
+    "id": "shang",
+    "name": "Shang Dynasty",
+    "chineseName": "商朝",
+    "period": "c. 1600-1046 BC",
+    "founder": "Tang of Shang",
+    "capital": "Yin (Anyang)",
+    "description": "The Shang Dynasty is the first Chinese dynasty with archaeological evidence. It's known for advanced bronze work, oracle bone script, and sophisticated social structure.",
+    "chineseDescription": "商朝是第一个有考古证据的中国朝代。以先进的青铜器、甲骨文和复杂的社会结构而闻名。",
+    "achievements": [
+      "Developed oracle bone script (earliest Chinese writing)",
+      "Advanced bronze casting technology",
+      "Created sophisticated ritual vessels",
+      "Established ancestor worship traditions",
+      "Developed early astronomy and calendar"
+    ],
+    "notableEmperors": [
+      {
+        "name": "Tang of Shang",
+        "chineseName": "商汤",
+        "reign": "c. 1600-1588 BC",
+        "accomplishments": "Founded Shang Dynasty, overthrew Xia, established benevolent rule"
+      },
+      {
+        "name": "Pan Geng",
+        "chineseName": "盘庚",
+        "reign": "c. 1300 BC",
+        "accomplishments": "Moved capital to Yin, stabilized dynasty"
+      },
+      {
+        "name": "Wu Ding",
+        "chineseName": "武丁",
+        "reign": "c. 1250-1192 BC",
+        "accomplishments": "Longest reign, expanded territory, cultural flourishing"
+      },
+      {
+        "name": "Di Xin (King Zhou)",
+        "chineseName": "帝辛(纣王)",
+        "reign": "c. 1075-1046 BC",
+        "accomplishments": "Last Shang king, known for tyranny, overthrown by Zhou"
+      }
+    ]
+  },
+  {
+    "id": "zhou",
+    "name": "Zhou Dynasty",
+    "chineseName": "周朝",
+    "period": "1046-256 BC",
+    "founder": "King Wu of Zhou",
+    "capital": "Haojing (Western Zhou), Luoyang (Eastern Zhou)",
+    "description": "The Zhou Dynasty was the longest-lasting Chinese dynasty. It introduced the Mandate of Heaven concept and saw the development of Confucianism and Taoism during the Spring and Autumn and Warring States periods.",
+    "chineseDescription": "周朝是中国历史上最长的朝代。引入了天命思想，春秋战国时期儒家和道家思想发展。",
+    "achievements": [
+      "Introduced Mandate of Heaven concept",
+      "Developed feudal system",
+      "Birth of Confucianism and Taoism",
+      "Advanced iron technology",
+      "Flourishing of philosophy (Hundred Schools of Thought)"
+    ],
+    "notableEmperors": [
+      {
+        "name": "King Wu",
+        "chineseName": "周武王",
+        "reign": "1046-1043 BC",
+        "accomplishments": "Founded Zhou Dynasty, overthrew Shang, established feudal system"
+      },
+      {
+        "name": "King Cheng",
+        "chineseName": "周成王",
+        "reign": "1042-1021 BC",
+        "accomplishments": "Consolidated Zhou rule with Duke of Zhou's assistance"
+      },
+      {
+        "name": "King Ping",
+        "chineseName": "周平王",
+        "reign": "770-720 BC",
+        "accomplishments": "Moved capital east, began Eastern Zhou period"
+      }
+    ]
+  },
+  {
+    "id": "qin",
+    "name": "Qin Dynasty",
+    "chineseName": "秦朝",
+    "period": "221-206 BC",
+    "founder": "Qin Shi Huang",
+    "capital": "Xianyang",
+    "description": "The Qin Dynasty was the first unified imperial dynasty of China. Though short-lived, it established many systems that influenced Chinese governance for centuries.",
+    "chineseDescription": "秦朝是中国第一个统一的封建王朝。虽然短暂，但建立了影响中国数千年的制度。",
+    "achievements": [
+      "Unified China for the first time",
+      "Standardized writing, currency, and measurements",
+      "Built the Great Wall",
+      "Created the Terracotta Army",
+      "Established centralized bureaucracy"
+    ],
+    "notableEmperors": [
+      {
+        "name": "Qin Shi Huang",
+        "chineseName": "秦始皇",
+        "reign": "221-210 BC",
+        "accomplishments": "First Emperor of unified China, built the Great Wall, standardized systems"
+      },
+      {
+        "name": "Qin Er Shi",
+        "chineseName": "秦二世",
+        "reign": "210-207 BC",
+        "accomplishments": "Second and last emperor, reign marked by rebellion and dynasty collapse"
+      }
+    ]
+  },
+  {
+    "id": "han",
+    "name": "Han Dynasty",
+    "chineseName": "汉朝",
+    "period": "206 BC - 220 AD",
+    "founder": "Liu Bang (Emperor Gaozu)",
+    "capital": "Chang'an (Xi'an)",
+    "description": "The Han Dynasty was one of the most prosperous periods in Chinese history. It established Confucianism as state ideology and opened the Silk Road.",
+    "chineseDescription": "汉朝是中国历史上最繁荣的时期之一。确立了儒家思想的统治地位，开辟了丝绸之路。",
+    "achievements": [
+      "Opened the Silk Road trade route",
+      "Established Confucianism as state ideology",
+      "Invented paper",
+      "Advanced astronomy and mathematics",
+      "Expanded Chinese territory significantly"
+    ],
+    "notableEmperors": [
+      {
+        "name": "Emperor Gaozu (Liu Bang)",
+        "chineseName": "汉高祖刘邦",
+        "reign": "202-195 BC",
+        "accomplishments": "Founded the Han Dynasty, established stable governance"
+      },
+      {
+        "name": "Emperor Wen",
+        "chineseName": "汉文帝",
+        "reign": "180-157 BC",
+        "accomplishments": "Benevolent rule, reduced taxes, promoted agriculture"
+      },
+      {
+        "name": "Emperor Jing",
+        "chineseName": "汉景帝",
+        "reign": "157-141 BC",
+        "accomplishments": "Continued father's policies, strengthened central government"
+      },
+      {
+        "name": "Emperor Wu",
+        "chineseName": "汉武帝",
+        "reign": "141-87 BC",
+        "accomplishments": "Expanded empire, opened Silk Road, promoted Confucianism"
+      },
+      {
+        "name": "Emperor Xuan",
+        "chineseName": "汉宣帝",
+        "reign": "74-48 BC",
+        "accomplishments": "Restored prosperity, balanced Confucian and Legalist policies"
+      },
+      {
+        "name": "Emperor Guangwu",
+        "chineseName": "汉光武帝",
+        "reign": "25-57 AD",
+        "accomplishments": "Founded Eastern Han, reunified China after civil war"
+      }
+    ]
+  },
+  {
+    "id": "three-kingdoms",
+    "name": "Three Kingdoms Period",
+    "chineseName": "三国时期",
+    "period": "220-280 AD",
+    "founder": "Various (Wei, Shu, Wu)",
+    "capital": "Luoyang (Wei), Chengdu (Shu), Jianye (Wu)",
+    "description": "A period of division following the Han Dynasty, romanticized in Chinese culture. Three kingdoms - Wei, Shu, and Wu - competed for supremacy.",
+    "chineseDescription": "汉朝之后的分裂时期，在中国文化中被浪漫化。魏、蜀、吴三国争霸。",
+    "achievements": [
+      "Rich military strategies and tactics",
+      "Cultural and literary development",
+      "Advances in agriculture and technology",
+      "Famous historical figures and stories",
+      "Foundation for Romance of the Three Kingdoms"
+    ],
+    "notableEmperors": [
+      {
+        "name": "Cao Cao (King of Wei)",
+        "chineseName": "曹操",
+        "reign": "155-220 AD",
+        "accomplishments": "Founded Wei, brilliant strategist and poet"
+      },
+      {
+        "name": "Liu Bei (Emperor of Shu)",
+        "chineseName": "刘备",
+        "reign": "161-223 AD",
+        "accomplishments": "Founded Shu Han, known for benevolence and loyalty"
+      },
+      {
+        "name": "Sun Quan (Emperor of Wu)",
+        "chineseName": "孙权",
+        "reign": "182-252 AD",
+        "accomplishments": "Founded Wu, longest-reigning of Three Kingdoms rulers"
+      }
+    ]
+  },
+  {
+    "id": "jin",
+    "name": "Jin Dynasty",
+    "chineseName": "晋朝",
+    "period": "266-420 AD",
+    "founder": "Sima Yan (Emperor Wu)",
+    "capital": "Luoyang (Western Jin), Jiankang (Eastern Jin)",
+    "description": "The Jin Dynasty briefly reunified China after the Three Kingdoms period, but faced internal strife and nomadic invasions.",
+    "chineseDescription": "晋朝在三国之后短暂统一中国，但面临内乱和游牧民族入侵。",
+    "achievements": [
+      "Briefly reunified China",
+      "Development of landscape poetry",
+      "Advances in calligraphy",
+      "Buddhist expansion in China",
+      "Cultural preservation during turmoil"
+    ],
+    "notableEmperors": [
+      {
+        "name": "Emperor Wu (Sima Yan)",
+        "chineseName": "晋武帝司马炎",
+        "reign": "266-290 AD",
+        "accomplishments": "Founded Jin Dynasty, reunified China"
+      },
+      {
+        "name": "Emperor Yuan",
+        "chineseName": "晋元帝",
+        "reign": "318-323 AD",
+        "accomplishments": "Founded Eastern Jin, preserved Chinese culture in south"
+      }
+    ]
+  },
+  {
+    "id": "sui",
+    "name": "Sui Dynasty",
+    "chineseName": "隋朝",
+    "period": "581-618 AD",
+    "founder": "Emperor Wen (Yang Jian)",
+    "capital": "Daxing (Chang'an)",
+    "description": "The Sui Dynasty reunified China after centuries of division. Though short-lived, it laid the foundation for the Tang Dynasty's prosperity.",
+    "chineseDescription": "隋朝在数百年分裂后重新统一中国。虽然短暂，但为唐朝的繁荣奠定了基础。",
+    "achievements": [
+      "Reunified China after 300 years of division",
+      "Built the Grand Canal",
+      "Reformed the civil service examination system",
+      "Standardized coinage",
+      "Strengthened central government"
+    ],
+    "notableEmperors": [
+      {
+        "name": "Emperor Wen (Yang Jian)",
+        "chineseName": "隋文帝杨坚",
+        "reign": "581-604 AD",
+        "accomplishments": "Founded Sui Dynasty, reunified China, reformed government"
+      },
+      {
+        "name": "Emperor Yang",
+        "chineseName": "隋炀帝",
+        "reign": "604-618 AD",
+        "accomplishments": "Built Grand Canal, but excessive projects led to dynasty's fall"
+      }
+    ]
+  },
+  {
+    "id": "tang",
+    "name": "Tang Dynasty",
+    "chineseName": "唐朝",
+    "period": "618-907 AD",
+    "founder": "Li Yuan (Emperor Gaozu)",
+    "capital": "Chang'an (Xi'an)",
+    "description": "The Tang Dynasty is considered a golden age of Chinese civilization, known for its cultural achievements, poetry, art, and cosmopolitan culture.",
+    "chineseDescription": "唐朝被认为是中国文明的黄金时代，以其文化成就、诗歌、艺术和国际化而闻名。",
+    "achievements": [
+      "Golden age of poetry and literature",
+      "Advanced printing technology",
+      "Flourishing international trade",
+      "Religious tolerance and diversity",
+      "Sophisticated urban culture"
+    ],
+    "notableEmperors": [
+      {
+        "name": "Emperor Gaozu",
+        "chineseName": "唐高祖",
+        "reign": "618-626 AD",
+        "accomplishments": "Founded Tang Dynasty, established stable rule"
+      },
+      {
+        "name": "Emperor Taizong",
+        "chineseName": "唐太宗",
+        "reign": "626-649 AD",
+        "accomplishments": "Created prosperous era, promoted education and culture"
+      },
+      {
+        "name": "Empress Wu Zetian",
+        "chineseName": "武则天",
+        "reign": "690-705 AD",
+        "accomplishments": "Only female emperor in Chinese history, promoted Buddhism"
+      },
+      {
+        "name": "Emperor Xuanzong",
+        "chineseName": "唐玄宗",
+        "reign": "712-756 AD",
+        "accomplishments": "Presided over peak of Tang prosperity and culture"
+      },
+      {
+        "name": "Emperor Xianzong",
+        "chineseName": "唐宪宗",
+        "reign": "805-820 AD",
+        "accomplishments": "Restored central authority, suppressed regional warlords"
+      }
+    ]
+  },
+  {
+    "id": "song",
+    "name": "Song Dynasty",
+    "chineseName": "宋朝",
+    "period": "960-1279 AD",
+    "founder": "Zhao Kuangyin (Emperor Taizu)",
+    "capital": "Kaifeng (Northern Song), Hangzhou (Southern Song)",
+    "description": "The Song Dynasty was marked by economic prosperity, technological innovation, and cultural refinement, despite military challenges.",
+    "chineseDescription": "宋朝以经济繁荣、技术创新和文化精致著称，尽管面临军事挑战。",
+    "achievements": [
+      "Invented movable type printing",
+      "Advanced gunpowder technology",
+      "Developed sophisticated economy",
+      "Flourishing of Neo-Confucianism",
+      "Refined landscape painting and ceramics"
+    ],
+    "notableEmperors": [
+      {
+        "name": "Emperor Taizu",
+        "chineseName": "宋太祖",
+        "reign": "960-976 AD",
+        "accomplishments": "Founded Song Dynasty, reunified much of China"
+      },
+      {
+        "name": "Emperor Taizong",
+        "chineseName": "宋太宗",
+        "reign": "976-997 AD",
+        "accomplishments": "Continued unification, promoted civil service examinations"
+      },
+      {
+        "name": "Emperor Zhenzong",
+        "chineseName": "宋真宗",
+        "reign": "997-1022 AD",
+        "accomplishments": "Maintained peace, promoted Confucian scholarship"
+      },
+      {
+        "name": "Emperor Renzong",
+        "chineseName": "宋仁宗",
+        "reign": "1022-1063 AD",
+        "accomplishments": "Longest reign of Song, cultural golden age"
+      },
+      {
+        "name": "Emperor Huizong",
+        "chineseName": "宋徽宗",
+        "reign": "1100-1126 AD",
+        "accomplishments": "Great artist and calligrapher, but weak ruler"
+      },
+      {
+        "name": "Emperor Gaozong",
+        "chineseName": "宋高宗",
+        "reign": "1127-1162 AD",
+        "accomplishments": "Founded Southern Song, moved capital to Hangzhou"
+      }
+    ]
+  },
+  {
+    "id": "yuan",
+    "name": "Yuan Dynasty",
+    "chineseName": "元朝",
+    "period": "1271-1368 AD",
+    "founder": "Kublai Khan",
+    "capital": "Dadu (Beijing)",
+    "description": "The Yuan Dynasty was established by the Mongols under Kublai Khan. It was the first time all of China was ruled by a foreign power.",
+    "chineseDescription": "元朝由蒙古人忽必烈建立，是中国首次完全被外族统治。",
+    "achievements": [
+      "United China under Mongol rule",
+      "Promoted cultural exchange along Silk Road",
+      "Advanced astronomy and calendar systems",
+      "Developed drama and theater arts",
+      "Facilitated East-West trade"
+    ],
+    "notableEmperors": [
+      {
+        "name": "Kublai Khan",
+        "chineseName": "忽必烈",
+        "reign": "1260-1294 AD",
+        "accomplishments": "Founded Yuan Dynasty, completed Mongol conquest of China"
+      },
+      {
+        "name": "Temür Khan",
+        "chineseName": "元成宗",
+        "reign": "1294-1307 AD",
+        "accomplishments": "Maintained stability, promoted Confucian values"
+      },
+      {
+        "name": "Toghon Temür",
+        "chineseName": "元顺帝",
+        "reign": "1333-1368 AD",
+        "accomplishments": "Last Yuan emperor, lost control to Ming rebellion"
+      }
+    ]
+  },
+  {
+    "id": "ming",
+    "name": "Ming Dynasty",
+    "chineseName": "明朝",
+    "period": "1368-1644 AD",
+    "founder": "Zhu Yuanzhang (Hongwu Emperor)",
+    "capital": "Nanjing, then Beijing",
+    "description": "The Ming Dynasty restored Han Chinese rule and is famous for its cultural achievements, including the Forbidden City and porcelain production.",
+    "chineseDescription": "明朝恢复了汉族统治，以其文化成就著称，包括紫禁城和瓷器生产。",
+    "achievements": [
+      "Built the Forbidden City",
+      "Reconstructed the Great Wall",
+      "Zheng He's maritime expeditions",
+      "Advanced porcelain and silk production",
+      "Flourishing literature and philosophy"
+    ],
+    "notableEmperors": [
+      {
+        "name": "Hongwu Emperor",
+        "chineseName": "明太祖朱元璋",
+        "reign": "1368-1398 AD",
+        "accomplishments": "Founded Ming Dynasty, expelled Mongols, reformed government"
+      },
+      {
+        "name": "Yongle Emperor",
+        "chineseName": "明成祖永乐",
+        "reign": "1402-1424 AD",
+        "accomplishments": "Built Forbidden City, sponsored Zheng He's voyages, compiled Yongle Encyclopedia"
+      },
+      {
+        "name": "Hongxi Emperor",
+        "chineseName": "明仁宗",
+        "reign": "1424-1425 AD",
+        "accomplishments": "Brief but benevolent reign, reduced taxes"
+      },
+      {
+        "name": "Xuande Emperor",
+        "chineseName": "明宣宗",
+        "reign": "1425-1435 AD",
+        "accomplishments": "Prosperous reign, patron of arts, skilled painter"
+      },
+      {
+        "name": "Jiajing Emperor",
+        "chineseName": "明世宗",
+        "reign": "1521-1567 AD",
+        "accomplishments": "Long reign, focused on Taoism, neglected governance"
+      },
+      {
+        "name": "Wanli Emperor",
+        "chineseName": "明神宗",
+        "reign": "1572-1620 AD",
+        "accomplishments": "Longest Ming reign, early prosperity then decline"
+      },
+      {
+        "name": "Chongzhen Emperor",
+        "chineseName": "明思宗",
+        "reign": "1627-1644 AD",
+        "accomplishments": "Last Ming emperor, committed suicide when Beijing fell"
+      }
+    ]
+  },
+  {
+    "id": "qing",
+    "name": "Qing Dynasty",
+    "chineseName": "清朝",
+    "period": "1644-1912 AD",
+    "founder": "Nurhaci (consolidated by Shunzhi Emperor)",
+    "capital": "Beijing",
+    "description": "The Qing Dynasty was China's last imperial dynasty, established by the Manchus. It saw territorial expansion but also faced Western imperialism.",
+    "chineseDescription": "清朝是中国最后一个封建王朝，由满族建立。领土扩张但也面临西方帝国主义。",
+    "achievements": [
+      "Expanded Chinese territory to largest extent",
+      "Prosperous early period (Kangxi-Qianlong era)",
+      "Cultural synthesis of Manchu and Han traditions",
+      "Advanced agriculture and population growth",
+      "Rich artistic and literary production"
+    ],
+    "notableEmperors": [
+      {
+        "name": "Shunzhi Emperor",
+        "chineseName": "顺治帝",
+        "reign": "1644-1661 AD",
+        "accomplishments": "First Qing emperor in Beijing, consolidated Manchu rule"
+      },
+      {
+        "name": "Kangxi Emperor",
+        "chineseName": "康熙帝",
+        "reign": "1661-1722 AD",
+        "accomplishments": "Longest-reigning emperor, expanded territory, promoted learning"
+      },
+      {
+        "name": "Yongzheng Emperor",
+        "chineseName": "雍正帝",
+        "reign": "1722-1735 AD",
+        "accomplishments": "Reformed administration, strengthened central control"
+      },
+      {
+        "name": "Qianlong Emperor",
+        "chineseName": "乾隆帝",
+        "reign": "1735-1796 AD",
+        "accomplishments": "Presided over peak of Qing prosperity, patron of arts"
+      },
+      {
+        "name": "Jiaqing Emperor",
+        "chineseName": "嘉庆帝",
+        "reign": "1796-1820 AD",
+        "accomplishments": "Faced internal rebellions, beginning of Qing decline"
+      },
+      {
+        "name": "Daoguang Emperor",
+        "chineseName": "道光帝",
+        "reign": "1820-1850 AD",
+        "accomplishments": "Faced Opium Wars, lost Hong Kong to Britain"
+      },
+      {
+        "name": "Xianfeng Emperor",
+        "chineseName": "咸丰帝",
+        "reign": "1850-1861 AD",
+        "accomplishments": "Faced Taiping Rebellion and Second Opium War"
+      },
+      {
+        "name": "Tongzhi Emperor",
+        "chineseName": "同治帝",
+        "reign": "1861-1875 AD",
+        "accomplishments": "Child emperor, Empress Dowager Cixi held real power"
+      },
+      {
+        "name": "Guangxu Emperor",
+        "chineseName": "光绪帝",
+        "reign": "1875-1908 AD",
+        "accomplishments": "Attempted reforms, controlled by Empress Dowager Cixi"
+      },
+      {
+        "name": "Puyi (Xuantong Emperor)",
+        "chineseName": "宣统帝溥仪",
+        "reign": "1908-1912 AD",
+        "accomplishments": "Last emperor of China, abdicated at age 6, later puppet emperor of Manchukuo"
+      }
+    ]
+  }
+]

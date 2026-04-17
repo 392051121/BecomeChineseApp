@@ -1,0 +1,42 @@
+Cities (recommended 1600x1000 JPG, <= 500KB each)
+- beijing_great_wall.jpg
+- xian_terracotta_warriors.jpg
+- chengdu_pandas_teahouse.jpg
+- shanghai_bund_art_deco.jpg
+- hangzhou_west_lake.jpg
+- guilin_li_river.jpg
+- suzhou_classical_garden.jpg
+- lijiang_old_town.jpg
+
+Dynasties (recommended 1200x1200 PNG/JPG, <= 400KB each)
+- xia_dynasty_bronze_artifact.png
+- shang_dynasty_oracle_bone.png
+- zhou_dynasty_bronze_vessel.png
+- qin_dynasty_terracotta_detail.png
+- han_dynasty_silk_road_relic.png
+- sui_dynasty_grand_canal_relic.png
+- tang_dynasty_pottery.png
+- song_dynasty_ceramics.png
+- yuan_dynasty_blue_white_porcelain.png
+- ming_dynasty_imperial_porcelain.png
+- qing_dynasty_court_artifact.png
+
+Recipes (recommended 1200x900 JPG, <= 450KB each)
+- kung-pao-chicken.jpg
+- mapo-tofu.jpg
+- sweet-sour-pork.jpg
+- fried-rice.jpg
+- dumplings.jpg
+- xiaolongbao.jpg
+- peking-duck.jpg
+- char-siu.jpg
+- hot-pot.jpg
+- congee.jpg
+- braised-pork.jpg
+- scrambled-eggs-tomatoes.jpg
+- steamed-fish.jpg
+
+Local path suggestion
+- assets/cities/*.jpg
+- assets/dynasties/*.png
+- assets/recipes/*.jpg
