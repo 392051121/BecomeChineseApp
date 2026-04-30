@@ -25,13 +25,19 @@
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#FDFBF7"
       },
-      "edgeToEdgeEnabled": true
+      "edgeToEdgeEnabled": true,
+      "package": "com.wx123.BecomeChineseApp"
     },
     "web": {
       "favicon": "./assets/favicon.png"
     },
     "plugins": [
       "expo-font"
-    ]
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "addac4c9-d8a5-448f-9f27-e275826740ed"
+      }
+    }
   }
 }

@@ -1,5 +1,29 @@
 import citiesRaw from './cities.json';
 import { cityImagePrompts, getImageSource } from './imagePrompts';
+import { getCityRecipes, getCityDynasties, getCityPeople } from './relations';
+
+const provinceMap = {
+  beijing: 'Beijing',
+  shanghai: 'Shanghai',
+  xian: 'Shaanxi',
+  chengdu: 'Sichuan',
+  guilin: 'Guangxi',
+  hangzhou: 'Zhejiang',
+  suzhou: 'Jiangsu',
+  lijiang: 'Yunnan',
+  nanjing: 'Jiangsu',
+  shenzhen: 'Guangdong',
+  guangzhou: 'Guangdong',
+  tianjin: 'Tianjin',
+  chongqing: 'Chongqing',
+  wuhan: 'Hubei',
+  dalian: 'Liaoning',
+  qingdao: 'Shandong',
+  xiamen: 'Fujian',
+  harbin: 'Heilongjiang',
+  kunming: 'Yunnan',
+  lhasa: 'Tibet',
+};
 
 const vibeMap = {
   beijing: 'Imperial order and a strong capital rhythm / 首都的礼制感与中轴秩序',
@@ -57,28 +81,52 @@ const cityTaglineMap = {
   lhasa: '高原、宗教与雪域风光交汇',
 };
 
-const localSecretMap = {
-  beijing: '清晨的胡同最能看见北京的日常：晨练、早茶、修车摊和慢慢醒来的院落。',
-  shanghai: '上海不只看外滩，也要钻进弄堂与老街，才能看见海派生活的细腻层次。',
-  xian: '城墙骑行最能感受西安的空间感：一边是古都，一边是当代生活。',
-  chengdu: '人民公园的盖碗茶、摆龙门阵和麻将在一起，就是成都的生活语法。',
-  guilin: '桂林的精华不止山水照片，晨雾中的漓江才是中国山水审美的现场。',
-  hangzhou: '西湖最适合在傍晚走，苏堤、茶山、湖面一起慢下来。',
-  suzhou: '苏州园林最好早去，人在园中走一圈，就会明白什么叫“移步换景”。',
-  lijiang: '丽江古城适合早晨走，石板路、流水和木屋会比白天更安静。',
-  nanjing: '秦淮河夜色很有南京味道，但真正的南京气质也藏在老城巷口和早餐摊。',
-  shenzhen: '深圳的文化不是古旧感，而是改革开放后形成的现代城市速度。',
-  guangzhou: '广州的早茶不是吃一顿饭，而是整个城市的人情和节奏。',
-  tianjin: '天津的乐趣在河边散步、老租界街区和市井幽默。',
-  chongqing: '重庆的立体地形决定了它的城市性格：上上下下、热烈直接。',
-  wuhan: '武汉最适合看湖：东湖的开阔感能把这座城市的气质讲清楚。',
-  dalian: '大连的海岸线适合慢走，海风、广场和近代街景连成一体。',
-  qingdao: '青岛的城市记忆里有海港、啤酒和一段清晰的近代城市历史。',
-  xiamen: '厦门最有味道的是老城、海岛和闽南日常混在一起的松弛感。',
-  harbin: '哈尔滨的冬天不是缺点，而是这座北方城市最重要的文化季节。',
-  kunming: '昆明的好处是四季不极端，生活节奏也因此更平稳。',
-  lhasa: '拉萨的节奏要放慢，才能更好理解高原城市的生活方式与信仰氛围。',
+const localLifestyleMap = {
+  beijing: 'A Sunday afternoon often means a park walk, a bowl of tea, and a slower rhythm under the old courtyard sky. / 周日下午常是公园散步、喝茶和在老院落的天空下慢下来。',
+  shanghai: 'A Sunday afternoon might move from a café to an exhibition to a tree-lined lane, always lightly dressed and self-aware. / 周日下午常在咖啡馆、展览与梧桐街区之间轻轻流动。',
+  xian: 'A Sunday afternoon can be a ride along the city wall, a walk for snacks, and a quiet pause beneath the ancient capital. / 周日下午可能是城墙骑行、觅食散步，以及在古都气息里稍作停留。',
+  chengdu: 'A Sunday afternoon belongs to teahouses, people-watching, and a long, unhurried conversation with time. / 周日下午属于茶馆、摆龙门阵和与时间慢慢周旋。',
+  guilin: 'A Sunday afternoon is often a river walk, where mountain silhouettes and soft water light deepen the landscape. / 周日下午常是江边散步，看山影和水色慢慢铺开。',
+  hangzhou: 'A Sunday afternoon may mean lakeside cycling, tea, and a quiet drift through Song-style streets. / 周日下午常是湖边骑行、喝茶和在宋韵街区轻轻穿行。',
+  suzhou: 'A Sunday afternoon is best spent in a garden, a canal-side shop, or a small dessert house with patient light. / 周日下午适合园林、河边小店和一间安静甜点铺。',
+  lijiang: 'A Sunday afternoon slows down among stone lanes, tea cups, and the changing light of the mountains. / 周日下午在石板路、茶杯和山色变化中慢下来。',
+  nanjing: 'A Sunday afternoon might drift toward bookstores, coffee, or a quiet walk through old streets and old memory. / 周日下午常去书店、咖啡馆，或在老街里安静散步。',
+  shenzhen: 'A Sunday afternoon often mixes malls, seaside walks, and young creative spaces in a very contemporary tempo. / 周日下午常混合商场、海边步道与创意园的现代节奏。',
+  guangzhou: 'A Sunday afternoon can still be morning-tea culture at heart: family, conversation, and a street-life pulse that refuses to rush. / 周日下午也延续早茶文化：家人、聊天与不肯匆忙的街巷节奏。',
+  tianjin: "A Sunday afternoon often means a riverside stroll, local snacks, and the city's dry, playful humor. / 周日下午常是河边散步、小吃与天津式幽默。",
+  chongqing: 'A Sunday afternoon moves between levels, bridges, and rivers — a city that teaches you how to go up and down. / 周日下午在坡道、桥梁与江边之间切换。',
+  wuhan: 'A Sunday afternoon is often lake air, campus paths, and a bowl of hot dry noodles before the day softens. / 周日下午常是湖风、校园散步与一碗热干面。',
+  dalian: 'A Sunday afternoon belongs to the sea, broad squares, and a clean coastal light that makes people linger. / 周日下午属于海边、广场和让人驻足的海岸光线。',
+  qingdao: 'A Sunday afternoon usually means the sea wall, old streets, and a slow walk with the harbor breeze. / 周日下午常是海边、老街和港风散步。',
+  xiamen: 'A Sunday afternoon is likely a ride by the water, a café stop, and a stroll where island and old town blur together. / 周日下午常是海边骑行、咖啡停留与岛城漫步。',
+  harbin: 'A Sunday afternoon shifts naturally toward winter light, cafés, and seasonal movement that turns cold into identity. / 周日下午会自然转向冬日光线、咖啡馆和把寒冷变成身份的节奏。',
+  kunming: 'A Sunday afternoon often means flowers, lakeside air, and neighborhood parks that keep the city gently balanced. / 周日下午常是花市、湖边与社区公园。',
+  lhasa: 'A Sunday afternoon unfolds slowly: turning prayer wheels, sweet tea, sunshine, and the dignity of altitude. / 周日下午缓慢展开：转经、甜茶、阳光与高原的安静庄重。',
 };
+
+const localSecretMap = {
+  beijing: '清晨的胡同最能看见北京的日常：晨练、早茶、修车摊和慢慢醒来的院落。周日下午，很多人会去公园散步、听票友、带孩子遛弯，城市的秩序感会变得柔和。',
+  shanghai: '上海不只看外滩，也要钻进弄堂与老街，才能看见海派生活的细腻层次。周日下午常常是咖啡、展览、江边散步和老洋房街区慢行的组合。',
+  xian: '城墙骑行最能感受西安的空间感：一边是古都，一边是当代生活。周日下午，人们会去回民街附近觅食，或在城墙下晒太阳、喝茶。',
+  chengdu: '人民公园的盖碗茶、摆龙门阵和麻将在一起，就是成都的生活语法。周日下午最典型的画面，是茶馆里慢慢聊、慢慢坐，时间像被放宽了。',
+  guilin: '桂林的精华不止山水照片，晨雾中的漓江才是中国山水审美的现场。周日下午，很多家庭会沿着江边散步，看山影和水色一起变淡。',
+  hangzhou: '西湖最适合在傍晚走，苏堤、茶山、湖面一起慢下来。周日下午常见的是喝茶、看湖、骑行与宋韵街区的轻松停留。',
+  suzhou: '苏州园林最好早去，人在园中走一圈，就会明白什么叫“移步换景”。周日下午，人们会去园林、河边小店或老街吃点心，节奏安静而细密。',
+  lijiang: '丽江古城适合早晨走，石板路、流水和木屋会比白天更安静。周日下午，游客和本地人都更愿意慢慢坐下，喝茶、听风、看雪山光线变化。',
+  nanjing: '秦淮河夜色很有南京味道，但真正的南京气质也藏在老城巷口和早餐摊。周日下午，人们常去书店、咖啡店，或在老城里散步找一点安静。',
+  shenzhen: '深圳的文化不是古旧感，而是改革开放后形成的现代城市速度。周日下午经常是亲子商场、海边步道、创意园和年轻人的城市探索。',
+  guangzhou: '广州的早茶不是吃一顿饭，而是整个城市的人情和节奏。周日下午，很多人会继续饮茶、探亲、逛骑楼街，生活感很强。',
+  tianjin: '天津的乐趣在河边散步、老租界街区和市井幽默。周日下午，海河边常见慢走、拍照和吃点小吃的轻松氛围。',
+  chongqing: '重庆的立体地形决定了它的城市性格：上上下下、热烈直接。周日下午，人们会在商场、江边和山城步道之间来回切换。',
+  wuhan: '武汉最适合看湖：东湖的开阔感能把这座城市的气质讲清楚。周日下午通常是江边吹风、校园散步和热干面后的轻松休息。',
+  dalian: '大连的海岸线适合慢走，海风、广场和近代街景连成一体。周日下午，海边散步、咖啡和广场停留是很典型的日常。',
+  qingdao: '青岛的城市记忆里有海港、啤酒和一段清晰的近代城市历史。周日下午，很多人会去海边、老街和啤酒屋附近走走。',
+  xiamen: '厦门最有味道的是老城、海岛和闽南日常混在一起的松弛感。周日下午，常是海边骑行、咖啡店和鼓浪屿式散步。',
+  harbin: '哈尔滨的冬天不是缺点，而是这座北方城市最重要的文化季节。周日下午，冬季冰雪活动和咖啡馆会把城市生活串起来。',
+  kunming: '昆明的好处是四季不极端，生活节奏也因此更平稳。周日下午，人们更常去花市、湖边和社区公园，生活温度很舒适。',
+  lhasa: '拉萨的节奏要放慢，才能更好理解高原城市的生活方式与信仰氛围。周日下午，转经、喝甜茶、晒太阳是最自然的日常。',
+};
+
 const cityAssetMap = {
   beijing: 'beijing.jpg',
   shanghai: 'shanghai.jpg',
@@ -101,6 +149,7 @@ const cityAssetMap = {
   kunming: 'kunming.jpg',
   lhasa: 'lhasa.jpg',
 };
+
 const cityKeywordMap = {
   beijing: 'Beijing, Forbidden City, palace architecture, China, traditional roof, courtyard',
   shanghai: 'Shanghai, The Bund, Lujiazui, Oriental Pearl Tower, skyline, night city lights',
@@ -127,16 +176,7 @@ const cityKeywordMap = {
 export const cities = citiesRaw
   .slice()
   .sort((a, b) => {
-    const featuredOrder = [
-      'xian',
-      'chengdu',
-      'shanghai',
-      'beijing',
-      'hangzhou',
-      'guilin',
-      'suzhou',
-      'lijiang',
-    ];
+    const featuredOrder = ['xian', 'chengdu', 'shanghai', 'beijing', 'hangzhou', 'guilin', 'suzhou', 'lijiang'];
     const orderMap = Object.fromEntries(featuredOrder.map((id, index) => [id, index]));
     const aOrder = orderMap[a.id];
     const bOrder = orderMap[b.id];
@@ -147,70 +187,83 @@ export const cities = citiesRaw
     if (bFeatured) return 1;
     return String(a.name).localeCompare(String(b.name));
   })
-  .map((item) => ({
-    id: item.id,
+  .map((item, index) => {
+    const province_id = provinceMap[item.id] ?? 'General';
+    const featuredOrder = ['xian', 'chengdu', 'shanghai', 'beijing', 'hangzhou', 'guilin', 'suzhou', 'lijiang'];
+    const isFeatured = featuredOrder.includes(item.id);
 
-    // --- Standard fields (snake_case) for Travel module ---
-    name_en: item.name,
-    name_cn: item.chineseName,
-    pinyin: cityPinyinMap[item.id] ?? item.name,
-    tagline: cityTaglineMap[item.id] ?? 'A Chinese city worth reading slowly / 一座值得慢慢读的中国城市',
-    travelTips: {
-      bestSeason: item.bestTimeToVisit ?? 'Any season works, but it is best read through China’s solar terms and local landscape / 四季皆可，但更适合结合中国节气与地方风物来读。',
-      localVibe:
-        vibeMap[item.id] ??
-        item.description ??
-        'Landmarks, local flavors, and everyday streets together shape a Chinese city’s character / 中国城市的地标、地方风味与日常街巷共同构成它的气质。',
-    },
-    attractions: (item.attractions ?? []).map((a) => ({
-      name: a.name,
-      desc: a.description,
-    })),
-    localSecret: localSecretMap[item.id] ?? 'Leave the main street and step into the lanes; that is often where a Chinese city’s everyday rhythm becomes clearest / 离开主街，走进巷子，往往更能看见中国城市的日常层次。',
-    province:
-      ({
-        beijing: 'Beijing',
-        shanghai: 'Shanghai',
-        xian: 'Shaanxi',
-        chengdu: 'Sichuan',
-        guilin: 'Guangxi',
-        hangzhou: 'Zhejiang',
-        suzhou: 'Jiangsu',
-        lijiang: 'Yunnan',
-        nanjing: 'Jiangsu',
-        shenzhen: 'Guangdong',
-        guangzhou: 'Guangdong',
-        tianjin: 'Tianjin',
-        chongqing: 'Chongqing',
-        wuhan: 'Hubei',
-        dalian: 'Liaoning',
-        qingdao: 'Shandong',
-        xiamen: 'Fujian',
-        harbin: 'Heilongjiang',
-        kunming: 'Yunnan',
-        lhasa: 'Tibet',
-      })[item.id] ?? 'General',
+    // Use relations.js for enriched relationships
+    const relatedRecipeIds = getCityRecipes(item.id, province_id);
+    const relatedDynastyIds = getCityDynasties(item.id, province_id);
+    const relatedPersonIds = getCityPeople(item.id);
 
-    // --- Backward-compatible fields used by current UI ---
-    nameEn: item.name,
-    namePinyin: item.name,
-    nameCn: item.chineseName,
-    imagePrompt: cityImagePrompts[item.id] ?? `Authentic Chinese ${item.name} cityscape, unmistakably China, clean mobile composition, no Japanese, no Korean, no Western elements.`,
-    image: `https://source.unsplash.com/1600x1000/?${encodeURIComponent(
-      cityKeywordMap[item.id] ?? `${item.name}, landmark, cityscape, China`
-    )}`,
-    imagePlaceholderText: `Image of ${item.name}`,
-    imageAsset: cityAssetMap[item.id] ?? null,
-    imageSource: getImageSource(cityAssetMap[item.id] ?? null),
-    // Keep Travel screen concise fields
-    mustSee: (item.attractions ?? []).map((a) => a.name).join(', '),
-    localTaste: (item.localFood ?? []).join(', '),
-    vibe: vibeMap[item.id] ?? item.description,
-    // Keep full source data for future pages/details
-    description: item.description,
-    chineseDescription: item.chineseDescription,
-    bestTimeToVisit: item.bestTimeToVisit,
-    localFood: item.localFood ?? [],
-    attractions: item.attractions ?? [],
-  }));
-
+    return {
+      id: item.id,
+      type: 'city',
+      province_id,
+      provinceId: province_id,
+      regionId: province_id === 'Beijing' || province_id === 'Tianjin' || province_id === 'Hebei' || province_id === 'Shanxi' || province_id === 'Inner Mongolia' || province_id === 'Shaanxi' ? 'north'
+        : province_id === 'Shanghai' || province_id === 'Jiangsu' || province_id === 'Zhejiang' || province_id === 'Anhui' || province_id === 'Fujian' || province_id === 'Jiangxi' ? 'east'
+        : province_id === 'Guangdong' || province_id === 'Guangxi' || province_id === 'Hainan' ? 'south'
+        : province_id === 'Sichuan' || province_id === 'Chongqing' || province_id === 'Guizhou' || province_id === 'Yunnan' || province_id === 'Tibet' ? 'west'
+        : province_id === 'Heilongjiang' || province_id === 'Jilin' || province_id === 'Liaoning' ? 'northeast'
+        : province_id === 'Henan' || province_id === 'Hubei' || province_id === 'Hunan' ? 'central'
+        : 'general',
+      nameEn: item.name,
+      nameCn: item.chineseName,
+      nameZh: item.chineseName,
+      name_en: item.name,
+      name_cn: item.chineseName,
+      name_zh: item.chineseName,
+      subtitleCn: cityTaglineMap[item.id] ?? '一座值得慢慢读的中国城市',
+      subtitleEn: 'A Chinese city worth reading slowly',
+      summaryCn: item.chineseDescription ?? item.description ?? '一座值得慢慢读的中国城市。',
+      summaryEn: item.description ?? 'A Chinese city worth reading slowly.',
+      highlights: (item.attractions ?? []).slice(0, 5).map((a) => a.name),
+      pinyin: cityPinyinMap[item.id] ?? item.name,
+      tagline: cityTaglineMap[item.id] ?? 'A Chinese city worth reading slowly / 一座值得慢慢读的中国城市',
+      character: vibeMap[item.id] ?? item.description ?? 'A city worth reading slowly / 一座值得慢慢读的城市',
+      culturalStory: item.description ?? item.chineseDescription,
+      cultural_story: item.description ?? item.chineseDescription,
+      worldContext: item.bestTimeToVisit ?? 'A city framed through seasonal and historical rhythm / 以节气与历史节奏来读的城市。',
+      localLifestyle: localLifestyleMap[item.id] ?? "A Sunday afternoon reveals the city's daily temperament. / 周日下午最能看见城市的日常气质。",
+      tags: [province_id, 'city', 'travel'],
+      relatedIds: [
+        ...(item.localFood ?? []).map((food) => `${item.id}:${food}`),
+      ],
+      relatedRecipeIds,
+      relatedDynastyIds,
+      relatedPersonIds,
+      related_links: {
+        food: [],
+        history: [],
+        places: [],
+      },
+      mapPosition: {
+        lat: item.lat ?? 0,
+        lng: item.lng ?? 0,
+      },
+      difficulty: 'easy',
+      isFeatured,
+      sortOrder: isFeatured ? featuredOrder.indexOf(item.id) : 100 + index,
+      travelTips: {
+        bestSeason: item.bestTimeToVisit ?? "Any season works, but it is best read through China's solar terms and local landscape / 四季皆可，但更适合结合中国节气与地方风物来读。",
+        localVibe: vibeMap[item.id] ?? item.description ?? "Landmarks, local flavors, and everyday streets together shape a Chinese city's character / 中国城市的地标、地方风味与日常街巷共同构成它的气质。",
+      },
+      attractions: (item.attractions ?? []).map((a) => ({ name: a.name, desc: a.description })),
+      localSecret: localSecretMap[item.id] ?? 'Leave the main street and step into the lanes; that is often where a Chinese city\'s everyday rhythm becomes clearest / 离开主街，走进巷子，往往更能看见中国城市的日常层次。',
+      province: province_id === 'General' ? 'General / China home cooking' : `${province_id} / ${province_id}`,
+      imagePrompt: cityImagePrompts[item.id] ?? `Authentic Chinese ${item.name} cityscape, unmistakably China, clean mobile composition, no Japanese, no Korean, no Western elements.`,
+      image: cityAssetMap[item.id] ? undefined : `https://picsum.photos/seed/${encodeURIComponent(item.id || item.name)}/1600/1000`,
+      imagePlaceholderText: `Image of ${item.name}`,
+      imageAsset: cityAssetMap[item.id] ?? null,
+      imageSource: getImageSource(cityAssetMap[item.id] ?? null),
+      mustSee: (item.attractions ?? []).map((a) => a.name).join(', '),
+      localTaste: (item.localFood ?? []).join(', '),
+      vibe: vibeMap[item.id] ?? item.description,
+      description: item.description,
+      chineseDescription: item.chineseDescription,
+      bestTimeToVisit: item.bestTimeToVisit,
+      localFood: item.localFood ?? [],
+    };
+  });

@@ -25,11 +25,92 @@ export const localCityImages = {
 };
 
 export const localDynastyImages = {
-
+  // Dynasty images to be added
+  // "tang.jpg": require("../../assets/dynasties/tang.jpg"),
+  // "song.jpg": require("../../assets/dynasties/song.jpg"),
+  // "ming.jpg": require("../../assets/dynasties/ming.jpg"),
+  // "qing.jpg": require("../../assets/dynasties/qing.jpg"),
+  // "han.jpg": require("../../assets/dynasties/han.jpg"),
+  // "qin.jpg": require("../../assets/dynasties/qin.jpg"),
 };
 
 export const localRecipeImages = {
+  // Recipe images to be added - uncomment when images are placed in assets/recipes/
+  // Sichuan Cuisine
+  // "kung-pao-chicken.jpg": require("../../assets/recipes/kung-pao-chicken.jpg"),
+  // "mapo-tofu.jpg": require("../../assets/recipes/mapo-tofu.jpg"),
+  // "hot-pot.jpg": require("../../assets/recipes/hot-pot.jpg"),
+  // "twice-cooked-pork.jpg": require("../../assets/recipes/twice-cooked-pork.jpg"),
+  // "fish-flavored-pork.jpg": require("../../assets/recipes/fish-flavored-pork.jpg"),
+  // "dan-dan-noodles.jpg": require("../../assets/recipes/dan-dan-noodles.jpg"),
+  // "spicy-crawfish.jpg": require("../../assets/recipes/spicy-crawfish.jpg"),
 
+  // Cantonese / Guangdong
+  // "sweet-sour-pork.jpg": require("../../assets/recipes/sweet-sour-pork.jpg"),
+  // "char-siu.jpg": require("../../assets/recipes/char-siu.jpg"),
+  // "congee.jpg": require("../../assets/recipes/congee.jpg"),
+  // "steamed-fish.jpg": require("../../assets/recipes/steamed-fish.jpg"),
+  // "wonton-soup.jpg": require("../../assets/recipes/wonton-soup.jpg"),
+  // "shrimp-dumplings.jpg": require("../../assets/recipes/shrimp-dumplings.jpg"),
+  // "siu-mai.jpg": require("../../assets/recipes/siu-mai.jpg"),
+  // "roast-pigeon.jpg": require("../../assets/recipes/roast-pigeon.jpg"),
+  // "claypot-rice.jpg": require("../../assets/recipes/claypot-rice.jpg"),
+
+  // Shanghai / Jiangnan
+  // "xiaolongbao.jpg": require("../../assets/recipes/xiaolongbao.jpg"),
+  // "braised-pork.jpg": require("../../assets/recipes/braised-pork.jpg"),
+  // "lion-head-meatballs.jpg": require("../../assets/recipes/lion-head-meatballs.jpg"),
+  // "beggar-chicken.jpg": require("../../assets/recipes/beggar-chicken.jpg"),
+  // "dongpo-pork.jpg": require("../../assets/recipes/dongpo-pork.jpg"),
+  // "west-lake-fish.jpg": require("../../assets/recipes/west-lake-fish.jpg"),
+  // "longjing-shrimp.jpg": require("../../assets/recipes/longjing-shrimp.jpg"),
+
+  // Beijing / Northern
+  // "peking-duck.jpg": require("../../assets/recipes/peking-duck.jpg"),
+  // "dumplings.jpg": require("../../assets/recipes/dumplings.jpg"),
+  // "zhajiang-noodles.jpg": require("../../assets/recipes/zhajiang-noodles.jpg"),
+  // "hot-dry-noodles.jpg": require("../../assets/recipes/hot-dry-noodles.jpg"),
+  // "scallion-pancakes.jpg": require("../../assets/recipes/scallion-pancakes.jpg"),
+  // "stewed-pork-buns.jpg": require("../../assets/recipes/stewed-pork-buns.jpg"),
+  // "pan-fried-buns.jpg": require("../../assets/recipes/pan-fried-buns.jpg"),
+
+  // Northwestern
+  // "yangrou-paomo.jpg": require("../../assets/recipes/yangrou-paomo.jpg"),
+  // "biang-biang-noodles.jpg": require("../../assets/recipes/biang-biang-noodles.jpg"),
+  // "red-braised-beef.jpg": require("../../assets/recipes/red-braised-beef.jpg"),
+
+  // General / Home Cooking
+  // "fried-rice.jpg": require("../../assets/recipes/fried-rice.jpg"),
+  // "scrambled-eggs-tomatoes.jpg": require("../../assets/recipes/scrambled-eggs-tomatoes.jpg"),
+  // "steamed-egg-custard.jpg": require("../../assets/recipes/steamed-egg-custard.jpg"),
+  // "cucumber-garlic.jpg": require("../../assets/recipes/cucumber-garlic.jpg"),
+  // "tomato-egg-drop-soup.jpg": require("../../assets/recipes/tomato-egg-drop-soup.jpg"),
+  // "steamed-chicken.jpg": require("../../assets/recipes/steamed-chicken.jpg"),
+  // "sour-spicy-pot.jpg": require("../../assets/recipes/sour-spicy-pot.jpg"),
+  // "braised-noodles.jpg": require("../../assets/recipes/braised-noodles.jpg"),
+  // "sweet-ribs.jpg": require("../../assets/recipes/sweet-ribs.jpg"),
+  // "stinky-tofu.jpg": require("../../assets/recipes/stinky-tofu.jpg"),
+
+  // Snacks & Street Food
+  // "beef-chow-fun.jpg": require("../../assets/recipes/beef-chow-fun.jpg"),
+  // "sugar-coated-hawthorn.jpg": require("../../assets/recipes/sugar-coated-hawthorn.jpg"),
+
+  // Festival Foods
+  // "eight-treasure-rice.jpg": require("../../assets/recipes/eight-treasure-rice.jpg"),
+  // "tangyuan.jpg": require("../../assets/recipes/tangyuan.jpg"),
+  // "mooncake.jpg": require("../../assets/recipes/mooncake.jpg"),
+  // "zongzi.jpg": require("../../assets/recipes/zongzi.jpg"),
+
+  // Bakery / Desserts
+  // "pork-floss-buns.jpg": require("../../assets/recipes/pork-floss-buns.jpg"),
+  // "egg-tarts.jpg": require("../../assets/recipes/egg-tarts.jpg"),
+  // "pineapple-buns.jpg": require("../../assets/recipes/pineapple-buns.jpg"),
+  // "radish-cake.jpg": require("../../assets/recipes/radish-cake.jpg"),
+  // "taro-cake.jpg": require("../../assets/recipes/taro-cake.jpg"),
+  // "mango-pudding.jpg": require("../../assets/recipes/mango-pudding.jpg"),
+  // "black-sesame-soup.jpg": require("../../assets/recipes/black-sesame-soup.jpg"),
+  // "red-bean-soup.jpg": require("../../assets/recipes/red-bean-soup.jpg"),
+  // "almond-tofu.jpg": require("../../assets/recipes/almond-tofu.jpg"),
 };
 
 export function getLocalImage(category, filename) {

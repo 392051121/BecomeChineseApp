@@ -1,7 +1,9 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Animated, Image, ImageBackground, StyleSheet, Text, View } from 'react-native';
+import { Building, UtensilsCrossed, Crown, MapPin } from 'lucide-react-native';
 
 import { theme } from '../theme/theme';
+import { useTheme } from '../theme/ThemeContext';
 
 export function SmartImageBlock({
   source,
@@ -10,7 +12,10 @@ export function SmartImageBlock({
   style,
   overlayOpacity = 0.1,
   children,
+  placeholderType = 'default', // 'city', 'recipe', 'dynasty', 'default'
+  placeholderName,
 }) {
+  const { colors, isDark } = useTheme();
   const [failed, setFailed] = useState(false);
   const [attemptUri, setAttemptUri] = useState(uri);
   const [triedPicsum, setTriedPicsum] = useState(false);
@@ -60,21 +65,47 @@ export function SmartImageBlock({
     setFailed(true);
   }
 
+  function getPlaceholderIcon() {
+    switch (placeholderType) {
+      case 'city': return Building;
+      case 'recipe': return UtensilsCrossed;
+      case 'dynasty': return Crown;
+      default: return MapPin;
+    }
+  }
+
+  function getPlaceholderColor() {
+    switch (placeholderType) {
+      case 'city': return '#6B8A94';
+      case 'recipe': return '#E2B05E';
+      case 'dynasty': return '#B33B24';
+      default: return theme.colors.primary;
+    }
+  }
+
   if (showFallback) {
+    const Icon = getPlaceholderIcon();
+    const color = getPlaceholderColor();
+
     return (
-      <View style={[styles.fallback, style]}>
-        <Image source={require('../../assets/icon.png')} style={styles.logoMark} />
-        <Text style={styles.logo}>{initials}</Text>
-        <Text style={styles.fallbackText}>{label}</Text>
+      <View style={[styles.fallback, { backgroundColor: isDark ? colors.surface : '#E8E8E8', borderColor: colors.border }, style]}>
+        <View style={styles.fallbackDecorative}>
+          <View style={[styles.fallbackCircle1, { backgroundColor: `${color}15` }]} />
+          <View style={[styles.fallbackCircle2, { backgroundColor: `${color}10` }]} />
+        </View>
+        <Icon size={32} color={color} strokeWidth={1.5} opacity={0.6} />
+        {placeholderName && <Text style={[styles.fallbackName, { color }]}>{placeholderName}</Text>}
+        {label && <Text style={[styles.fallbackText, { color: colors.mutedText }]}>{label}</Text>}
       </View>
     );
   }
 
   return (
-    <Animated.View style={{ opacity: fadeAnim }}>
+    <Animated.View style={[style, { opacity: fadeAnim }]}>
       <ImageBackground
         source={source ?? { uri: attemptUri }}
-        style={style}
+        style={[StyleSheet.absoluteFill, { width: '100%', height: '100%' }]}
+        resizeMode="cover"
         onError={handleImageError}
         onLoadEnd={() => setLoaded(true)}
       >
@@ -88,10 +119,10 @@ export function SmartImageBlock({
 const styles = StyleSheet.create({
   overlay: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: '#333333',
+    backgroundColor: theme.colors.imageOverlayRemote,
   },
   fallback: {
-    backgroundColor: '#E8E8E8',
+    backgroundColor: theme.colors.panel,
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 0.5,
@@ -100,12 +131,12 @@ const styles = StyleSheet.create({
   logoMark: {
     width: 36,
     height: 36,
-    tintColor: '#8D8D8D',
+    tintColor: theme.colors.mutedText,
     opacity: 0.55,
     marginBottom: 6,
   },
   logo: {
-    color: '#6B6B6B',
+    color: theme.colors.mutedText,
     fontSize: 20,
     fontWeight: '800',
     letterSpacing: 2,
@@ -118,6 +149,30 @@ const styles = StyleSheet.create({
     letterSpacing: 0.3,
     textAlign: 'center',
     paddingHorizontal: 10,
+  },
+  fallbackDecorative: {
+    ...StyleSheet.absoluteFillObject,
+  },
+  fallbackCircle1: {
+    position: 'absolute',
+    top: -30,
+    right: -30,
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+  },
+  fallbackCircle2: {
+    position: 'absolute',
+    bottom: -20,
+    left: -20,
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+  },
+  fallbackName: {
+    marginTop: 8,
+    fontSize: 14,
+    fontWeight: '700',
   },
 });
 

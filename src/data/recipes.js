@@ -1,5 +1,6 @@
 import recipesRaw from './recipes.json';
 import { getImageSource, recipeImagePrompts } from './imagePrompts';
+import { provinceRecipeRelations, festivalRecipeRelations } from './relations';
 
 const recipeKeywordMap = {
   'kung-pao-chicken': 'Kung Pao Chicken / 宫保鸡丁, Sichuan cuisine / 四川菜, peanuts / 花生, spicy stir-fry / 辣味炒菜, Chinese home cooking / 中国家常菜',
@@ -17,52 +18,144 @@ const recipeKeywordMap = {
   'steamed-fish': 'Steamed Fish / 清蒸鱼, Cantonese cuisine / 粤菜, original flavor / 原味, festival banquet / 年节宴席, Chinese home-style cooking / 中国家常做法',
 };
 
-export const recipes = recipesRaw.map((item) => ({
-  id: item.id,
-  nameEn: item.name,
-  nameZh: item.chineseName,
-  difficulty: item.difficulty,
-  prepTime: item.prepTime,
-  province:
-    ({
-      'kung-pao-chicken': 'Sichuan / 四川',
-      'mapo-tofu': 'Sichuan / 四川',
-      'sweet-sour-pork': 'Guangdong / 广东',
-      'fried-rice': 'Jiangsu / 江苏',
-      dumplings: 'Shaanxi / 陕西',
-      xiaolongbao: 'Shanghai / 上海',
-      'peking-duck': 'Beijing / 北京',
-      'char-siu': 'Guangdong / 广东',
-      'hot-pot': 'Sichuan / 四川',
-      congee: 'Guangdong / 广东',
-      'braised-pork': 'Shanghai / 上海',
-      'scrambled-eggs-tomatoes': 'Chinese home cooking / 中国家常',
-      'steamed-fish': 'Guangdong / 广东',
-    })[item.id] ?? 'Chinese home cooking / 中国家常',
-  imagePrompt: recipeImagePrompts[item.id] ?? `Authentic Chinese ${item.name} close-up, unmistakably China, Chinese ceramic plate, editorial food photography, no Japanese, no Korean, no Western plating.`,
-  image: `https://source.unsplash.com/1600x1000/?${encodeURIComponent(
-    `${recipeKeywordMap[item.id] ?? item.name}, Chinese food photography, close up`
-  )}`,
-  imagePlaceholderText: `Image of ${item.name}`,
-  imageAsset: `${item.id}.jpg`,
-  imageSource: getImageSource(null),
-  culturalStory: item.description,
-  substitution: item.tips,
-  culturalContext:
-    {
-      'kung-pao-chicken': 'A classic Sichuan dish that balances numbing heat, spice, sweetness, and savory depth. / 典型川菜代表，兼具麻、辣、甜、鲜的复合口味。',
-      'mapo-tofu': 'Tofu paired with chili oil and Sichuan pepper, showing the signature structure of Sichuan flavor. / 豆腐与麻辣调味的结合，体现四川味型的典型结构。',
-      'sweet-sour-pork': 'A sweet-and-sour Cantonese dish often seen in family banquets. / 粤菜与广式家宴中常见的酸甜口菜式。',
-      'fried-rice': 'A staple that reflects Chinese home cooking’s practicality and thrift. / 剩饭再利用形成的经典主食，体现中国家庭的节俭与灵活。',
-      dumplings: 'A staple for both everyday meals and Lunar New Year reunions. / 北方年节与日常都常见的面食，象征团圆。',
-      xiaolongbao: 'A Jiangnan dim sum classic known for thin skin, rich soup, and precise steaming. / 江南点心代表之一，讲究皮薄、汤足、火候准。',
-      'peking-duck': 'A capital-city dish that reflects Beijing’s sense of ceremony. / 都城饮食代表，体现北京菜的仪式感。',
-      'char-siu': 'A signature Cantonese roast dish that highlights marinades and fire control. / 岭南烧味的典型之一，体现粤菜对火候与腌制的重视。',
-      'hot-pot': 'A powerful symbol of communal dining in China — shared, lively, and warm. / 中国聚餐文化的强连接符号，强调共享与热闹。',
-      congee: 'The most modest and stable form of rice-based breakfast in Chinese daily life. / 米食文化中最朴素也最稳定的一种日常早餐形态。',
-      'braised-pork': 'Braising shows the Chinese love for savory sauce and tender texture. / 红烧技法体现中国家庭菜对酱香与软糯口感的偏爱。',
-      'scrambled-eggs-tomatoes': 'A fast, reliable comfort dish in Chinese home cooking. / 中国家常菜代表，快、稳、下饭。',
-      'steamed-fish': 'A Cantonese cooking style that respects the ingredient’s original flavor. / 强调尊重食材本味，是粤菜审美的重要体现。',
-    }[item.id] ?? 'A small part of Chinese food culture. / 中国饮食文化中的一部分。',
-}));
+export const recipes = recipesRaw.map((item, index) => {
+  const provinceId = (item.province || ({
+    'kung-pao-chicken': 'Sichuan',
+    'mapo-tofu': 'Sichuan',
+    'sweet-sour-pork': 'Guangdong',
+    'fried-rice': 'Jiangsu',
+    dumplings: 'Shaanxi',
+    xiaolongbao: 'Shanghai',
+    'peking-duck': 'Beijing',
+    'char-siu': 'Guangdong',
+    'hot-pot': 'Sichuan',
+    congee: 'Guangdong',
+    'braised-pork': 'Shanghai',
+    'scrambled-eggs-tomatoes': 'General',
+    'steamed-fish': 'Guangdong',
+  })[item.id]) ?? 'General';
 
+  const featuredRecipes = ['peking-duck', 'mapo-tofu', 'xiaolongbao', 'hot-pot', 'kung-pao-chicken'];
+  const isFeatured = featuredRecipes.includes(item.id);
+
+  return {
+    id: item.id,
+    type: 'recipe',
+    province_id: provinceId,
+    provinceId,
+    regionId: provinceId === 'Sichuan' || provinceId === 'Chongqing' ? 'west'
+      : provinceId === 'Guangdong' || provinceId === 'Guangxi' ? 'south'
+      : provinceId === 'Jiangsu' || provinceId === 'Shanghai' || provinceId === 'Zhejiang' ? 'east'
+      : provinceId === 'Beijing' || provinceId === 'Shaanxi' || provinceId === 'Shandong' ? 'north'
+      : provinceId === 'Hunan' || provinceId === 'Hubei' ? 'central'
+      : provinceId === 'Gansu' ? 'northwest'
+      : 'general',
+    related_links: {
+      places: [],
+      history: [],
+      food: [],
+    },
+    nameEn: item.name,
+    nameCn: item.chineseName,
+    nameZh: item.chineseName,
+    name_en: item.name,
+    name_cn: item.chineseName,
+    name_zh: item.chineseName,
+    pinyin: item.pinyin ?? item.chineseName,
+    subtitleCn: item.tasteTags ? `${item.tasteTags.slice(0, 2).join('、')}风味` : '中国饮食文化中的一道菜',
+    subtitleEn: item.tasteTags ? `${item.tasteTags[0]} Chinese dish` : 'A representative Chinese dish',
+    summaryCn: item.chineseDescription || item.description,
+    summaryEn: item.description,
+    highlights: [item.name, item.chineseName, provinceId, item.city].filter(Boolean),
+    difficulty: item.difficulty ?? 'medium',
+    prepTime: item.prepTime,
+    cookTime: item.cookTime,
+    servings: item.servings,
+    province: item.city ? `${item.city} / ${provinceId}` : `${provinceId} / ${provinceId === 'General' ? '中国家常' : provinceId}`,
+    city: item.city,
+    tags: item.tasteTags ?? item.tags ?? [],
+    tasteTags: item.tasteTags ?? [],
+    mainIngredients: item.mainIngredients ?? [],
+    culturalBackground: item.culturalBackground ?? '',
+    seasonalConnection: item.seasonalConnection ?? '',
+    historicalConnection: item.historicalConnection ?? '',
+    relatedIds: [provinceId],
+    relatedCityIds: Object.entries(provinceRecipeRelations)
+      .filter(([, recipes]) => recipes.includes(item.id))
+      .map(([province]) => province.toLowerCase()),
+    relatedFestivalIds: Object.entries(festivalRecipeRelations)
+      .filter(([, recipes]) => recipes.includes(item.id))
+      .map(([festival]) => festival),
+    relatedQuizIds: [],
+    tasteProfile: item.tasteTags ?? [],
+    ingredients: item.ingredients ?? [],
+    steps: item.steps ?? [],
+    tips: item.tips ?? '',
+    isFeatured,
+    sortOrder: isFeatured ? featuredRecipes.indexOf(item.id) : 100 + index,
+    imagePrompt: recipeImagePrompts[item.id] ?? `Authentic Chinese ${item.name} close-up, unmistakably China, Chinese ceramic plate, editorial food photography, no Japanese, no Korean, no Western plating.`,
+    image: `https://picsum.photos/seed/${encodeURIComponent(item.id || item.name)}/800/600`,
+    imagePlaceholderText: `Image of ${item.name}`,
+    imageAsset: `${item.id}.jpg`,
+    imageSource: getImageSource(`${item.id}.jpg`),
+    culturalStory: item.culturalBackground || item.description,
+    cultural_story: item.culturalBackground || item.description,
+    substitution: item.tips,
+    taste_profile: item.tasteTags ?? [],
+    etiquette: item.tips,
+    culturalContext: item.culturalBackground ?? 'A small part of Chinese food culture. / 中国饮食文化中的一部分。',
+  };
+});
+
+// Helper functions for recipe queries
+export function getRecipesByProvince(provinceId) {
+  return recipes.filter(r => r.provinceId === provinceId);
+}
+
+export function getRecipesByRegion(regionId) {
+  return recipes.filter(r => r.regionId === regionId);
+}
+
+export function getRecipesByTasteTag(tag) {
+  return recipes.filter(r => r.tasteTags.includes(tag));
+}
+
+export function getRecipesBySeason(season) {
+  const seasonKeywords = {
+    spring: ['春', 'spring', 'refreshing'],
+    summer: ['夏', 'summer', 'cooling', 'refreshing', 'cold'],
+    autumn: ['秋', 'autumn', 'Mid-Autumn'],
+    winter: ['冬', 'winter', 'warming', 'hot pot', 'braised'],
+  };
+  const keywords = seasonKeywords[season] || [];
+  return recipes.filter(r =>
+    keywords.some(kw =>
+      r.seasonalConnection?.toLowerCase().includes(kw.toLowerCase()) ||
+      r.nameCn?.includes(kw) ||
+      r.name?.toLowerCase().includes(kw.toLowerCase())
+    )
+  );
+}
+
+export function getFeaturedRecipes() {
+  return recipes.filter(r => r.isFeatured).sort((a, b) => a.sortOrder - b.sortOrder);
+}
+
+export function getRecipeById(id) {
+  return recipes.find(r => r.id === id);
+}
+
+export function searchRecipes(query) {
+  const q = query.toLowerCase();
+  return recipes.filter(r =>
+    r.nameCn?.includes(query) ||
+    r.name?.toLowerCase().includes(q) ||
+    r.pinyin?.toLowerCase().includes(q) ||
+    r.provinceId?.toLowerCase().includes(q) ||
+    r.city?.toLowerCase().includes(q) ||
+    r.tasteTags?.some(t => t.toLowerCase().includes(q)) ||
+    r.mainIngredients?.some(i => i.toLowerCase().includes(q))
+  );
+}
+
+export default recipes;

@@ -7,19 +7,49 @@ import {
   Text,
   View,
 } from 'react-native';
-import { ArrowLeft, BadgeInfo, BookOpen, Sparkles } from 'lucide-react-native';
+import * as Speech from 'expo-speech';
+import * as Haptics from 'expo-haptics';
+import { ArrowLeft, BadgeInfo, BookOpen, Sparkles, Users, Crown, MapPin, UtensilsCrossed, Scroll, Share2 } from 'lucide-react-native';
 
 import { dynasties } from '../data/dynasties';
 import { SmartImageBlock } from '../components/SmartImageBlock';
 import { getLocalImage } from '../assets/localImages';
 import { theme } from '../theme/theme';
+import { useTheme } from '../theme/ThemeContext';
+import { HandscrollContainer } from '../components/HandscrollContainer';
+import { ScreenHeader } from '../components/ScreenHeader';
+import { SectionCard } from '../components/SectionCard';
+import { PaperTexture } from '../components/PaperTexture';
+import { cities } from '../data/cities';
+import { recipes } from '../data/recipes';
+import { people } from '../data/people';
+import { shareText, generateDynastyShareText } from '../utils/sharing';
 
 export function DynastyDetailScreen({ route, navigation }) {
+  const { colors } = useTheme();
   const dynastyId = route?.params?.dynastyId ?? 'tang';
   const dynasty = useMemo(
     () => dynasties.find((item) => item.id === dynastyId) ?? dynasties[0],
     [dynastyId]
   );
+
+  const speakTerm = (text) => {
+    if (!text) return;
+    Haptics.selectionAsync().catch(() => {});
+    Speech.speak(String(text), { language: 'en-US', rate: 0.92, pitch: 0.96 });
+  };
+
+  const handleShare = async () => {
+    Haptics.selectionAsync().catch(() => {});
+    const shareTextContent = generateDynastyShareText({
+      nameCn: dynasty?.nameCn,
+      nameEn: dynasty?.nameEn,
+      period: dynasty?.years,
+      tagline: dynasty?.tagline,
+      contribution: dynasty?.contribution,
+    });
+    await shareText(shareTextContent, `Share ${dynasty?.nameEn} Dynasty`);
+  };
 
   const sections = useMemo(() => {
     const emperors = dynasty?.emperors ?? [];
@@ -51,75 +81,237 @@ export function DynastyDetailScreen({ route, navigation }) {
 
   return (
     <SafeAreaView style={styles.safeArea}>
-      <View style={styles.topBar}>
-        <Pressable style={styles.backBtn} onPress={() => navigation.goBack()}>
-          <ArrowLeft size={16} color={theme.colors.text} strokeWidth={2} />
-          <Text style={styles.backText}>Back</Text>
-        </Pressable>
-        <Text style={styles.topTitle}>Dynasty Detail</Text>
-      </View>
+      <HandscrollContainer>
+        <View style={styles.topBar}>
+          <Pressable style={styles.backBtn} onPress={() => navigation.goBack()} accessibilityRole="button" accessibilityLabel="Go back" accessibilityHint="Double tap to return to previous screen">
+            <ArrowLeft size={16} color={theme.colors.text} strokeWidth={2} />
+            <Text style={styles.backText}>Back</Text>
+          </Pressable>
+          <Text style={styles.topTitle}>Dynasty Detail</Text>
+          <Pressable
+            style={styles.shareBtn}
+            onPress={handleShare}
+            accessibilityRole="button"
+            accessibilityLabel="Share this dynasty"
+          >
+            <Share2 size={18} color={theme.colors.primary} strokeWidth={2} />
+          </Pressable>
+        </View>
 
-      <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
-        <View style={styles.hero}>
-          <SmartImageBlock
-            source={getLocalImage('dynasties', dynasty.imageAsset)}
-            uri={dynasty.image}
-            label={dynasty.imagePlaceholderText}
-            style={styles.heroImage}
-            overlayOpacity={0.12}
+        <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+          <ScreenHeader
+            kicker={dynasty?.years ?? 'Dynasty'}
+            title={dynasty?.nameEn ?? 'Dynasty'}
+            subtitle={dynasty?.tagline ?? ''}
+            style={styles.header}
+            includeTopInset={false}
           />
-          <View style={styles.heroMeta}>
-            <Text style={styles.dynastyName}>{dynasty.nameCn}</Text>
-            <Text style={styles.dynastyNameEn}>{dynasty.nameEn} Dynasty</Text>
-            <Text style={styles.period}>{dynasty.years}</Text>
-            <Text style={styles.tagline}>{dynasty.tagline}</Text>
-          </View>
-        </View>
+          <SectionCard style={styles.hero}>
+            <PaperTexture intensity="light" />
+            <SmartImageBlock
+              source={getLocalImage('dynasties', dynasty.imageAsset)}
+              uri={dynasty.image}
+              label={dynasty.imagePlaceholderText}
+              style={styles.heroImage}
+              overlayOpacity={0.12}
+            />
+            <View style={styles.heroMeta}>
+              <Text style={styles.dynastyName}>{dynasty.nameCn}</Text>
+              <Text style={styles.dynastyNameEn}>{dynasty.nameEn} Dynasty</Text>
+              <Text style={styles.period}>{dynasty.years}</Text>
+            </View>
+          </SectionCard>
 
-        <View style={styles.card}>
-          <View style={styles.sectionHeader}>
-            <BadgeInfo size={14} color={theme.colors.primary} />
-            <Text style={styles.sectionTitle}>Timeline Link</Text>
-          </View>
-          <Text style={styles.sectionText}>{dynasty.worldContext}</Text>
-          <View style={styles.miniTimeline}>
-            <Text style={styles.timelineLabel}>Start</Text>
-            <View style={styles.timelineLine} />
-            <Text style={styles.timelineLabel}>End</Text>
-          </View>
-          <Text style={styles.sectionTextMuted}>{dynasty.legacy}</Text>
-        </View>
+          <SectionCard style={styles.card}>
+            <View style={styles.sectionHeader}>
+              <BadgeInfo size={14} color={theme.colors.primary} />
+              <Text style={styles.sectionTitle}>Timeline Link</Text>
+            </View>
+            <Text style={styles.sectionText}>{dynasty.worldContext}</Text>
+            <View style={styles.miniTimeline}>
+              <Text style={styles.timelineLabel}>Start</Text>
+              <View style={styles.timelineLine} />
+              <Text style={styles.timelineLabel}>End</Text>
+            </View>
+            <Text style={styles.sectionTextMuted}>{dynasty.legacy}</Text>
+          </SectionCard>
 
-        <View style={styles.card}>
-          <View style={styles.sectionHeader}>
-            <BookOpen size={14} color={theme.colors.primary} />
-            <Text style={styles.sectionTitle}>Rulers</Text>
-          </View>
-          {sections.map((section) => (
-            <View key={section.key} style={styles.subSection}>
-              <Text style={styles.subSectionTitle}>{section.title}</Text>
-              {section.emperors.map((e, index) => (
-                <View key={`${section.key}-${index}-${e.name}`} style={styles.emperorRow}>
-                  <Text style={styles.emperorName}>{e.name}</Text>
-                  {e.nameZh ? <Text style={styles.emperorZh}>{e.nameZh}</Text> : null}
-                  {e.reign ? <Text style={styles.emperorReign}>{e.reign}</Text> : null}
-                  <Text style={styles.emperorAch}>{e.achievement}</Text>
+          <SectionCard style={styles.card}>
+            <View style={styles.sectionHeader}>
+              <BookOpen size={14} color={theme.colors.primary} />
+              <Text style={styles.sectionTitle}>Rulers</Text>
+            </View>
+            {sections.map((section) => (
+              <View key={section.key} style={styles.subSection}>
+                <Text style={styles.subSectionTitle}>{section.title}</Text>
+                {section.emperors.map((e, index) => (
+                  <View key={`${section.key}-${index}-${e.name}`} style={styles.emperorRow}>
+                    <Text style={styles.emperorName}>{e.name}</Text>
+                    {e.nameZh ? <Text style={styles.emperorZh}>{e.nameZh}</Text> : null}
+                    {e.reign ? <Text style={styles.emperorReign}>{e.reign}</Text> : null}
+                    <Text style={styles.emperorAch}>{e.achievement}</Text>
+                  </View>
+                ))}
+              </View>
+            ))}
+          </SectionCard>
+
+          {/* Famous People Section */}
+          {dynasty.famousPeople && dynasty.famousPeople.length > 0 && (
+            <SectionCard style={styles.card}>
+              <View style={styles.sectionHeader}>
+                <Users size={14} color={theme.colors.primary} />
+                <Text style={styles.sectionTitle}>Notable Figures</Text>
+              </View>
+              <Text style={styles.sectionHint}>Key personalities who shaped this era</Text>
+              {dynasty.famousPeople.map((person, idx) => (
+                <View key={`person-${idx}`} style={styles.personRow}>
+                  <View style={styles.personIcon}>
+                    <Text style={styles.personIconText}>{person.nameCn?.[0] ?? person.name[0]}</Text>
+                  </View>
+                  <View style={styles.personInfo}>
+                    <Text style={styles.personName}>{person.name}</Text>
+                    <Text style={styles.personNameCn}>{person.nameCn}</Text>
+                    <Text style={styles.personRole}>{person.role}</Text>
+                  </View>
                 </View>
               ))}
-            </View>
-          ))}
-        </View>
+            </SectionCard>
+          )}
 
-        <View style={styles.card}>
-          <View style={styles.sectionHeader}>
-            <Sparkles size={14} color={theme.colors.primary} />
-            <Text style={styles.sectionTitle}>Achievement Hook</Text>
-          </View>
-          <Text style={styles.sectionText}>
-            Exploring this dynasty can unlock timeline achievements, collection milestones, and cultural rank progress.
-          </Text>
-        </View>
-      </ScrollView>
+          {/* Artifacts Section */}
+          {dynasty.artifacts && dynasty.artifacts.length > 0 && (
+            <SectionCard style={styles.card}>
+              <View style={styles.sectionHeader}>
+                <Crown size={14} color={theme.colors.primary} />
+                <Text style={styles.sectionTitle}>Cultural Artifacts</Text>
+              </View>
+              <Text style={styles.sectionHint}>Treasures and innovations from this era</Text>
+              {dynasty.artifacts.map((artifact, idx) => (
+                <View key={`artifact-${idx}`} style={styles.artifactRow}>
+                  <View style={styles.artifactDot} />
+                  <View style={styles.artifactInfo}>
+                    <Text style={styles.artifactName}>{artifact.name}</Text>
+                    <Text style={styles.artifactNameCn}>{artifact.nameCn}</Text>
+                    <Text style={styles.artifactDesc}>{artifact.desc}</Text>
+                  </View>
+                </View>
+              ))}
+            </SectionCard>
+          )}
+
+          {/* Key Events Section */}
+          {dynasty.keyEvents && dynasty.keyEvents.length > 0 && (
+            <SectionCard style={styles.card}>
+              <View style={styles.sectionHeader}>
+                <Scroll size={14} color={theme.colors.primary} />
+                <Text style={styles.sectionTitle}>Key Events</Text>
+              </View>
+              {dynasty.keyEvents.map((event, idx) => (
+                <View key={`event-${idx}`} style={styles.eventItem}>
+                  <View style={styles.eventDot} />
+                  <Text style={styles.eventText}>{event}</Text>
+                </View>
+              ))}
+            </SectionCard>
+          )}
+
+          {/* Enhanced Cross-References Section */}
+          <SectionCard style={styles.card}>
+            <View style={styles.sectionHeader}>
+              <Sparkles size={14} color={theme.colors.primary} />
+              <Text style={styles.sectionTitle}>Explore Further</Text>
+            </View>
+            <Text style={styles.sectionText}>Continue exploring the culture, places, and flavors connected to this dynasty.</Text>
+
+            {/* Related Cities */}
+            {(() => {
+              const relatedCities = cities.filter((city) =>
+                city.provinceId === dynasty.provinceId ||
+                city.relatedDynastyIds?.includes(dynasty.id)
+              ).slice(0, 3);
+              return relatedCities.length > 0 ? (
+                <View style={styles.relatedSection}>
+                  <View style={styles.relatedLabelRow}>
+                    <MapPin size={12} color={theme.colors.mutedText} />
+                    <Text style={styles.relatedLabel}>Related Cities</Text>
+                  </View>
+                  {relatedCities.map((city) => (
+                    <Pressable
+                      key={city.id}
+                      style={styles.relatedItem}
+                      onPress={() => navigation.getParent()?.navigate('Places')}
+                      accessibilityRole="button"
+                      accessibilityLabel={`${city.nameEn} - ${city.nameCn}`}
+                      accessibilityHint="Double tap to explore cities"
+                    >
+                      <Text style={styles.relatedItemName}>{city.nameCn}</Text>
+                      <Text style={styles.relatedItemSub}>{city.nameEn}</Text>
+                    </Pressable>
+                  ))}
+                </View>
+              ) : null;
+            })()}
+
+            {/* Related Foods */}
+            {(() => {
+              const relatedFoods = recipes.filter((recipe) =>
+                recipe.provinceId === dynasty.provinceId
+              ).slice(0, 3);
+              return relatedFoods.length > 0 ? (
+                <View style={styles.relatedSection}>
+                  <View style={styles.relatedLabelRow}>
+                    <UtensilsCrossed size={12} color={theme.colors.mutedText} />
+                    <Text style={styles.relatedLabel}>Related Foods</Text>
+                  </View>
+                  {relatedFoods.map((food) => (
+                    <Pressable
+                      key={food.id}
+                      style={styles.relatedItem}
+                      onPress={() => navigation.getParent()?.navigate('Food')}
+                      accessibilityRole="button"
+                      accessibilityLabel={`${food.nameEn} - ${food.nameCn}`}
+                      accessibilityHint="Double tap to explore recipes"
+                    >
+                      <Text style={styles.relatedItemName}>{food.nameCn}</Text>
+                      <Text style={styles.relatedItemSub}>{food.nameEn}</Text>
+                    </Pressable>
+                  ))}
+                </View>
+              ) : null;
+            })()}
+
+            {/* Related People */}
+            {(() => {
+              const relatedPeople = dynasty.relatedPersonIds?.slice(0, 3) ?? [];
+              return relatedPeople.length > 0 ? (
+                <View style={styles.relatedSection}>
+                  <View style={styles.relatedLabelRow}>
+                    <Users size={12} color={theme.colors.mutedText} />
+                    <Text style={styles.relatedLabel}>Historical Figures</Text>
+                  </View>
+                  {relatedPeople.map((personId) => {
+                    const person = people.find(p => p.id === personId);
+                    return person ? (
+                      <Pressable
+                        key={personId}
+                        style={styles.relatedItem}
+                        onPress={() => navigation.navigate('PersonDetail', { personId })}
+                        accessibilityRole="button"
+                        accessibilityLabel={`${person.nameEn} - ${person.nameCn}`}
+                        accessibilityHint="Double tap to view person details"
+                      >
+                        <Text style={styles.relatedItemName}>{person.nameCn}</Text>
+                        <Text style={styles.relatedItemSub}>{person.nameEn}</Text>
+                      </Pressable>
+                    ) : null;
+                  })}
+                </View>
+              ) : null;
+            })()}
+          </SectionCard>
+        </ScrollView>
+      </HandscrollContainer>
     </SafeAreaView>
   );
 }
@@ -137,18 +329,29 @@ const styles = StyleSheet.create({
   backBtn: { flexDirection: 'row', alignItems: 'center', gap: 6 },
   backText: { color: theme.colors.text, fontWeight: '700' },
   topTitle: { color: theme.colors.text, fontSize: 16, fontWeight: '700' },
+  shareBtn: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: theme.colors.cinnabarGlow,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   content: { paddingHorizontal: 24, paddingBottom: 28, gap: 14 },
-  hero: { borderWidth: 0.5, borderColor: theme.colors.border, borderRadius: 4, overflow: 'hidden' },
+  header: { marginBottom: 4 },
+  hero: { overflow: 'hidden' },
   heroImage: { height: 220 },
   heroMeta: { padding: 14, backgroundColor: theme.colors.card },
   dynastyName: { color: theme.colors.text, fontSize: 28, fontWeight: '800' },
   dynastyNameEn: { marginTop: 4, color: theme.colors.primary, fontWeight: '800', letterSpacing: 1.2 },
   period: { marginTop: 6, color: theme.colors.mutedText },
   tagline: { marginTop: 8, color: theme.colors.text, fontStyle: 'italic' },
-  card: { borderWidth: 0.5, borderColor: theme.colors.border, borderRadius: 4, backgroundColor: theme.colors.card, padding: 14 },
+  card: { padding: 14 },
   sectionHeader: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   sectionTitle: { color: theme.colors.primary, fontSize: 12, fontWeight: '800', letterSpacing: 1.2, textTransform: 'uppercase' },
+  sectionHint: { marginTop: 4, color: theme.colors.mutedText, fontSize: 11 },
   sectionText: { marginTop: 10, color: theme.colors.text, lineHeight: 22 },
+  relatedLink: { marginTop: 8, color: theme.colors.text, fontSize: 12, lineHeight: 18.4 },
   sectionTextMuted: { marginTop: 10, color: theme.colors.mutedText, lineHeight: 22 },
   miniTimeline: { flexDirection: 'row', alignItems: 'center', gap: 10, marginTop: 12 },
   timelineLine: { flex: 1, height: 0.5, backgroundColor: theme.colors.border },
@@ -160,4 +363,30 @@ const styles = StyleSheet.create({
   emperorZh: { color: theme.colors.primary, marginTop: 3, fontWeight: '700' },
   emperorReign: { color: theme.colors.mutedText, marginTop: 3, fontSize: 11 },
   emperorAch: { color: theme.colors.text, marginTop: 6, lineHeight: 20 },
+  // Person styles
+  personRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 10, marginTop: 10, paddingVertical: 8, borderBottomWidth: 0.5, borderBottomColor: theme.colors.border },
+  personIcon: { width: 36, height: 36, borderRadius: 18, backgroundColor: theme.colors.cinnabarGlow, alignItems: 'center', justifyContent: 'center' },
+  personIconText: { color: theme.colors.primary, fontWeight: '800', fontSize: 14 },
+  personInfo: { flex: 1 },
+  personName: { color: theme.colors.text, fontWeight: '700', fontSize: 14 },
+  personNameCn: { color: theme.colors.primary, fontSize: 12, marginTop: 1 },
+  personRole: { color: theme.colors.mutedText, fontSize: 11, marginTop: 3 },
+  // Artifact styles
+  artifactRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 8, marginTop: 10 },
+  artifactDot: { width: 6, height: 6, borderRadius: 3, backgroundColor: theme.colors.primary, marginTop: 6 },
+  artifactInfo: { flex: 1 },
+  artifactName: { color: theme.colors.text, fontWeight: '600', fontSize: 13 },
+  artifactNameCn: { color: theme.colors.primary, fontSize: 11, marginTop: 1 },
+  artifactDesc: { color: theme.colors.mutedText, fontSize: 11, marginTop: 2 },
+  // Event styles
+  eventItem: { flexDirection: 'row', alignItems: 'flex-start', gap: 8, marginTop: 8 },
+  eventDot: { width: 5, height: 5, borderRadius: 2.5, backgroundColor: theme.colors.primary, marginTop: 6 },
+  eventText: { color: theme.colors.text, fontSize: 13, flex: 1 },
+  // Related section styles
+  relatedSection: { marginTop: 14 },
+  relatedLabelRow: { flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 8 },
+  relatedLabel: { color: theme.colors.mutedText, fontSize: 11, fontWeight: '600' },
+  relatedItem: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: 8, paddingHorizontal: 10, backgroundColor: theme.colors.surface, borderRadius: 6, marginTop: 6, borderWidth: 0.5, borderColor: theme.colors.border },
+  relatedItemName: { color: theme.colors.text, fontWeight: '600', fontSize: 13 },
+  relatedItemSub: { color: theme.colors.mutedText, fontSize: 11 },
 });

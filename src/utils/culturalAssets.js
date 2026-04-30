@@ -1,13 +1,30 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { STORAGE_LIMITS, getCultureRank as getCultureRankConfig } from '../config/gamification';
+import { STORAGE_KEYS } from '../config/storageKeys';
+import { CACHE_CONFIG, STORAGE_LIMITS as LIMITS } from '../config/constants';
+import { showError, ERROR_MESSAGES, logger } from './errorHandling';
 
-const CULTURAL_ASSETS_KEY = 'cultural.assets.v1';
+const MAX_RECENT_ITEMS = STORAGE_LIMITS.MAX_RECENT_ITEMS;
+
+// In-memory cache to reduce AsyncStorage reads
+let cachedAssets = null;
+let cacheTimestamp = 0;
+const CACHE_TTL = CACHE_CONFIG.DEFAULT_TTL_MS;
 
 function todayKey(date = new Date()) {
-  return date.toISOString().slice(0, 10);
+  // Use local date components instead of UTC to avoid timezone issues
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
 }
 
 function normalizeArray(input) {
   return Array.isArray(input) ? input : [];
+}
+
+export function getProvinceId(item) {
+  return item?.province_id ?? item?.provinceId ?? item?.province ?? null;
 }
 
 function ensureState(raw) {
@@ -18,12 +35,16 @@ function ensureState(raw) {
       cities: normalizeArray(state?.favorites?.cities),
       recipes: normalizeArray(state?.favorites?.recipes),
       dynasties: normalizeArray(state?.favorites?.dynasties),
+      people: normalizeArray(state?.favorites?.people),
     },
     quiz: {
       streak: Number(state?.quiz?.streak ?? 0),
       totalSolved: Number(state?.quiz?.totalSolved ?? 0),
       lastSolvedDate: state?.quiz?.lastSolvedDate ?? null,
       solvedByDate: state?.quiz?.solvedByDate && typeof state.quiz.solvedByDate === 'object' ? state.quiz.solvedByDate : {},
+    },
+    stats: {
+      namesGenerated: Number(state?.stats?.namesGenerated ?? 0),
     },
     meta: {
       updatedAt: state?.meta?.updatedAt ?? null,
@@ -32,62 +53,92 @@ function ensureState(raw) {
 }
 
 export async function getCulturalAssets() {
+  // Return cached data if still valid
+  const now = Date.now();
+  if (cachedAssets && (now - cacheTimestamp) < CACHE_TTL) {
+    return cachedAssets;
+  }
+
   try {
-    const raw = await AsyncStorage.getItem(CULTURAL_ASSETS_KEY);
+    const raw = await AsyncStorage.getItem(STORAGE_KEYS.CULTURAL_ASSETS);
     const parsed = raw ? JSON.parse(raw) : null;
-    return ensureState(parsed);
-  } catch {
+    const result = ensureState(parsed);
+    // Update cache
+    cachedAssets = result;
+    cacheTimestamp = now;
+    return result;
+  } catch (error) {
+    logger.error('CulturalAssets', 'Failed to load cultural assets', error);
+    showError(ERROR_MESSAGES.LOAD_FAILED);
     return ensureState(null);
   }
 }
 
 export async function saveCulturalAssets(nextState) {
-  const normalized = ensureState(nextState);
-  const payload = {
-    ...normalized,
-    meta: {
-      ...normalized.meta,
-      updatedAt: new Date().toISOString(),
-    },
-  };
-  await AsyncStorage.setItem(CULTURAL_ASSETS_KEY, JSON.stringify(payload));
-  return payload;
+  try {
+    const normalized = ensureState(nextState);
+    const payload = {
+      ...normalized,
+      meta: {
+        ...normalized.meta,
+        updatedAt: new Date().toISOString(),
+      },
+    };
+    await AsyncStorage.setItem(STORAGE_KEYS.CULTURAL_ASSETS, JSON.stringify(payload));
+    // Update cache with the new data
+    cachedAssets = payload;
+    cacheTimestamp = Date.now();
+    return payload;
+  } catch (error) {
+    logger.error('CulturalAssets', 'Failed to save cultural assets', error);
+    showError(ERROR_MESSAGES.SAVE_FAILED);
+    return ensureState(nextState);
+  }
 }
 
 export async function patchCulturalAssets(patchFn) {
-  const current = await getCulturalAssets();
+  // Use cached data if available to avoid extra read
+  const current = cachedAssets || await getCulturalAssets();
   const next = patchFn(current);
   return saveCulturalAssets(next);
 }
 
+// Invalidate cache to force fresh data load
+export function invalidateAssetsCache() {
+  cachedAssets = null;
+  cacheTimestamp = 0;
+}
+
 export function buildProvinceStats({ favorites, cities, recipes }) {
   const provinceMap = new Map();
-  const allTagged = [...cities, ...recipes].filter((item) => item?.province);
+  const allTagged = [...cities, ...recipes].filter((item) => getProvinceId(item));
   allTagged.forEach((item) => {
-    if (!provinceMap.has(item.province)) {
-      provinceMap.set(item.province, { total: 0, visited: false });
+    const provinceId = getProvinceId(item);
+    if (!provinceMap.has(provinceId)) {
+      provinceMap.set(provinceId, { total: 0, visited: false });
     }
-    provinceMap.get(item.province).total += 1;
+    provinceMap.get(provinceId).total += 1;
   });
 
   const nameFavorites = normalizeArray(favorites?.names);
   nameFavorites.forEach((fav) => {
-    if (!fav?.province) return;
-    if (!provinceMap.has(fav.province)) {
-      provinceMap.set(fav.province, { total: 0, visited: false });
+    const provinceId = getProvinceId(fav);
+    if (!provinceId) return;
+    if (!provinceMap.has(provinceId)) {
+      provinceMap.set(provinceId, { total: 0, visited: false });
     }
-    provinceMap.get(fav.province).visited = true;
+    provinceMap.get(provinceId).visited = true;
   });
 
   const provinceList = [...normalizeArray(favorites?.cities), ...normalizeArray(favorites?.recipes)]
-    .map((item) => item?.province)
+    .map((item) => getProvinceId(item))
     .filter(Boolean);
 
-  provinceList.forEach((province) => {
-    if (!provinceMap.has(province)) {
-      provinceMap.set(province, { total: 0, visited: false });
+  provinceList.forEach((provinceId) => {
+    if (!provinceMap.has(provinceId)) {
+      provinceMap.set(provinceId, { total: 0, visited: false });
     }
-    provinceMap.get(province).visited = true;
+    provinceMap.get(provinceId).visited = true;
   });
 
   const provinces = Array.from(provinceMap.entries()).map(([province, value]) => ({
@@ -123,8 +174,8 @@ function uniqueById(list) {
 }
 
 export async function addNameFavorite(namePayload) {
-  return patchCulturalAssets((state) => {
-    const nextNames = uniqueById([namePayload, ...state.favorites.names]).slice(0, 60);
+  const result = await patchCulturalAssets((state) => {
+    const nextNames = uniqueById([namePayload, ...state.favorites.names]).slice(0, LIMITS.MAX_FAVORITES_PER_TYPE);
     return {
       ...state,
       favorites: {
@@ -133,14 +184,26 @@ export async function addNameFavorite(namePayload) {
       },
     };
   });
+  return result;
+}
+
+export async function incrementNamesGenerated() {
+  const result = await patchCulturalAssets((state) => ({
+    ...state,
+    stats: {
+      ...state.stats,
+      namesGenerated: (state.stats?.namesGenerated ?? 0) + 1,
+    },
+  }));
+  return result;
 }
 
 export async function toggleCollectionItem(type, item) {
   if (!item?.id) return getCulturalAssets();
-  return patchCulturalAssets((state) => {
+  const result = await patchCulturalAssets((state) => {
     const current = normalizeArray(state.favorites?.[type]);
     const exists = current.some((x) => x?.id === item.id);
-    const nextList = exists ? current.filter((x) => x?.id !== item.id) : uniqueById([item, ...current]).slice(0, 60);
+    const nextList = exists ? current.filter((x) => x?.id !== item.id) : uniqueById([item, ...current]).slice(0, LIMITS.MAX_FAVORITES_PER_TYPE);
     return {
       ...state,
       favorites: {
@@ -149,6 +212,30 @@ export async function toggleCollectionItem(type, item) {
       },
     };
   });
+  return result;
+}
+
+export async function setCollectionItem(type, item, nextActive) {
+  if (!item?.id) return getCulturalAssets();
+  return patchCulturalAssets((state) => {
+    const current = normalizeArray(state.favorites?.[type]);
+    const exists = current.some((x) => x?.id === item.id);
+    let nextList = current;
+    if (nextActive && !exists) nextList = uniqueById([item, ...current]).slice(0, LIMITS.MAX_FAVORITES_PER_TYPE);
+    if (!nextActive && exists) nextList = current.filter((x) => x?.id !== item.id);
+    return {
+      ...state,
+      favorites: {
+        ...state.favorites,
+        [type]: nextList,
+      },
+    };
+  });
+}
+
+export async function getFavoritesSnapshot() {
+  const assets = await getCulturalAssets();
+  return assets.favorites;
 }
 
 export async function markQuizSolvedToday({ date = new Date(), solved = false }) {
@@ -160,9 +247,23 @@ export async function markQuizSolvedToday({ date = new Date(), solved = false })
 
     const alreadyMarked = Boolean(state.quiz.solvedByDate?.[day]);
     if (solved && !alreadyMarked) {
-      const mode = calculateNextStreak(prevDate, date);
-      if (mode === 'increment') streak += 1;
-      else streak = 1;
+      // First time solving today
+      if (!prevDate) {
+        // No previous record, start streak at 1
+        streak = 1;
+      } else {
+        const diff = daysBetween(prevDate, date);
+        if (diff === 1) {
+          // Consecutive day, increment streak
+          streak += 1;
+        } else if (diff <= 0) {
+          // Same day (shouldn't happen due to alreadyMarked check, but handle it)
+          // Keep current streak
+        } else {
+          // Gap in days, reset streak
+          streak = 1;
+        }
+      }
       totalSolved += 1;
     }
 
@@ -183,8 +284,72 @@ export async function markQuizSolvedToday({ date = new Date(), solved = false })
 }
 
 export function getCultureRank(connected) {
-  if (connected >= 8) return 'Gold Wanderer';
-  if (connected >= 4) return 'Silver Explorer';
-  if (connected >= 1) return 'Bronze Traveler';
-  return 'Wanderer Seed';
+  return getCultureRankConfig(connected);
+}
+
+export function getProvinceConnectionMap({ favorites, cities, recipes, dynasties }) {
+  const provinceMap = new Map();
+  const sourceLists = [normalizeArray(cities), normalizeArray(recipes), normalizeArray(dynasties)];
+  sourceLists.flat().forEach((item) => {
+    const provinceId = getProvinceId(item);
+    if (!provinceId) return;
+    if (!provinceMap.has(provinceId)) {
+      provinceMap.set(provinceId, { collected: 0, connected: false });
+    }
+    provinceMap.get(provinceId).collected += 1;
+  });
+
+  const collectedItems = [
+    ...normalizeArray(favorites?.cities),
+    ...normalizeArray(favorites?.recipes),
+    ...normalizeArray(favorites?.dynasties),
+    ...normalizeArray(favorites?.names),
+  ];
+  collectedItems.forEach((item) => {
+    const provinceId = getProvinceId(item);
+    if (!provinceId) return;
+    if (!provinceMap.has(provinceId)) {
+      provinceMap.set(provinceId, { collected: 0, connected: false });
+    }
+    provinceMap.get(provinceId).connected = true;
+  });
+
+  const provinces = [...provinceMap.entries()].map(([province, value]) => ({ province, ...value }));
+  const collectedCount = provinces.filter((item) => item.connected).length;
+  return {
+    provinces,
+    collectedCount,
+    totalCount: provinces.length,
+    connectedProvinces: new Set(provinces.filter((item) => item.connected).map((item) => item.province)),
+  };
+}
+
+// Recently viewed items
+export async function addRecentlyViewed(item) {
+  if (!item?.id || !item?.type) return getRecentlyViewed();
+  try {
+    const current = await getRecentlyViewed();
+    const filtered = current.filter((i) => !(i.id === item.id && i.type === item.type));
+    const next = [
+      { id: item.id, type: item.type, nameEn: item.nameEn, nameCn: item.nameCn, province: item.province, viewedAt: Date.now() },
+      ...filtered,
+    ].slice(0, MAX_RECENT_ITEMS);
+    await AsyncStorage.setItem(STORAGE_KEYS.RECENTLY_VIEWED, JSON.stringify(next));
+    return next;
+  } catch {
+    return [];
+  }
+}
+
+export async function getRecentlyViewed() {
+  try {
+    const raw = await AsyncStorage.getItem(STORAGE_KEYS.RECENTLY_VIEWED);
+    return raw ? JSON.parse(raw) : [];
+  } catch {
+    return [];
+  }
+}
+
+export async function clearRecentlyViewed() {
+  await AsyncStorage.removeItem(STORAGE_KEYS.RECENTLY_VIEWED);
 }

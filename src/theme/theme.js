@@ -1,11 +1,111 @@
+import { Platform } from 'react-native';
+
+import { colors } from './colors';
+
 export const theme = {
-  colors: {
-    background: '#FDFBF7',
-    primary: '#B33B24',
-    text: '#333333',
-    card: '#FFFFFF',
-    border: 'rgba(51, 51, 51, 0.10)',
-    mutedText: 'rgba(51, 51, 51, 0.70)',
+  colors,
+
+  // Typography - Chinese aesthetic with modern readability
+  typography: {
+    titleSerif: Platform.select({
+      ios: 'Georgia',
+      android: 'serif',
+      default: 'serif',
+    }),
+    body: 'System',
+    pinyin: 'System',
+    lineHeight: 1.56,
+    titleLetterSpacing: 0.2,
+    labelLetterSpacing: 1.1,
+    // Chinese character specific
+    hanziLetterSpacing: 2.5,
+    hanziLineHeight: 1.3,
+  },
+
+  // Spacing - inspired by traditional Chinese layout proportions
+  spacing: {
+    xs: 4,
+    sm: 8,
+    md: 16,
+    lg: 24,
+    xl: 32,
+    xxl: 48,
+    pageX: 20,
+    pageY: 14,
+    sectionGap: 14,
+    cardGap: 12,
+    stack: 12,
+    sectionTitleGap: 8,
+    blockGap: 12,
+    sheetGap: 12,
+  },
+
+  // Motion - subtle and elegant, like brush strokes
+  motion: {
+    tapScale: 0.985,
+    springTension: 90,
+    springFriction: 8,
+    durationFast: 180,
+    durationNormal: 280,
+    durationSlow: 420,
+  },
+
+  // Border radii - soft curves inspired by traditional ceramics
+  radii: {
+    xs: 2,
+    sm: 4,
+    md: 12,
+    lg: 18,
+    xl: 24,
+    pill: 999,
+  },
+
+  // Shadows - subtle depth like ink wash layers
+  shadows: {
+    subtle: {
+      shadowColor: '#000',
+      shadowOpacity: 0.02,
+      shadowRadius: 8,
+      shadowOffset: { width: 0, height: 4 },
+      elevation: 1,
+    },
+    medium: {
+      shadowColor: '#000',
+      shadowOpacity: 0.04,
+      shadowRadius: 12,
+      shadowOffset: { width: 0, height: 6 },
+      elevation: 2,
+    },
+    strong: {
+      shadowColor: '#000',
+      shadowOpacity: 0.06,
+      shadowRadius: 16,
+      shadowOffset: { width: 0, height: 8 },
+      elevation: 3,
+    },
+    modal: {
+      shadowColor: '#000',
+      shadowOpacity: 0.10,
+      shadowRadius: 20,
+      shadowOffset: { width: 0, height: -8 },
+      elevation: 8,
+    },
+  },
+
+  // Chinese aesthetic specific
+  chinese: {
+    // Brush stroke widths
+    brushThin: 0.5,
+    brushNormal: 1,
+    brushThick: 1.5,
+
+    // Ink wash opacity levels
+    inkLight: 0.04,
+    inkMedium: 0.08,
+    inkStrong: 0.12,
+
+    // Traditional pattern spacing
+    patternSpacing: 28,
   },
 };
 

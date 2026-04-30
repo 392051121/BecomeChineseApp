@@ -1,339 +1,60 @@
 [
-  {
-    "id": "beijing",
-    "name": "Beijing",
-    "chineseName": "北京",
-    "description": "Beijing, the capital of China, is a city where ancient history meets modern development. With over 3,000 years of history, it's home to some of China's most iconic landmarks.",
-    "chineseDescription": "北京是中国的首都，是一座古老历史与现代发展交融的城市。拥有3000多年历史，是中国最具标志性地标的所在地。",
-    "attractions": [
-      {
-        "name": "The Great Wall",
-        "chineseName": "长城",
-        "description": "One of the Seven Wonders of the World, the Great Wall stretches over 13,000 miles. The Badaling and Mutianyu sections near Beijing are most popular.",
-        "tips": "Visit early morning to avoid crowds. Wear comfortable shoes."
-      },
-      {
-        "name": "Forbidden City",
-        "chineseName": "故宫",
-        "description": "The imperial palace of the Ming and Qing dynasties, featuring 980 buildings with traditional Chinese architecture.",
-        "tips": "Book tickets online in advance. Allow 3-4 hours for visit."
-      },
-      {
-        "name": "Temple of Heaven",
-        "chineseName": "天坛",
-        "description": "A masterpiece of Ming architecture where emperors performed annual ceremonies to pray for good harvests.",
-        "tips": "Visit in early morning to see locals practicing tai chi."
-      },
-      {
-        "name": "Summer Palace",
-        "chineseName": "颐和园",
-        "description": "A vast imperial garden with beautiful lakes, pavilions, and the famous Marble Boat.",
-        "tips": "Rent a boat on Kunming Lake for a unique perspective."
-      }
-    ],
-    "bestTimeToVisit": "Spring (April-May) and Autumn (September-October)",
-    "localFood": ["Peking Duck", "Jiaozi (dumplings)", "Zhajiangmian (noodles)"]
-  },
-  {
-    "id": "shanghai",
-    "name": "Shanghai",
-    "chineseName": "上海",
-    "description": "Shanghai is China's largest city and financial hub, known for its stunning skyline, colonial architecture, and vibrant culture.",
-    "chineseDescription": "上海是中国最大的城市和金融中心，以其壮观的天际线、殖民建筑和充满活力的文化而闻名。",
-    "attractions": [
-      {
-        "name": "The Bund",
-        "chineseName": "外滩",
-        "description": "A waterfront area featuring colonial-era buildings and stunning views of modern Pudong skyline across the river.",
-        "tips": "Visit at night for spectacular light shows."
-      },
-      {
-        "name": "Yu Garden",
-        "chineseName": "豫园",
-        "description": "A classical Chinese garden from the Ming Dynasty with beautiful pavilions, ponds, and rockeries.",
-        "tips": "Visit on weekdays to avoid weekend crowds."
-      },
-      {
-        "name": "Oriental Pearl Tower",
-        "chineseName": "东方明珠塔",
-        "description": "An iconic TV tower with observation decks offering panoramic city views.",
-        "tips": "Book tickets online for faster entry."
-      },
-      {
-        "name": "Nanjing Road",
-        "chineseName": "南京路",
-        "description": "One of the world's busiest shopping streets, stretching from the Bund to Jing'an Temple.",
-        "tips": "Walk the pedestrian section for the best experience."
-      }
-    ],
-    "bestTimeToVisit": "Spring (March-May) and Autumn (September-November)",
-    "localFood": ["Xiaolongbao (soup dumplings)", "Shengjianbao", "Hairy crab"]
-  },
-  {
-    "id": "xian",
-    "name": "Xi'an",
-    "chineseName": "西安",
-    "description": "Xi'an, one of China's ancient capitals, was the starting point of the Silk Road and home to the famous Terracotta Warriors.",
-    "chineseDescription": "西安是中国古都之一，是丝绸之路的起点，也是著名兵马俑的所在地。",
-    "attractions": [
-      {
-        "name": "Terracotta Warriors",
-        "chineseName": "兵马俑",
-        "description": "An archaeological marvel featuring thousands of life-sized terracotta soldiers buried with Emperor Qin Shi Huang.",
-        "tips": "Hire a guide to fully appreciate the history. Allow 3-4 hours."
-      },
-      {
-        "name": "Ancient City Wall",
-        "chineseName": "古城墙",
-        "description": "One of the best-preserved city walls in China, offering bike rentals for a unique tour experience.",
-        "tips": "Rent a bike and cycle the 14km perimeter at sunset."
-      },
-      {
-        "name": "Muslim Quarter",
-        "chineseName": "回民街",
-        "description": "A vibrant area with Islamic architecture, street food, and traditional crafts.",
-        "tips": "Try local specialties like roujiamo and yangrou paomo."
-      },
-      {
-        "name": "Big Wild Goose Pagoda",
-        "chineseName": "大雁塔",
-        "description": "A Buddhist pagoda built in 652 AD, housing sacred Buddhist texts brought from India.",
-        "tips": "Visit the musical fountain show in the evening."
-      }
-    ],
-    "bestTimeToVisit": "Spring (March-May) and Autumn (September-November)",
-    "localFood": ["Roujiamo (Chinese burger)", "Biangbiang noodles", "Yangrou paomo"]
-  },
-  {
-    "id": "chengdu",
-    "name": "Chengdu",
-    "chineseName": "成都",
-    "description": "Chengdu, the capital of Sichuan Province, is famous for its spicy cuisine, laid-back lifestyle, and giant pandas.",
-    "chineseDescription": "成都是四川省会，以其麻辣美食、悠闲生活方式和大熊猫而闻名。",
-    "attractions": [
-      {
-        "name": "Giant Panda Base",
-        "chineseName": "大熊猫繁育研究基地",
-        "description": "A conservation center where you can see giant pandas in a natural habitat setting.",
-        "tips": "Visit in the morning (8-10am) when pandas are most active."
-      },
-      {
-        "name": "Jinli Ancient Street",
-        "chineseName": "锦里古街",
-        "description": "A reconstructed ancient street with traditional architecture, shops, and street food.",
-        "tips": "Visit in the evening for beautiful lantern lighting."
-      },
-      {
-        "name": "Wuhou Shrine",
-        "chineseName": "武侯祠",
-        "description": "A temple dedicated to Zhuge Liang, the famous strategist of the Three Kingdoms period.",
-        "tips": "Combine with a visit to nearby Jinli Street."
-      },
-      {
-        "name": "People's Park",
-        "chineseName": "人民公园",
-        "description": "A popular park where locals gather for tea, mahjong, and traditional ear cleaning.",
-        "tips": "Experience traditional teahouse culture here."
-      }
-    ],
-    "bestTimeToVisit": "Spring (March-June) and Autumn (September-November)",
-    "localFood": ["Hotpot", "Mapo tofu", "Dan dan noodles", "Kung pao chicken"]
-  },
-  {
-    "id": "guilin",
-    "name": "Guilin",
-    "chineseName": "桂林",
-    "description": "Guilin is renowned for its stunning karst landscape, with limestone peaks rising dramatically from the Li River.",
-    "chineseDescription": "桂林以其壮丽的喀斯特地貌而闻名，石灰岩山峰从漓江中拔地而起。",
-    "attractions": [
-      {
-        "name": "Li River Cruise",
-        "chineseName": "漓江游船",
-        "description": "A scenic cruise from Guilin to Yangshuo, passing through breathtaking karst mountains.",
-        "tips": "Book a morning cruise for the best light and fewer crowds."
-      },
-      {
-        "name": "Reed Flute Cave",
-        "chineseName": "芦笛岩",
-        "description": "A spectacular limestone cave with colorful lighting illuminating natural rock formations.",
-        "tips": "Join a guided tour to learn about the formations."
-      },
-      {
-        "name": "Elephant Trunk Hill",
-        "chineseName": "象鼻山",
-        "description": "Guilin's symbol, a hill shaped like an elephant drinking from the river.",
-        "tips": "Best photographed from across the river."
-      },
-      {
-        "name": "Longji Rice Terraces",
-        "chineseName": "龙脊梯田",
-        "description": "Spectacular terraced rice fields carved into mountain slopes over 700 years ago.",
-        "tips": "Visit in May-June (water-filled) or September-October (golden harvest)."
-      }
-    ],
-    "bestTimeToVisit": "April-October (avoid rainy season in May-June)",
-    "localFood": ["Guilin rice noodles", "Beer fish", "Stuffed snails"]
-  },
-  {
-    "id": "hangzhou",
-    "name": "Hangzhou",
-    "chineseName": "杭州",
-    "description": "Hangzhou, the capital of Zhejiang Province, is famous for its scenic West Lake, historic temples, and as the birthplace of Longjing tea.",
-    "chineseDescription": "杭州是浙江省会，以风景秀丽的西湖、历史悠久的寺庙和龙井茶的故乡而闻名。",
-    "attractions": [
-      {
-        "name": "West Lake",
-        "chineseName": "西湖",
-        "description": "A UNESCO World Heritage site with beautiful gardens, pagodas, and causeways. Famous for its 'Ten Scenes of West Lake'.",
-        "tips": "Rent a bike to explore the lake perimeter. Visit at sunset for stunning views."
-      },
-      {
-        "name": "Lingyin Temple",
-        "chineseName": "灵隐寺",
-        "description": "One of China's largest and wealthiest Buddhist temples, founded in 328 AD, nestled in lush forest.",
-        "tips": "Visit early morning to experience morning prayers and avoid crowds."
-      },
-      {
-        "name": "Longjing Tea Plantations",
-        "chineseName": "龙井茶园",
-        "description": "Terraced tea plantations producing China's most famous green tea. Visitors can pick tea and learn about tea culture.",
-        "tips": "Visit in spring (March-April) during harvest season for the best experience."
-      },
-      {
-        "name": "Hefang Street",
-        "chineseName": "河坊街",
-        "description": "A historic pedestrian street with traditional architecture, local snacks, and handicraft shops.",
-        "tips": "Try traditional Hangzhou snacks like osmanthus cake and beggar's chicken."
-      }
-    ],
-    "bestTimeToVisit": "March-May and September-November",
-    "localFood": ["Dongpo pork", "West Lake vinegar fish", "Longjing shrimp", "Beggar's chicken"]
-  },
-  {
-    "id": "suzhou",
-    "name": "Suzhou",
-    "chineseName": "苏州",
-    "description": "Known as the 'Venice of the East', Suzhou is famous for its classical gardens, silk production, and ancient water towns.",
-    "chineseDescription": "苏州被称为'东方威尼斯'，以其古典园林、丝绸生产和古老水乡而闻名。",
-    "attractions": [
-      {
-        "name": "Humble Administrator's Garden",
-        "chineseName": "拙政园",
-        "description": "The largest and most famous classical garden in Suzhou, a UNESCO World Heritage site with ponds, pavilions, and rockeries.",
-        "tips": "Visit on weekdays to avoid crowds. Allow 2-3 hours to fully explore."
-      },
-      {
-        "name": "Pingjiang Road",
-        "chineseName": "平江路",
-        "description": "A historic canal street with traditional architecture, teahouses, and boutique shops along the waterway.",
-        "tips": "Visit in the evening when lanterns are lit for a romantic atmosphere."
-      },
-      {
-        "name": "Tiger Hill",
-        "chineseName": "虎丘",
-        "description": "A historic site with the famous leaning Yunyan Pagoda, known as the 'Leaning Tower of China'.",
-        "tips": "Climb to the top for panoramic views of Suzhou."
-      },
-      {
-        "name": "Tongli Water Town",
-        "chineseName": "同里古镇",
-        "description": "An ancient water town with well-preserved Ming and Qing architecture, stone bridges, and canals.",
-        "tips": "Take a boat ride through the canals for the best experience."
-      }
-    ],
-    "bestTimeToVisit": "March-May and September-November",
-    "localFood": ["Squirrel-shaped mandarin fish", "Biluochun tea", "Suzhou-style mooncakes"]
-  },
-  {
-    "id": "lijiang",
-    "name": "Lijiang",
-    "chineseName": "丽江",
-    "description": "Lijiang is a UNESCO World Heritage ancient town in Yunnan Province, known for its well-preserved old town and Naxi minority culture.",
-    "chineseDescription": "丽江是云南省的联合国教科文组织世界遗产古城，以保存完好的古城和纳西族文化而闻名。",
-    "attractions": [
-      {
-        "name": "Lijiang Old Town",
-        "chineseName": "丽江古城",
-        "description": "A UNESCO World Heritage site with cobblestone streets, traditional Naxi architecture, and flowing canals.",
-        "tips": "Explore early morning or evening to avoid crowds. Get lost in the maze of alleys."
-      },
-      {
-        "name": "Jade Dragon Snow Mountain",
-        "chineseName": "玉龙雪山",
-        "description": "A stunning mountain range with glaciers, reaching 5,596 meters. Cable cars take visitors to high altitudes.",
-        "tips": "Bring warm clothes and be prepared for altitude. Book tickets in advance."
-      },
-      {
-        "name": "Blue Moon Valley",
-        "chineseName": "蓝月谷",
-        "description": "A scenic valley at the foot of Jade Dragon Snow Mountain with turquoise lakes and waterfalls.",
-        "tips": "Visit on sunny days when the water is most vibrant blue."
-      },
-      {
-        "name": "Shuhe Ancient Town",
-        "chineseName": "束河古镇",
-        "description": "A quieter alternative to Lijiang Old Town, with similar architecture but fewer tourists.",
-        "tips": "Stay overnight to experience the peaceful atmosphere after day-trippers leave."
-      }
-    ],
-    "bestTimeToVisit": "March-May and September-November",
-    "localFood": ["Naxi grilled fish", "Baba (flatbread)", "Yak meat hotpot"]
-  },
-  {
-    "id": "nanjing",
-    "name": "Nanjing",
-    "chineseName": "南京",
-    "description": "Nanjing served as China's capital for six dynasties. Rich in history with beautiful lakes and mountains.",
-    "chineseDescription": "南京曾是六朝古都，历史悠久，山水秀美。",
-    "attractions": [
-      {"name": "Sun Yat-sen Mausoleum", "chineseName": "中山陵", "description": "Grand mausoleum honoring Dr. Sun Yat-sen on Purple Mountain.", "tips": "Climb 392 steps. Visit early."},
-      {"name": "Confucius Temple", "chineseName": "夫子庙", "description": "Temple complex along Qinhuai River with markets.", "tips": "Visit at night for lanterns."},
-      {"name": "Ming Xiaoling Mausoleum", "chineseName": "明孝陵", "description": "Tomb of Hongwu Emperor, UNESCO site.", "tips": "Walk the Sacred Way."},
-      {"name": "Nanjing City Wall", "chineseName": "南京城墙", "description": "World's longest city wall from Ming Dynasty.", "tips": "Rent a bike."},
-      {"name": "Xuanwu Lake", "chineseName": "玄武湖", "description": "Scenic lake park with islands and gardens.", "tips": "Rent a paddle boat."}
-    ],
-    "bestTimeToVisit": "March-May and September-November",
-    "localFood": ["Salted duck", "Duck blood soup", "Nanjing dumplings"]
-  },
-  {
-    "id": "shenzhen",
-    "name": "Shenzhen",
-    "chineseName": "深圳",
-    "description": "China's tech hub, transformed from fishing village in 40 years.",
-    "chineseDescription": "中国科技中心，40年从渔村崛起。",
-    "attractions": [
-      {"name": "Window of the World", "chineseName": "世界之窗", "description": "Theme park with miniature world landmarks.", "tips": "Full day needed."},
-      {"name": "Splendid China", "chineseName": "锦绣中华", "description": "China's ethnic diversity and landmarks in miniature.", "tips": "Watch cultural shows."},
-      {"name": "OCT Loft", "chineseName": "华侨城创意园", "description": "Arts district in converted factories.", "tips": "Great for photos."},
-      {"name": "Dameisha Beach", "chineseName": "大梅沙", "description": "Popular beach with golden sand.", "tips": "Weekdays less crowded."},
-      {"name": "Dafen Oil Painting Village", "chineseName": "大芬油画村", "description": "World's largest oil painting center.", "tips": "Commission custom art."}
-    ],
-    "bestTimeToVisit": "October-December",
-    "localFood": ["Dim sum", "Seafood", "Chaoshan hotpot"]
-  },
-  {
-    "id": "guangzhou",
-    "name": "Guangzhou",
-    "chineseName": "广州",
-    "description": "Birthplace of Cantonese cuisine, major trading port with 2,000 years history.",
-    "chineseDescription": "粤菜发源地，2000年历史贸易港。",
-    "attractions": [
-      {"name": "Canton Tower", "chineseName": "广州塔", "description": "China's tallest tower with world's highest Ferris wheel.", "tips": "Visit at sunset."},
-      {"name": "Chen Clan Hall", "chineseName": "陈家祠", "description": "Masterpiece of Lingnan architecture.", "tips": "Hire a guide."},
-      {"name": "Shamian Island", "chineseName": "沙面岛", "description": "Historic island with colonial architecture.", "tips": "Perfect for walks."},
-      {"name": "Baiyun Mountain", "chineseName": "白云山", "description": "Scenic mountain with hiking trails.", "tips": "Cable car up, hike down."},
-      {"name": "Beijing Road", "chineseName": "北京路", "description": "Shopping street with ancient road remains.", "tips": "Try street food."}
-    ],
-    "bestTimeToVisit": "October-December",
-    "localFood": ["Dim sum", "Roast goose", "Wonton noodles"]
-  },
-  {"id":"tianjin","name":"Tianjin","chineseName":"天津","description":"Port city near Beijing, known for colonial architecture and street food.","chineseDescription":"北京附近港口城市，以殖民建筑和街头小吃闻名。","attractions":[{"name":"Ancient Culture Street","chineseName":"古文化街","description":"Traditional street with Qing architecture.","tips":"Buy traditional crafts."},{"name":"Italian Style Town","chineseName":"意式风情街","description":"European architecture district.","tips":"Visit cafes."},{"name":"Tianjin Eye","chineseName":"天津之眼","description":"Ferris wheel on bridge.","tips":"Night views best."},{"name":"Porcelain House","chineseName":"瓷房子","description":"House covered in porcelain.","tips":"Unique photo spot."},{"name":"Haihe River","chineseName":"海河","description":"River cruise available.","tips":"Evening cruise."}],"bestTimeToVisit":"April-October","localFood":["Goubuli baozi","Jianbing","Mahua"]},
-  {"id":"chongqing","name":"Chongqing","chineseName":"重庆","description":"Mountain city famous for hotpot and Yangtze River.","chineseDescription":"山城，以火锅和长江闻名。","attractions":[{"name":"Hongya Cave","chineseName":"洪崖洞","description":"Stilted buildings on cliff.","tips":"Visit at night."},{"name":"Ciqikou","chineseName":"磁器口","description":"Ancient town.","tips":"Try street snacks."},{"name":"Yangtze River Cruise","chineseName":"长江游船","description":"Three Gorges cruise.","tips":"Book multi-day."},{"name":"Dazu Rock Carvings","chineseName":"大足石刻","description":"UNESCO Buddhist carvings.","tips":"Hire guide."},{"name":"Jiefangbei","chineseName":"解放碑","description":"Shopping district.","tips":"Evening best."}],"bestTimeToVisit":"March-May, September-November","localFood":["Chongqing hotpot","Xiaomian noodles"]},
-  {"id":"wuhan","name":"Wuhan","chineseName":"武汉","description":"Central China hub where Yangtze and Han rivers meet.","chineseDescription":"华中枢纽，长江汉江交汇处。","attractions":[{"name":"Yellow Crane Tower","chineseName":"黄鹤楼","description":"Historic tower with river views.","tips":"Climb for views."},{"name":"East Lake","chineseName":"东湖","description":"China's largest urban lake.","tips":"Rent bikes."},{"name":"Hubei Museum","chineseName":"湖北博物馆","description":"Ancient chime bells.","tips":"Free admission."},{"name":"Wuhan Yangtze Bridge","chineseName":"武汉长江大桥","description":"First bridge over Yangtze.","tips":"Walk across."},{"name":"Jianghan Road","chineseName":"江汉路","description":"Pedestrian shopping street.","tips":"Evening stroll."}],"bestTimeToVisit":"March-May, September-November","localFood":["Hot dry noodles","Duck neck"]},
-  {"id":"dalian","name":"Dalian","chineseName":"大连","description":"Coastal city with beaches and Russian architecture.","chineseDescription":"海滨城市，有海滩和俄式建筑。","attractions":[{"name":"Xinghai Square","chineseName":"星海广场","description":"Largest city square in Asia.","tips":"Evening walk."},{"name":"Tiger Beach","chineseName":"老虎滩","description":"Ocean park with aquarium.","tips":"Full day needed."},{"name":"Russian Street","chineseName":"俄罗斯风情街","description":"Russian-style buildings.","tips":"Try Russian food."},{"name":"Binhai Road","chineseName":"滨海路","description":"Scenic coastal drive.","tips":"Rent car or bike."},{"name":"Laohutan","chineseName":"老虎滩","description":"Beach and park.","tips":"Summer best."}],"bestTimeToVisit":"May-October","localFood":["Seafood","Grilled squid"]},
-  {"id":"qingdao","name":"Qingdao","chineseName":"青岛","description":"Beer city with German colonial heritage and beaches.","chineseDescription":"啤酒之城，德式殖民遗产和海滩。","attractions":[{"name":"Tsingtao Brewery","chineseName":"青岛啤酒博物馆","description":"Famous brewery museum.","tips":"Try fresh beer."},{"name":"Zhanqiao Pier","chineseName":"栈桥","description":"Iconic seaside pier.","tips":"Sunset views."},{"name":"Badaguan","chineseName":"八大关","description":"European villa district.","tips":"Walk the streets."},{"name":"Laoshan","chineseName":"崂山","description":"Coastal mountain.","tips":"Hike trails."},{"name":"May Fourth Square","chineseName":"五四广场","description":"Modern waterfront.","tips":"Evening best."}],"bestTimeToVisit":"April-October","localFood":["Seafood","Tsingtao beer","Grilled clams"]},
-  {"id":"xiamen","name":"Xiamen","chineseName":"厦门","description":"Coastal city with Gulangyu Island and colonial architecture.","chineseDescription":"海滨城市，有鼓浪屿和殖民建筑。","attractions":[{"name":"Gulangyu Island","chineseName":"鼓浪屿","description":"Car-free island with colonial villas.","tips":"Stay overnight."},{"name":"Nanputuo Temple","chineseName":"南普陀寺","description":"Buddhist temple.","tips":"Climb mountain behind."},{"name":"Zhongshan Road","chineseName":"中山路","description":"Shopping street.","tips":"Try local snacks."},{"name":"Hulishan Fortress","chineseName":"胡里山炮台","description":"Coastal fort.","tips":"See old cannons."},{"name":"Xiamen University","chineseName":"厦门大学","description":"Beautiful campus.","tips":"Walk around lake."}],"bestTimeToVisit":"March-May, September-November","localFood":["Seafood","Shacha noodles","Oyster omelet"]},
-  {"id":"harbin","name":"Harbin","chineseName":"哈尔滨","description":"Ice city with Russian influence and winter festival.","chineseDescription":"冰城，俄罗斯风情和冰雪节。","attractions":[{"name":"Ice and Snow World","chineseName":"冰雪大世界","description":"Winter ice sculpture festival.","tips":"Visit January-February."},{"name":"St. Sophia Cathedral","chineseName":"圣索菲亚大教堂","description":"Russian Orthodox church.","tips":"Beautiful architecture."},{"name":"Central Street","chineseName":"中央大街","description":"European-style pedestrian street.","tips":"Try Russian bread."},{"name":"Siberian Tiger Park","chineseName":"东北虎林园","description":"Tiger conservation park.","tips":"Take bus tour."},{"name":"Sun Island","chineseName":"太阳岛","description":"Park with snow sculptures.","tips":"Winter best."}],"bestTimeToVisit":"December-February (winter), June-August (summer)","localFood":["Russian bread","Smoked sausage","Guobaorou"]},
-  {"id":"kunming","name":"Kunming","chineseName":"昆明","description":"Spring City with eternal spring weather and Stone Forest.","chineseDescription":"春城，四季如春，有石林。","attractions":[{"name":"Stone Forest","chineseName":"石林","description":"UNESCO karst formations.","tips":"Full day trip."},{"name":"Dianchi Lake","chineseName":"滇池","description":"Large freshwater lake.","tips":"See red-billed gulls."},{"name":"Green Lake Park","chineseName":"翠湖公园","description":"Urban park.","tips":"Morning tai chi."},{"name":"Yuantong Temple","chineseName":"圆通寺","description":"Ancient Buddhist temple.","tips":"Peaceful atmosphere."},{"name":"Flower Market","chineseName":"花市","description":"Fresh flower market.","tips":"Morning best."}],"bestTimeToVisit":"Year-round","localFood":["Crossing-bridge noodles","Steam pot chicken"]},
-  {"id":"lhasa","name":"Lhasa","chineseName":"拉萨","description":"Tibet's spiritual capital with Potala Palace at high altitude.","chineseDescription":"西藏精神首都，有布达拉宫，高海拔。","attractions":[{"name":"Potala Palace","chineseName":"布达拉宫","description":"Iconic palace of Dalai Lama.","tips":"Book tickets advance. Acclimatize first."},{"name":"Jokhang Temple","chineseName":"大昭寺","description":"Most sacred temple in Tibet.","tips":"See pilgrims prostrating."},{"name":"Barkhor Street","chineseName":"八廓街","description":"Pilgrimage circuit and market.","tips":"Walk clockwise."},{"name":"Sera Monastery","chineseName":"色拉寺","description":"Monk debate sessions.","tips":"Afternoon debates."},{"name":"Namtso Lake","chineseName":"纳木错","description":"Sacred high-altitude lake.","tips":"2-day trip recommended."}],"bestTimeToVisit":"May-October","localFood":["Yak butter tea","Tsampa","Yak meat"]}
+  {"id":"beijing","name":"Beijing","chineseName":"北京","description":"China's capital with 3,000 years of history, home to the Forbidden City and Great Wall.","chineseDescription":"中国首都，三千年历史，故宫和长城所在地。","attractions":[{"name":"Forbidden City","chineseName":"故宫","description":"Imperial palace of Ming and Qing dynasties.","tips":"Book online, 3-4 hours needed."},{"name":"Great Wall","chineseName":"长城","description":"World wonder, Badaling section most popular.","tips":"Visit early morning."},{"name":"Temple of Heaven","chineseName":"天坛","description":"Ming architecture for harvest ceremonies.","tips":"Morning tai chi."},{"name":"Summer Palace","chineseName":"颐和园","description":"Imperial garden with Kunming Lake.","tips":"Rent a boat."}],"bestTimeToVisit":"April-May, September-October","localFood":["Peking Duck","Jiaozi","Zhajiangmian"]},
+  {"id":"shanghai","name":"Shanghai","chineseName":"上海","description":"China's largest city and financial hub with stunning skyline.","chineseDescription":"中国最大城市和金融中心，壮观天际线。","attractions":[{"name":"The Bund","chineseName":"外滩","description":"Colonial buildings and Pudong views.","tips":"Night visit best."},{"name":"Yu Garden","chineseName":"豫园","description":"Classical Ming Dynasty garden.","tips":"Weekday visit."},{"name":"Oriental Pearl Tower","chineseName":"东方明珠塔","description":"Iconic TV tower with city views.","tips":"Book online."}],"bestTimeToVisit":"March-May, September-November","localFood":["Xiaolongbao","Shengjianbao","Hairy crab"]},
+  {"id":"xian","name":"Xi'an","chineseName":"西安","description":"Ancient capital and Silk Road starting point, home of Terracotta Warriors.","chineseDescription":"古都，丝绸之路起点，兵马俑所在地。","attractions":[{"name":"Terracotta Warriors","chineseName":"兵马俑","description":"Thousands of life-sized clay soldiers.","tips":"Hire a guide."},{"name":"Ancient City Wall","chineseName":"古城墙","description":"Best-preserved city wall in China.","tips":"Rent a bike."},{"name":"Muslim Quarter","chineseName":"回民街","description":"Vibrant street food area.","tips":"Try roujiamo."}],"bestTimeToVisit":"March-May, September-November","localFood":["Roujiamo","Biangbiang noodles","Yangrou paomo"]},
+  {"id":"chengdu","name":"Chengdu","chineseName":"成都","description":"Capital of Sichuan, famous for pandas and spicy cuisine.","chineseDescription":"四川省会，以大熊猫和麻辣美食闻名。","attractions":[{"name":"Giant Panda Base","chineseName":"大熊猫基地","description":"Conservation center for giant pandas.","tips":"Morning visit."},{"name":"Jinli Ancient Street","chineseName":"锦里古街","description":"Traditional street with shops and food.","tips":"Evening lanterns."},{"name":"People's Park","chineseName":"人民公园","description":"Teahouse culture and mahjong.","tips":"Try ear cleaning."}],"bestTimeToVisit":"March-June, September-November","localFood":["Hotpot","Mapo tofu","Dan dan noodles"]},
+  {"id":"guilin","name":"Guilin","chineseName":"桂林","description":"Famous for karst mountains and Li River scenery.","chineseDescription":"以喀斯特山水和漓江风光闻名。","attractions":[{"name":"Li River Cruise","chineseName":"漓江游船","description":"Scenic cruise to Yangshuo.","tips":"Morning cruise."},{"name":"Reed Flute Cave","chineseName":"芦笛岩","description":"Spectacular limestone cave.","tips":"Guided tour."},{"name":"Elephant Trunk Hill","chineseName":"象鼻山","description":"City symbol, elephant-shaped hill.","tips":"Photo from across river."}],"bestTimeToVisit":"April-October","localFood":["Guilin rice noodles","Beer fish"]},
+  {"id":"hangzhou","name":"Hangzhou","chineseName":"杭州","description":"Famous for West Lake and Longjing tea.","chineseDescription":"以西湖和龙井茶闻名。","attractions":[{"name":"West Lake","chineseName":"西湖","description":"UNESCO World Heritage site.","tips":"Rent a bike."},{"name":"Lingyin Temple","chineseName":"灵隐寺","description":"Ancient Buddhist temple.","tips":"Early morning."},{"name":"Longjing Tea Plantations","chineseName":"龙井茶园","description":"Famous green tea fields.","tips":"Spring harvest."}],"bestTimeToVisit":"March-May, September-November","localFood":["Dongpo pork","West Lake fish","Longjing shrimp"]},
+  {"id":"suzhou","name":"Suzhou","chineseName":"苏州","description":"Venice of the East, famous for classical gardens.","chineseDescription":"东方威尼斯，以古典园林闻名。","attractions":[{"name":"Humble Administrator's Garden","chineseName":"拙政园","description":"Largest classical garden.","tips":"Weekday visit."},{"name":"Pingjiang Road","chineseName":"平江路","description":"Historic canal street.","tips":"Evening stroll."},{"name":"Tiger Hill","chineseName":"虎丘","description":"Leaning pagoda and gardens.","tips":"Climb for views."}],"bestTimeToVisit":"March-May, September-November","localFood":["Squirrel fish","Biluochun tea"]},
+  {"id":"lijiang","name":"Lijiang","chineseName":"丽江","description":"UNESCO ancient town with Naxi culture.","chineseDescription":"世界遗产古城，纳西族文化。","attractions":[{"name":"Lijiang Old Town","chineseName":"丽江古城","description":"Cobblestone streets and canals.","tips":"Early morning."},{"name":"Jade Dragon Snow Mountain","chineseName":"玉龙雪山","description":"Snow-capped mountain, 5,596m.","tips":"Bring warm clothes."},{"name":"Blue Moon Valley","chineseName":"蓝月谷","description":"Turquoise lakes and waterfalls.","tips":"Sunny days best."}],"bestTimeToVisit":"March-May, September-November","localFood":["Naxi grilled fish","Yak hotpot"]},
+  {"id":"nanjing","name":"Nanjing","chineseName":"南京","description":"Six-dynasty ancient capital with rich history.","chineseDescription":"六朝古都，历史悠久。","attractions":[{"name":"Sun Yat-sen Mausoleum","chineseName":"中山陵","description":"Grand mausoleum on Purple Mountain.","tips":"392 steps."},{"name":"Confucius Temple","chineseName":"夫子庙","description":"Temple along Qinhuai River.","tips":"Night lanterns."},{"name":"Ming Xiaoling","chineseName":"明孝陵","description":"Tomb of Hongwu Emperor.","tips":"Walk Sacred Way."}],"bestTimeToVisit":"March-May, September-November","localFood":["Salted duck","Duck blood soup"]},
+  {"id":"guangzhou","name":"Guangzhou","chineseName":"广州","description":"Birthplace of Cantonese cuisine, 2,000-year trading port.","chineseDescription":"粤菜发源地，两千年贸易港。","attractions":[{"name":"Canton Tower","chineseName":"广州塔","description":"China's tallest tower.","tips":"Sunset visit."},{"name":"Chen Clan Hall","chineseName":"陈家祠","description":"Lingnan architecture masterpiece.","tips":"Hire guide."},{"name":"Shamian Island","chineseName":"沙面岛","description":"Colonial architecture island.","tips":"Morning walk."}],"bestTimeToVisit":"October-December","localFood":["Dim sum","Roast goose","Wonton noodles"]},
+  {"id":"shenzhen","name":"Shenzhen","chineseName":"深圳","description":"China's tech hub, transformed in 40 years.","chineseDescription":"中国科技中心，四十年崛起。","attractions":[{"name":"Window of the World","chineseName":"世界之窗","description":"Miniature world landmarks.","tips":"Full day."},{"name":"OCT Loft","chineseName":"华侨城创意园","description":"Arts district in old factories.","tips":"Photo spot."},{"name":"Dameisha Beach","chineseName":"大梅沙","description":"Popular beach.","tips":"Weekday less crowded."}],"bestTimeToVisit":"October-December","localFood":["Dim sum","Seafood"]},
+  {"id":"tianjin","name":"Tianjin","chineseName":"天津","description":"Port city near Beijing with colonial architecture.","chineseDescription":"北京附近港口城市，殖民建筑。","attractions":[{"name":"Ancient Culture Street","chineseName":"古文化街","description":"Traditional Qing architecture.","tips":"Buy crafts."},{"name":"Tianjin Eye","chineseName":"天津之眼","description":"Ferris wheel on bridge.","tips":"Night views."},{"name":"Italian Style Town","chineseName":"意式风情街","description":"European architecture.","tips":"Cafe hopping."}],"bestTimeToVisit":"April-October","localFood":["Goubuli baozi","Jianbing","Mahua"]},
+  {"id":"chongqing","name":"Chongqing","chineseName":"重庆","description":"Mountain city famous for hotpot and Yangtze River.","chineseDescription":"山城，以火锅和长江闻名。","attractions":[{"name":"Hongya Cave","chineseName":"洪崖洞","description":"Stilted buildings on cliff.","tips":"Night visit."},{"name":"Ciqikou","chineseName":"磁器口","description":"Ancient town.","tips":"Street snacks."},{"name":"Dazu Rock Carvings","chineseName":"大足石刻","description":"UNESCO Buddhist carvings.","tips":"Hire guide."}],"bestTimeToVisit":"March-May, September-November","localFood":["Chongqing hotpot","Xiaomian noodles"]},
+  {"id":"wuhan","name":"Wuhan","chineseName":"武汉","description":"Central China hub where Yangtze and Han rivers meet.","chineseDescription":"华中枢纽，长江汉江交汇。","attractions":[{"name":"Yellow Crane Tower","chineseName":"黄鹤楼","description":"Historic tower with river views.","tips":"Climb for views."},{"name":"East Lake","chineseName":"东湖","description":"China's largest urban lake.","tips":"Rent bikes."},{"name":"Hubei Museum","chineseName":"湖北博物馆","description":"Ancient chime bells.","tips":"Free admission."}],"bestTimeToVisit":"March-May, September-November","localFood":["Hot dry noodles","Duck neck"]},
+  {"id":"qingdao","name":"Qingdao","chineseName":"青岛","description":"Beer city with German heritage and beaches.","chineseDescription":"啤酒之城，德式遗产和海滩。","attractions":[{"name":"Tsingtao Brewery","chineseName":"青岛啤酒博物馆","description":"Famous brewery museum.","tips":"Try fresh beer."},{"name":"Zhanqiao Pier","chineseName":"栈桥","description":"Iconic seaside pier.","tips":"Sunset views."},{"name":"Badaguan","chineseName":"八大关","description":"European villa district.","tips":"Walk the streets."}],"bestTimeToVisit":"April-October","localFood":["Seafood","Tsingtao beer","Grilled clams"]},
+  {"id":"xiamen","name":"Xiamen","chineseName":"厦门","description":"Coastal city with Gulangyu Island.","chineseDescription":"海滨城市，有鼓浪屿。","attractions":[{"name":"Gulangyu Island","chineseName":"鼓浪屿","description":"Car-free island with colonial villas.","tips":"Stay overnight."},{"name":"Nanputuo Temple","chineseName":"南普陀寺","description":"Buddhist temple.","tips":"Climb mountain."},{"name":"Xiamen University","chineseName":"厦门大学","description":"Beautiful campus.","tips":"Walk around lake."}],"bestTimeToVisit":"March-May, September-November","localFood":["Seafood","Shacha noodles","Oyster omelet"]},
+  {"id":"harbin","name":"Harbin","chineseName":"哈尔滨","description":"Ice city with Russian influence and winter festival.","chineseDescription":"冰城，俄罗斯风情和冰雪节。","attractions":[{"name":"Ice and Snow World","chineseName":"冰雪大世界","description":"Winter ice sculpture festival.","tips":"January-February."},{"name":"St. Sophia Cathedral","chineseName":"圣索菲亚大教堂","description":"Russian Orthodox church.","tips":"Beautiful architecture."},{"name":"Central Street","chineseName":"中央大街","description":"European pedestrian street.","tips":"Russian bread."}],"bestTimeToVisit":"December-February, June-August","localFood":["Russian bread","Smoked sausage","Guobaorou"]},
+  {"id":"kunming","name":"Kunming","chineseName":"昆明","description":"Spring City with eternal spring weather and Stone Forest.","chineseDescription":"春城，四季如春，有石林。","attractions":[{"name":"Stone Forest","chineseName":"石林","description":"UNESCO karst formations.","tips":"Full day trip."},{"name":"Dianchi Lake","chineseName":"滇池","description":"Large freshwater lake.","tips":"See red-billed gulls."},{"name":"Green Lake Park","chineseName":"翠湖公园","description":"Urban park.","tips":"Morning tai chi."}],"bestTimeToVisit":"Year-round","localFood":["Crossing-bridge noodles","Steam pot chicken"]},
+  {"id":"lhasa","name":"Lhasa","chineseName":"拉萨","description":"Tibet's spiritual capital with Potala Palace.","chineseDescription":"西藏精神首都，有布达拉宫。","attractions":[{"name":"Potala Palace","chineseName":"布达拉宫","description":"Iconic palace of Dalai Lama.","tips":"Book in advance."},{"name":"Jokhang Temple","chineseName":"大昭寺","description":"Most sacred temple in Tibet.","tips":"See pilgrims."},{"name":"Barkhor Street","chineseName":"八廓街","description":"Pilgrimage circuit and market.","tips":"Walk clockwise."}],"bestTimeToVisit":"May-October","localFood":["Yak butter tea","Tsampa","Yak meat"]},
+  {"id":"dalian","name":"Dalian","chineseName":"大连","description":"Coastal city with beaches and Russian architecture.","chineseDescription":"海滨城市，有海滩和俄式建筑。","attractions":[{"name":"Xinghai Square","chineseName":"星海广场","description":"Largest city square in Asia.","tips":"Evening walk."},{"name":"Tiger Beach","chineseName":"老虎滩","description":"Ocean park with aquarium.","tips":"Full day."},{"name":"Binhai Road","chineseName":"滨海路","description":"Scenic coastal drive.","tips":"Rent bike."}],"bestTimeToVisit":"May-October","localFood":["Seafood","Grilled squid"]},
+  {"id":"dunhuang","name":"Dunhuang","chineseName":"敦煌","description":"Silk Road oasis with Mogao Caves and desert scenery.","chineseDescription":"丝绸之路绿洲，有莫高窟和沙漠风光。","attractions":[{"name":"Mogao Caves","chineseName":"莫高窟","description":"UNESCO Buddhist cave art.","tips":"Book months ahead."},{"name":"Crescent Lake","chineseName":"月牙泉","description":"Desert oasis spring.","tips":"Sunset camel ride."},{"name":"Mingsha Shan","chineseName":"鸣沙山","description":"Singing sand dunes.","tips":"Slide down dunes."}],"bestTimeToVisit":"May-October","localFood":["Camel meat","Yellow noodles"]},
+  {"id":"zhangjiajie","name":"Zhangjiajie","chineseName":"张家界","description":"Avatar mountains with towering sandstone pillars.","chineseDescription":"阿凡达山，砂岩柱林立。","attractions":[{"name":"Zhangjiajie National Park","chineseName":"张家界国家森林公园","description":"Towering sandstone pillars.","tips":"2-3 days needed."},{"name":"Tianmen Mountain","chineseName":"天门山","description":"Glass skywalk and cave.","tips":"Take cable car."},{"name":"Baofeng Lake","chineseName":"宝峰湖","description":"Scenic mountain lake.","tips":"Boat ride."}],"bestTimeToVisit":"April-November","localFood":["Tujia cuisine","Wild mushrooms"]},
+  {"id":"jiuzhaigou","name":"Jiuzhaigou","chineseName":"九寨沟","description":"Fairyland with colorful lakes and waterfalls.","chineseDescription":"童话世界，彩色湖泊和瀑布。","attractions":[{"name":"Jiuzhaigou Valley","chineseName":"九寨沟","description":"UNESCO colorful lakes and waterfalls.","tips":"Book ahead, 2 days."},{"name":"Huanglong","chineseName":"黄龙","description":"Turquoise travertine pools.","tips":"Altitude warning."}],"bestTimeToVisit":"September-November","localFood":["Tibetan food","Yak butter tea"]},
+  {"id":"huangshan","name":"Huangshan","chineseName":"黄山","description":"Yellow Mountain with iconic granite peaks and pine trees.","chineseDescription":"黄山，标志性花岗岩峰和松树。","attractions":[{"name":"Huangshan Mountain","chineseName":"黄山","description":"Iconic granite peaks and sea of clouds.","tips":"Stay overnight for sunrise."},{"name":"Ancient Villages","chineseName":"古村落","description":"Hongcun and Xidi UNESCO sites.","tips":"Morning photos."}],"bestTimeToVisit":"April-May, September-November","localFood":["Hairy tofu","Stinky mandarin fish"]},
+  {"id":"sanya","name":"Sanya","chineseName":"三亚","description":"Tropical beach paradise on Hainan Island.","chineseDescription":"热带海滩天堂，海南岛。","attractions":[{"name":"Yalong Bay","chineseName":"亚龙湾","description":"Best beach in China.","tips":"Water sports."},{"name":"Nanshan Temple","chineseName":"南山寺","description":"Giant Guanyin statue.","tips":"Cultural experience."},{"name":"Wuzhizhou Island","chineseName":"蜈支洲岛","description":"Diving and beaches.","tips":"Book ferry."}],"bestTimeToVisit":"November-April","localFood":["Seafood","Hainan chicken rice","Coconut chicken"]},
+  {"id":"pingyao","name":"Pingyao","chineseName":"平遥","description":"Best-preserved ancient walled city from Ming Dynasty.","chineseDescription":"保存最完好的明代古城墙城市。","attractions":[{"name":"Ancient City","chineseName":"平遥古城","description":"UNESCO walled city, Ming Dynasty.","tips":"Stay in traditional inn."},{"name":"Rishengchang Bank","chineseName":"日升昌票号","description":"First bank in China.","tips":"Learn history."}],"bestTimeToVisit":"April-October","localFood":["Pingyao beef","Wantuo"]},
+  {"id":"luoyang","name":"Luoyang","chineseName":"洛阳","description":"Ancient capital with Longmen Grottoes and peony festival.","chineseDescription":"古都，有龙门石窟和牡丹节。","attractions":[{"name":"Longmen Grottoes","chineseName":"龙门石窟","description":"UNESCO Buddhist cave carvings.","tips":"Hire guide."},{"name":"White Horse Temple","chineseName":"白马寺","description":"First Buddhist temple in China.","tips":"Historical significance."},{"name":"Peony Festival","chineseName":"牡丹节","description":"April peony blooms.","tips":"Mid-April best."}],"bestTimeToVisit":"April-May, September-November","localFood":["Water banquet","Luoyang noodles"]},
+  {"id":"kaifeng","name":"Kaifeng","chineseName":"开封","description":"Northern Song capital with ancient Jewish history.","chineseDescription":"北宋都城，有古代犹太历史。","attractions":[{"name":"Iron Pagoda","chineseName":"铁塔","description":"Song Dynasty pagoda.","tips":"Climb for views."},{"name":"Millennium City Park","chineseName":"清明上河园","description":"Song Dynasty theme park.","tips":"Watch performances."},{"name":"Dragon Pavilion","chineseName":"龙亭","description":"Imperial palace site.","tips":"Morning visit."}],"bestTimeToVisit":"April-October","localFood":["Kaifeng snacks","Guan tang bao"]},
+  {"id":"datong","name":"Datong","chineseName":"大同","description":"Northern Wei capital with Yungang Grottoes.","chineseDescription":"北魏都城，有云冈石窟。","attractions":[{"name":"Yungang Grottoes","chineseName":"云冈石窟","description":"UNESCO Buddhist cave art.","tips":"Half day needed."},{"name":"Hanging Temple","chineseName":"悬空寺","description":"Temple built into cliff.","tips":"Not for faint-hearted."},{"name":"Wooden Pagoda","chineseName":"应县木塔","description":"Oldest wooden pagoda.","tips":"Nearby visit."}],"bestTimeToVisit":"May-October","localFood":["Datong noodles","Sliced noodles"]},
+  {"id":"yangshuo","name":"Yangshuo","chineseName":"阳朔","description":"Karst mountain town with outdoor activities.","chineseDescription":"喀斯特山城，户外活动丰富。","attractions":[{"name":"Li River","chineseName":"漓江","description":"Bamboo raft through karst peaks.","tips":"Sunrise raft."},{"name":"West Street","chineseName":"西街","description":"Backpacker street with cafes.","tips":"Nightlife."},{"name":"Moon Hill","chineseName":"月亮山","description":"Natural rock arch.","tips":"Short hike."}],"bestTimeToVisit":"April-October","localFood":["Beer fish","Guilin noodles"]},
+  {"id":"fenghuang","name":"Fenghuang","chineseName":"凤凰","description":"Ancient riverside town with Miao and Tujia culture.","chineseDescription":"古城，苗族土家族文化。","attractions":[{"name":"Ancient Town","chineseName":"凤凰古城","description":"Riverside stilted buildings.","tips":"Night lights."},{"name":"Tuojiang River","chineseName":"沱江","description":"Boat ride through town.","tips":"Evening boat."}],"bestTimeToVisit":"March-November","localFood":["Miao cuisine","Sour fish"]},
+  {"id":"wuzhen","name":"Wuzhen","chineseName":"乌镇","description":"Historic water town with canals and bridges.","chineseDescription":"历史水乡，运河桥梁。","attractions":[{"name":"East Gate","chineseName":"东栅","description":"Traditional workshops.","tips":"Day visit."},{"name":"West Gate","chineseName":"西栅","description":"Night illuminations.","tips":"Stay overnight."}],"bestTimeToVisit":"April-November","localFood":["Wuzhen braised pork","White chrysanthemum tea"]},
+  {"id":"zhouzhuang","name":"Zhouzhuang","chineseName":"周庄","description":"China's No.1 water town with ancient bridges.","chineseDescription":"中国第一水乡，古桥众多。","attractions":[{"name":"Double Bridge","chineseName":"双桥","description":"Iconic twin bridges.","tips":"Photo spot."},{"name":"Shen House","chineseName":"沈厅","description":"Ming Dynasty mansion.","tips":"Historic tour."}],"bestTimeToVisit":"April-November","localFood":["Wansan pork","Three delicacies"]},
+  {"id":"xitang","name":"Xitang","chineseName":"西塘","description":"Ancient water town with covered corridors.","chineseDescription":"古镇，有廊棚。","attractions":[{"name":"Covered Corridors","chineseName":"烟雨长廊","description":"Rain-protected walkways.","tips":"Rainy day visit."},{"name":"Bridges","chineseName":"古桥","description":"104 ancient bridges.","tips":"Sunrise photos."}],"bestTimeToVisit":"April-November","localFood":["Xitang pork","Osmanthus cake"]},
+  {"id":"tongli","name":"Tongli","chineseName":"同里","description":"Water town with gardens and canals.","chineseDescription":"水乡，园林运河。","attractions":[{"name":"Retreat Garden","chineseName":"退思园","description":"UNESCO classical garden.","tips":"Peaceful visit."},{"name":"Three Bridges","chineseName":"三桥","description":"Traditional wedding spot.","tips":"Walk around."}],"bestTimeToVisit":"April-November","localFood":["Water town snacks","Taihu fish"]},
+  {"id":"nanchang","name":"Nanchang","chineseName":"南昌","description":"Heroic city, capital of Jiangxi Province.","chineseDescription":"英雄城，江西省会。","attractions":[{"name":"Tengwang Pavilion","chineseName":"滕王阁","description":"Famous riverside pavilion.","tips":"Night views."},{"name":"August 1st Museum","chineseName":"八一纪念馆","description":"PLA founding history.","tips":"Learn history."}],"bestTimeToVisit":"March-May, September-November","localFood":["Nanchang rice noodles","Soup dumplings"]},
+  {"id":"changsha","name":"Changsha","chineseName":"长沙","description":"Capital of Hunan, famous for spicy food and nightlife.","chineseDescription":"湖南省会，以辣食和夜生活闻名。","attractions":[{"name":"Orange Island","chineseName":"橘子洲","description":"Mao Zedong statue.","tips":"Evening walk."},{"name":"Yuelu Academy","chineseName":"岳麓书院","description":"Ancient Confucian academy.","tips":"Historical tour."},{"name":"Hunan Museum","chineseName":"湖南省博物馆","description":"Mawangdui Han tomb.","tips":"Book ahead."}],"bestTimeToVisit":"March-May, September-November","localFood":["Stinky tofu","Spicy crayfish","Changsha noodles"]},
+  {"id":"wuwei","name":"Wuwei","chineseName":"武威","description":"Silk Road city with bronze flying horse.","chineseDescription":"丝绸之路城市，铜奔马出土地。","attractions":[{"name":"Leitai Han Tomb","chineseName":"雷台汉墓","description":"Bronze flying horse discovery.","tips":"See replica."},{"name":"Confucius Temple","chineseName":"文庙","description":"Largest Confucian temple in NW China.","tips":"Cultural visit."}],"bestTimeToVisit":"May-October","localFood":["Northwest noodles","Lamb"]},
+  {"id":"jiaxing","name":"Jiaxing","chineseName":"嘉兴","description":"Birthplace of Communist Party, near Shanghai.","chineseDescription":"中共诞生地，近上海。","attractions":[{"name":"South Lake","chineseName":"南湖","description":"CCP founding site.","tips":"Red boat."},{"name":"Wuzhen","chineseName":"乌镇","description":"Nearby water town.","tips":"Day trip."}],"bestTimeToVisit":"April-November","localFood":["Zongzi","Five-spice beans"]},
+  {"id":"shaoxing","name":"Shaoxing","chineseName":"绍兴","description":"Lu Xun's hometown, famous for yellow wine.","chineseDescription":"鲁迅故乡，以黄酒闻名。","attractions":[{"name":"Lu Xun's Former Residence","chineseName":"鲁迅故居","description":"Writer's childhood home.","tips":"Literary tour."},{"name":"East Lake","chineseName":"东湖","description":"Quarry lake with cliffs.","tips":"Boat ride."}],"bestTimeToVisit":"April-November","localFood":["Shaoxing wine","Stinky tofu","Dried vegetables"]},
+  {"id":"ningbo","name":"Ningbo","chineseName":"宁波","description":"Major port city with ancient library.","chineseDescription":"重要港口城市，有古老藏书楼。","attractions":[{"name":"Tianyi Pavilion","chineseName":"天一阁","description":"Oldest library in Asia.","tips":"Book lovers."},{"name":"Old Bund","chineseName":"老外滩","description":"Colonial architecture.","tips":"Evening stroll."}],"bestTimeToVisit":"April-November","localFood":["Ningbo tangyuan","Seafood","Dried fish"]},
+  {"id":"wenzhou","name":"Wenzhou","chineseName":"温州","description":"Entrepreneurial city with mountain scenery.","chineseDescription":"商业城市，山水风光。","attractions":[{"name":"Yandang Mountain","chineseName":"雁荡山","description":"UNESCO geopark.","tips":"2 days needed."},{"name":"Nanxi River","chineseName":"楠溪江","description":"Scenic river valley.","tips":"Bamboo raft."}],"bestTimeToVisit":"April-November","localFood":["Wenzhou fish balls","Rice cakes"]},
+  {"id":"fuzhou","name":"Fuzhou","chineseName":"福州","description":"Capital of Fujian, gateway to Taiwan.","chineseDescription":"福建省会，通往台湾的门户。","attractions":[{"name":"Three Lanes Seven Alleys","chineseName":"三坊七巷","description":"Ming-Qing architecture.","tips":"Walk around."},{"name":"Gushan Mountain","chineseName":"鼓山","description":"Buddhist temple and views.","tips":"Cable car."}],"bestTimeToVisit":"March-May, September-November","localFood":["Fuzhou fish balls","Buddha jumps wall","Lychee pork"]},
+  {"id":"quanzhou","name":"Quanzhou","chineseName":"泉州","description":"Ancient Silk Road port, UNESCO World Heritage.","chineseDescription":"古代海上丝绸之路港口，世界遗产。","attractions":[{"name":"Kaiyuan Temple","chineseName":"开元寺","description":"Largest Buddhist temple in Fujian.","tips":"Twin pagodas."},{"name":"Qingjing Mosque","chineseName":"清净寺","description":"Oldest mosque in China.","tips":"Islamic heritage."}],"bestTimeToVisit":"March-November","localFood":["Quanzhou snacks","Oyster omelet"]},
+  {"id":"xining","name":"Xining","chineseName":"西宁","description":"Gateway to Qinghai Lake and Tibet.","chineseDescription":"通往青海湖和西藏的门户。","attractions":[{"name":"Qinghai Lake","chineseName":"青海湖","description":"Largest saltwater lake in China.","tips":"July rape flowers."},{"name":"Ta'er Monastery","chineseName":"塔尔寺","description":"Birthplace of Tsongkhapa.","tips":"Respect customs."}],"bestTimeToVisit":"May-September","localFood":["Lamb","Yogurt","Highland barley"]},
+  {"id":"yinchuan","name":"Yinchuan","chineseName":"银川","description":"Capital of Ningxia, Hui Muslim culture.","chineseDescription":"宁夏省会，回族文化。","attractions":[{"name":"Western Xia Tombs","chineseName":"西夏王陵","description":"Pyramid-like imperial tombs.","tips":"Sunset visit."},{"name":"Shahu Lake","chineseName":"沙湖","description":"Desert and wetland.","tips":"Sand activities."}],"bestTimeToVisit":"May-October","localFood":["Lamb","Goji berries","Ningxia wine"]},
+  {"id":"lanzhou","name":"Lanzhou","chineseName":"兰州","description":"Northwest hub famous for hand-pulled noodles.","chineseDescription":"西北枢纽，以拉面闻名。","attractions":[{"name":"Yellow River","chineseName":"黄河","description":"Mother river of China.","tips":"Sheepskin raft."},{"name":"Bingling Temple","chineseName":"炳灵寺","description":"Buddhist grottoes.","tips":"Boat access."}],"bestTimeToVisit":"May-October","localFood":["Lanzhou noodles","Yellow River carp"]},
+  {"id":"urumqi","name":"Urumqi","chineseName":"乌鲁木齐","description":"Capital of Xinjiang, Central Asian culture.","chineseDescription":"新疆省会，中亚文化。","attractions":[{"name":"Grand Bazaar","chineseName":"大巴扎","description":"Islamic market.","tips":"Buy souvenirs."},{"name":"Heavenly Lake","chineseName":"天池","description":"Alpine lake on Bogda Mountain.","tips":"Day trip."}],"bestTimeToVisit":"May-October","localFood":["Lamb kebabs","Naan bread","Pilaf"]},
+  {"id":"kashgar","name":"Kashgar","chineseName":"喀什","description":"Ancient Silk Road city with Uyghur culture.","chineseDescription":"古丝绸之路城市，维吾尔文化。","attractions":[{"name":"Old City","chineseName":"老城","description":"Traditional Uyghur architecture.","tips":"Walk the alleys."},{"name":"Sunday Market","chineseName":"周日大巴扎","description":"Central Asia's largest market.","tips":"Sunday only."},{"name":"Id Kah Mosque","chineseName":"艾提尕尔清真寺","description":"Largest mosque in China.","tips":"Respect customs."}],"bestTimeToVisit":"May-October","localFood":["Pilaf","Naan","Mutton"]},
+  {"id":"turpan","name":"Turpan","chineseName":"吐鲁番","description":"Hottest place in China with ancient ruins.","chineseDescription":"中国最热的地方，有古代遗址。","attractions":[{"name":"Jiaohe Ruins","chineseName":"交河故城","description":"Ancient city on cliff.","tips":"Sunset photos."},{"name":"Flaming Mountains","chineseName":"火焰山","description":"Red sandstone hills.","tips":"Summer extremely hot."},{"name":"Karez Wells","chineseName":"坎儿井","description":"Ancient irrigation system.","tips":"Underground tour."}],"bestTimeToVisit":"April-October","localFood":["Grapes","Melons","Lamb"]},
+  {"id":"hohhot","name":"Hohhot","chineseName":"呼和浩特","description":"Capital of Inner Mongolia, Mongolian culture.","chineseDescription":"内蒙古省会，蒙古文化。","attractions":[{"name":"Dazhao Temple","chineseName":"大召寺","description":"Oldest Buddhist temple.","tips":"Silver Buddha."},{"name":"Grasslands","chineseName":"草原","description":"Xilamuren Grassland nearby.","tips":"Yurt stay."}],"bestTimeToVisit":"June-September","localFood":["Mongolian hotpot","Milk tea","Roasted lamb"]},
+  {"id":"shenyang","name":"Shenyang","chineseName":"沈阳","description":"Manchu capital with imperial palace.","chineseDescription":"满族都城，有皇宫。","attractions":[{"name":"Shenyang Imperial Palace","chineseName":"沈阳故宫","description":"Manchu imperial palace.","tips":"Compare with Beijing."},{"name":"Beiling Park","chineseName":"北陵公园","description":"Zhaoling Tomb.","tips":"Morning walk."}],"bestTimeToVisit":"May-October","localFood":["Northeast dumplings","Stew","Suancai"]},
+  {"id":"changchun","name":"Changchun","chineseName":"长春","description":"Automobile city with puppet palace.","chineseDescription":"汽车城，有伪满皇宫。","attractions":[{"name":"Puppet Emperor's Palace","chineseName":"伪满皇宫","description":"Last emperor's residence.","tips":"Learn history."},{"name":"Film Studio","chineseName":"长影世纪城","description":"China's first film studio.","tips":"Movie theme park."}],"bestTimeToVisit":"May-October","localFood":["Northeast cuisine","Stew"]},
+  {"id":"guiyang","name":"Guiyang","chineseName":"贵阳","description":"Capital of Guizhou, ethnic minority culture.","chineseDescription":"贵州省会，少数民族文化。","attractions":[{"name":"Qingyan Ancient Town","chineseName":"青岩古镇","description":"Ming Dynasty town.","tips":"Try tofu."},{"name":"Jiaxiu Pavilion","chineseName":"甲秀楼","description":"Historic pavilion.","tips":"Night views."}],"bestTimeToVisit":"March-November","localFood":["Sour fish soup","Guizhou noodles"]},
+  {"id":"kunming2","name":"Lijiang Old Town","chineseName":"丽江古城","description":"UNESCO ancient town with Naxi culture.","chineseDescription":"世界遗产古城，纳西族文化。","attractions":[{"name":"Sifang Street","chineseName":"四方街","description":"Central square.","tips":"Evening dancing."},{"name":"Mu Palace","chineseName":"木府","description":"Naxi chieftain palace.","tips":"Learn history."}],"bestTimeToVisit":"March-November","localFood":["Naxi snacks","Yak meat"]},
+  {"id":"dali","name":"Dali","chineseName":"大理","description":"Ancient Bai kingdom with Erhai Lake.","chineseDescription":"古大理国，有洱海。","attractions":[{"name":"Dali Old Town","chineseName":"大理古城","description":"Bai architecture.","tips":"Walk walls."},{"name":"Erhai Lake","chineseName":"洱海","description":"Scenic alpine lake.","tips":"Rent scooter."},{"name":"Three Pagodas","chineseName":"三塔","description":"Iconic Buddhist pagodas.","tips":"Photo spot."}],"bestTimeToVisit":"March-May, September-November","localFood":["Bai cuisine","Rice noodles","Cheese"]},
+  {"id":"shangri-la","name":"Shangri-La","chineseName":"香格里拉","description":"Tibetan town in Yunnan, gateway to Meili Snow Mountain.","chineseDescription":"云南藏区，通往梅里雪山。","attractions":[{"name":"Dukezong Old Town","chineseName":"独克宗古城","description":"Tibetan old town.","tips":"Prayer wheel."},{"name":"Songzanlin Monastery","chineseName":"松赞林寺","description":"Largest Tibetan monastery in Yunnan.","tips":"Morning visit."},{"name":"Pudacuo Park","chineseName":"普达措","description":"Alpine lakes and meadows.","tips":"Altitude warning."}],"bestTimeToVisit":"May-October","localFood":["Tibetan food","Yak butter tea"]},
+  {"id":"xishuangbanna","name":"Xishuangbanna","chineseName":"西双版纳","description":"Tropical rainforest with Dai minority culture.","chineseDescription":"热带雨林，傣族文化。","attractions":[{"name":"Botanical Garden","chineseName":"植物园","description":"Tropical plants research center.","tips":"Full day."},{"name":"Dai Park","chineseName":"傣族园","description":"Traditional Dai villages.","tips":"Water splashing."},{"name":"Wild Elephant Valley","chineseName":"野象谷","description":"Asian elephant reserve.","tips":"Morning best."}],"bestTimeToVisit":"November-April","localFood":["Dai cuisine","Pineapple rice","Grilled fish"]}
 ]
