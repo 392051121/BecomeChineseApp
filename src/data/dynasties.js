@@ -52,17 +52,19 @@ const colorThemeMap = {
 };
 
 const dynastyAssetMap = {
-  xia: 'xia_dynasty_bronze_artifact.png',
-  shang: 'shang_dynasty_oracle_bone.png',
-  zhou: 'zhou_dynasty_bronze_vessel.png',
-  qin: 'qin_dynasty_terracotta_detail.png',
-  han: 'han_dynasty_silk_road_relic.png',
-  sui: 'sui_dynasty_grand_canal_relic.png',
-  tang: 'tang_dynasty_pottery.png',
-  song: 'song_dynasty_ceramics.png',
-  yuan: 'yuan_dynasty_blue_white_porcelain.png',
-  ming: 'ming_dynasty_imperial_porcelain.png',
-  qing: 'qing_dynasty_court_artifact.png',
+  xia: 'xia.jpg',
+  shang: 'shang.jpg',
+  zhou: 'zhou.jpg',
+  qin: 'qin.jpg',
+  han: 'han.jpg',
+  'three-kingdoms': 'three-kingdoms.jpg',
+  jin: 'jin.jpg',
+  sui: 'sui.jpg',
+  tang: 'tang.jpg',
+  song: 'song.jpg',
+  yuan: 'yuan.jpg',
+  ming: 'ming.jpg',
+  qing: 'qing.jpg',
 };
 
 const dynastyKeywordMap = {

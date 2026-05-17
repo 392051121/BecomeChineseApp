@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { Pressable, StyleSheet, Text, TextInput, View, FlatList, Animated, Easing, Platform, ScrollView } from 'react-native';
 import { Search, X, Clock, TrendingUp, Mic, Filter, ChevronDown, Check } from 'lucide-react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';

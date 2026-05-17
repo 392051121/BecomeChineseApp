@@ -234,7 +234,7 @@ export function WrongAnswerReviewScreen() {
               </Text>
               <Pressable
                 style={styles.emptyButton}
-                onPress={() => navigation.getParent()?.navigate('Seasons')}
+                onPress={() => navigation.goBack()}
                 accessibilityRole="button"
                 accessibilityLabel="Go to Daily Quiz"
               >

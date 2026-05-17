@@ -9,6 +9,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { STORAGE_KEYS } from '../config/storageKeys';
 import { QUIZ_CONFIG } from '../config/constants';
 import { showError, ERROR_MESSAGES, logger } from './errorHandling';
+import { notifyBadgeRefresh } from '../components/CustomTabBar';
 
 /**
  * Save a wrong answer for later review
@@ -47,6 +48,9 @@ export async function saveWrongAnswer(question) {
     // Keep only last N wrong answers
     const trimmed = wrongAnswers.slice(0, QUIZ_CONFIG.MAX_WRONG_ANSWERS);
     await AsyncStorage.setItem(STORAGE_KEYS.WRONG_ANSWERS, JSON.stringify(trimmed));
+
+    // Notify TabBar to refresh badge
+    notifyBadgeRefresh();
 
     return true;
   } catch (error) {
@@ -93,6 +97,9 @@ export async function markAsReviewed(questionId, correct) {
     // Update review stats
     await updateReviewStats(correct);
 
+    // Notify TabBar to refresh badge
+    notifyBadgeRefresh();
+
     return true;
   } catch (error) {
     logger.error('WrongAnswers', 'Failed to mark as reviewed', error);
@@ -110,6 +117,9 @@ export async function removeWrongAnswer(questionId) {
 
     const filtered = wrongAnswers.filter((a) => a.id !== questionId);
     await AsyncStorage.setItem(STORAGE_KEYS.WRONG_ANSWERS, JSON.stringify(filtered));
+
+    // Notify TabBar to refresh badge
+    notifyBadgeRefresh();
 
     return true;
   } catch (error) {

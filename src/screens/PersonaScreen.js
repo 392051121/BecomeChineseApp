@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState, useRef } from 'react';
 import {
   ActivityIndicator,
+  Animated,
   KeyboardAvoidingView,
   Platform,
   Pressable,
@@ -27,6 +28,7 @@ import { BadgesSection, BadgeDetailCard, BadgeSummaryCard, checkBadgeUnlocked } 
 import { NameShareCard, CollectionShareCard } from '../components/ShareCards';
 import { ShareCardPreviewModal } from '../components/ShareCardPreviewModal';
 import { SkeletonListItem } from '../components/Skeleton';
+import { calculateTotalXP, getXPLevel } from '../data/badges';
 import { cities } from '../data/cities';
 import { recipes } from '../data/recipes';
 import { dynasties } from '../data/dynasties';
@@ -44,10 +46,36 @@ import {
 import { generateAtlasShareText, shareText, shareViewAsImage } from '../utils/sharing';
 import { theme } from '../theme/theme';
 import { useTheme } from '../theme/ThemeContext';
+import { useToast } from '../components/Toast';
 
 export function PersonaScreen() {
   const navigation = useNavigation();
   const { colors, isDark, toggleTheme, preference, setTheme } = useTheme();
+  const toast = useToast();
+
+  // Theme transition animation
+  const themeTransitionAnim = useRef(new Animated.Value(0)).current;
+  const prevIsDarkRef = useRef(isDark);
+
+  // Animate theme change
+  useEffect(() => {
+    if (prevIsDarkRef.current !== isDark) {
+      // Reset and start animation
+      themeTransitionAnim.setValue(0);
+      Animated.timing(themeTransitionAnim, {
+        toValue: 1,
+        duration: 300,
+        useNativeDriver: false, // backgroundColor doesn't support native driver
+      }).start();
+      prevIsDarkRef.current = isDark;
+    }
+  }, [isDark, themeTransitionAnim]);
+
+  const themeTransitionBg = themeTransitionAnim.interpolate({
+    inputRange: [0, 1],
+    outputRange: [isDark ? '#F8F5EE' : '#1A1A1A', colors.background],
+  });
+
   const serifFont = useMemo(
     () =>
       Platform.select({
@@ -183,6 +211,8 @@ export function PersonaScreen() {
       province: 'General',
       full: generated.full,
     }).catch(() => {});
+    // Show toast feedback
+    toast.success(`${generated.full.hanzi} saved to favorites`, 'Name Saved');
   }
 
   const cultureRank = useMemo(() => getCultureRank(provinceStats.connected), [provinceStats.connected]);
@@ -202,7 +232,16 @@ export function PersonaScreen() {
     usedFood: true,
     usedPlaces: true,
     usedQuiz: quizTotalSolved > 0,
+    // New exploration stats (viewed, not just collected)
+    citiesViewed: collectedCities.length, // Fallback to collected for now
+    recipesViewed: collectedRecipes.length,
+    dynastiesViewed: collectedDynasties.length,
+    provincesComplete: 0, // Will be calculated by exploration stats
   }), [quizStreak, quizTotalSolved, collectedCities.length, collectedRecipes.length, collectedDynasties.length, connectionMap.collectedCount, namesGenerated, favorites.length, cultureRank]);
+
+  // Calculate XP Level
+  const totalXP = useMemo(() => calculateTotalXP(badgeStats), [badgeStats]);
+  const xpLevel = useMemo(() => getXPLevel(totalXP), [totalXP]);
 
   const milestoneItems = [
     { label: 'Quiz', active: quizTotalSolved >= 1, hint: 'Solve 1 daily question' },
@@ -226,8 +265,9 @@ export function PersonaScreen() {
   }
 
   return (
-    <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.background }]}>
-      <KeyboardAvoidingView style={styles.safeArea} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+    <Animated.View style={[styles.safeArea, { backgroundColor: themeTransitionBg }]}>
+      <SafeAreaView style={styles.safeAreaInner}>
+        <KeyboardAvoidingView style={styles.safeArea} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
         <HandscrollContainer style={styles.scrollShell}>
           <View style={styles.container}>
             <ScreenHeader
@@ -401,6 +441,11 @@ export function PersonaScreen() {
 
             {/* Stats row */}
             <View style={styles.badgeRow}>
+              <Pressable style={[styles.badgeStat, activeInsight === 'level' && styles.badgeStatActive]} onPress={() => setActiveInsight('level')} accessibilityRole="button" accessibilityLabel={`Level: ${xpLevel.title}`} accessibilityHint="Double tap to view level insight">
+                <Trophy size={16} color={activeInsight === 'level' ? theme.colors.primary : theme.colors.mutedText} strokeWidth={2} />
+                <Text style={styles.badgeStatLabel}>Level</Text>
+                <Text style={styles.badgeStatValue}>{xpLevel.title}</Text>
+              </Pressable>
               <Pressable style={[styles.badgeStat, activeInsight === 'rank' && styles.badgeStatActive]} onPress={() => setActiveInsight('rank')} accessibilityRole="button" accessibilityLabel={`Rank: ${cultureRank}`} accessibilityHint="Double tap to view rank insight">
                 <Medal size={16} color={activeInsight === 'rank' ? theme.colors.primary : theme.colors.mutedText} strokeWidth={2} />
                 <Text style={styles.badgeStatLabel}>Rank</Text>
@@ -410,11 +455,6 @@ export function PersonaScreen() {
                 <MapPin size={16} color={activeInsight === 'regions' ? theme.colors.primary : theme.colors.mutedText} strokeWidth={2} />
                 <Text style={styles.badgeStatLabel}>Regions</Text>
                 <Text style={styles.badgeStatValue}>{provinceStats.connected}</Text>
-              </Pressable>
-              <Pressable style={[styles.badgeStat, activeInsight === 'saved' && styles.badgeStatActive]} onPress={() => setActiveInsight('saved')} accessibilityRole="button" accessibilityLabel={`Saved: ${favorites.length} names`} accessibilityHint="Double tap to view saved insight">
-                <Heart size={16} color={activeInsight === 'saved' ? theme.colors.primary : theme.colors.mutedText} strokeWidth={2} />
-                <Text style={styles.badgeStatLabel}>Saved</Text>
-                <Text style={styles.badgeStatValue}>{favorites.length}</Text>
               </Pressable>
             </View>
 
@@ -443,10 +483,12 @@ export function PersonaScreen() {
             <SectionCard style={styles.insightCard} tone="soft">
               <Text style={styles.sectionLabel}>Insight</Text>
               <Text style={styles.insightText}>
-                {activeInsight === 'rank'
-                  ? `Your current culture rank is ${cultureRank}. Keep solving and collecting to move up.`
+                {activeInsight === 'level'
+                  ? `XP Level reflects your overall activity. Earn XP by solving quizzes, collecting items, and unlocking badges. Current: ${totalXP} XP.`
+                  : activeInsight === 'rank'
+                  ? `Culture Rank reflects your exploration breadth. Connect more provinces by saving cities, dishes, and dynasties from different regions.`
                   : activeInsight === 'regions'
-                  ? `You have connected ${provinceStats.connected} regions. Save cities, dishes, and dynasties to expand your map.`
+                  ? `You have connected ${provinceStats.connected} regions. Save items from new provinces to expand your cultural map.`
                   : `You have saved ${favorites.length} names. Your archive is becoming more personal.`}
               </Text>
             </SectionCard>
@@ -563,12 +605,14 @@ export function PersonaScreen() {
           )
         }
       />
-    </SafeAreaView>
+      </SafeAreaView>
+    </Animated.View>
   );
 }
 
 const styles = StyleSheet.create({
   safeArea: { flex: 1 },
+  safeAreaInner: { flex: 1 },
   scrollShell: { flex: 1 },
   container: { flex: 1, paddingHorizontal: 20, paddingTop: 12, paddingBottom: 100 },
   header: { marginBottom: 10 },

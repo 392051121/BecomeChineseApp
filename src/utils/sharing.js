@@ -8,10 +8,17 @@ import { logger } from './errorHandling';
  */
 export async function shareText(content, title = 'BecomeChinese') {
   try {
-    await Sharing.shareAsync(content, {
-      dialogTitle: title,
-      mimeType: 'text/plain',
-    });
+    // expo-sharing requires a file URI, so we need to create a temp file
+    const fileUri = `${FileSystem.cacheDirectory}share.txt`;
+    await FileSystem.writeAsStringAsync(fileUri, content);
+
+    if (await Sharing.isAvailableAsync()) {
+      await Sharing.shareAsync(fileUri, {
+        dialogTitle: title,
+        mimeType: 'text/plain',
+        UTI: 'public.plain-text',
+      });
+    }
     return true;
   } catch (error) {
     logger.error('Sharing', 'Share text error', error);

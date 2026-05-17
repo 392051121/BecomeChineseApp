@@ -3,6 +3,7 @@ import { STORAGE_LIMITS, getCultureRank as getCultureRankConfig } from '../confi
 import { STORAGE_KEYS } from '../config/storageKeys';
 import { CACHE_CONFIG, STORAGE_LIMITS as LIMITS } from '../config/constants';
 import { showError, ERROR_MESSAGES, logger } from './errorHandling';
+import { updateTaskProgress } from './dailyTasks';
 
 const MAX_RECENT_ITEMS = STORAGE_LIMITS.MAX_RECENT_ITEMS;
 
@@ -212,6 +213,12 @@ export async function toggleCollectionItem(type, item) {
       },
     };
   });
+  // Update daily task progress for collection
+  const currentList = result.favorites?.[type] || [];
+  const wasAdded = currentList.some((x) => x?.id === item.id);
+  if (wasAdded) {
+    updateTaskProgress('collect', 1).catch(() => {});
+  }
   return result;
 }
 
@@ -238,8 +245,8 @@ export async function getFavoritesSnapshot() {
   return assets.favorites;
 }
 
-export async function markQuizSolvedToday({ date = new Date(), solved = false }) {
-  return patchCulturalAssets((state) => {
+export async function markQuizSolvedToday({ date = new Date(), solved = false, correct = false }) {
+  const result = await patchCulturalAssets((state) => {
     const day = todayKey(date);
     const prevDate = state.quiz.lastSolvedDate;
     let streak = state.quiz.streak;
@@ -276,11 +283,22 @@ export async function markQuizSolvedToday({ date = new Date(), solved = false })
         lastSolvedDate: solved ? day : prevDate,
         solvedByDate: {
           ...state.quiz.solvedByDate,
-          [day]: solved || alreadyMarked,
+          [day]: { solved: true, correct },
         },
       },
     };
   });
+
+  // Update daily task progress for quiz
+  if (solved) {
+    updateTaskProgress('quiz', 1).catch(() => {});
+    // Check streak task
+    if (result.quiz.streak > 0) {
+      updateTaskProgress('streak', 1).catch(() => {});
+    }
+  }
+
+  return result;
 }
 
 export function getCultureRank(connected) {
@@ -335,6 +353,16 @@ export async function addRecentlyViewed(item) {
       ...filtered,
     ].slice(0, MAX_RECENT_ITEMS);
     await AsyncStorage.setItem(STORAGE_KEYS.RECENTLY_VIEWED, JSON.stringify(next));
+
+    // Update daily task progress for exploration
+    if (item.type === 'city') {
+      updateTaskProgress('explore', 1).catch(() => {});
+    } else if (item.type === 'recipe') {
+      updateTaskProgress('explore', 1).catch(() => {});
+    } else if (item.type === 'dynasty' || item.type === 'person') {
+      updateTaskProgress('history', 1).catch(() => {});
+    }
+
     return next;
   } catch {
     return [];

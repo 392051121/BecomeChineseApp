@@ -1,8 +1,10 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import {
+  Platform,
   Pressable,
   SafeAreaView,
   ScrollView,
+  StatusBar,
   StyleSheet,
   Text,
   View,
@@ -15,16 +17,19 @@ import { dynasties } from '../data/dynasties';
 import { cities } from '../data/cities';
 import { getLocalImage } from '../assets/localImages';
 import { SmartImageBlock } from '../components/SmartImageBlock';
-import { HandscrollContainer } from '../components/HandscrollContainer';
 import { ScreenHeader } from '../components/ScreenHeader';
 import { SectionCard } from '../components/SectionCard';
+import { DetailHeader } from '../components/DetailHeader';
 import { getFavoritesSnapshot, toggleCollectionItem } from '../utils/culturalAssets';
 import { shareText } from '../utils/sharing';
+import { earnStamp } from '../utils/stampCollection';
 import { theme } from '../theme/theme';
 import { useTheme } from '../theme/ThemeContext';
+import { useToast } from '../components/Toast';
 
 export function PersonDetailScreen({ route, navigation }) {
   const { colors } = useTheme();
+  const toast = useToast();
   const personId = route?.params?.personId ?? 'zhenghe';
   const person = useMemo(
     () => people.find((item) => item.id === personId) ?? people[0],
@@ -54,9 +59,26 @@ export function PersonDetailScreen({ route, navigation }) {
     return () => { cancelled = true; };
   }, [personId]);
 
+  // Track stamp earning - user viewing person details
+  useEffect(() => {
+    if (!person?.id) return;
+
+    const timeoutId = setTimeout(async () => {
+      await earnStamp('person', person, {
+        viewTimeMs: 3000,
+        scrollDepth: 0.7,
+        interactions: 1,
+        expanded: true,
+      });
+    }, 3000);
+
+    return () => clearTimeout(timeoutId);
+  }, [person?.id]);
+
   const handleToggleBookmark = async () => {
     if (!person) return;
     Haptics.selectionAsync().catch(() => {});
+    const wasBookmarked = isBookmarked;
     const result = await toggleCollectionItem('people', {
       id: person.id,
       nameEn: person.nameEn,
@@ -64,6 +86,12 @@ export function PersonDetailScreen({ route, navigation }) {
     });
     const newFavorites = result?.favorites?.people || [];
     setIsBookmarked(newFavorites.some(p => p.id === person.id));
+    // Show toast feedback
+    if (!wasBookmarked) {
+      toast.success(`${person.nameCn} saved to collection`, 'Person Added');
+    } else {
+      toast.info(`${person.nameCn} removed from collection`, 'Person Removed');
+    }
   };
 
   const handleShare = async () => {
@@ -98,174 +126,132 @@ export function PersonDetailScreen({ route, navigation }) {
 
   return (
     <SafeAreaView style={styles.safeArea}>
-      <HandscrollContainer>
-        <View style={styles.topBar}>
-          <Pressable style={styles.backBtn} onPress={() => navigation.goBack()} accessibilityRole="button" accessibilityLabel="Go back">
-            <ArrowLeft size={16} color={theme.colors.text} strokeWidth={2} />
-            <Text style={styles.backText}>Back</Text>
-          </Pressable>
-          <Text style={styles.topTitle}>Historical Figure</Text>
-          <View style={styles.topActions}>
-            <Pressable
-              style={styles.shareBtn}
-              onPress={handleShare}
-              accessibilityRole="button"
-              accessibilityLabel="Share this person"
-            >
-              <Share2 size={18} color={theme.colors.primary} strokeWidth={2} />
-            </Pressable>
-            <Pressable
-              style={[styles.bookmarkBtn, isBookmarked && styles.bookmarkBtnActive]}
-              onPress={handleToggleBookmark}
-              accessibilityRole="button"
-              accessibilityLabel={isBookmarked ? "Remove from collection" : "Add to collection"}
-            >
-              <Bookmark
-                size={18}
-                color={isBookmarked ? '#FFFFFF' : theme.colors.primary}
-                strokeWidth={2}
-                fill={isBookmarked ? theme.colors.primary : 'none'}
-              />
-            </Pressable>
-          </View>
-        </View>
+      <StatusBar barStyle="dark-content" />
+      <DetailHeader
+        title="Historical Figure"
+        onBack={() => navigation.goBack()}
+        onShare={handleShare}
+        onBookmark={handleToggleBookmark}
+        isBookmarked={isBookmarked}
+        showBookmark={true}
+        shareLabel="Share this person"
+      />
 
-        <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
-          <SectionCard style={styles.hero}>
-            <View style={styles.heroContent}>
-              <View style={styles.avatarWrap}>
-                <Text style={styles.avatarText}>{person.nameCn?.[0] ?? person.nameEn?.[0]}</Text>
-              </View>
-              <Text style={styles.nameCn}>{person.nameCn}</Text>
-              <Text style={styles.nameEn}>{person.nameEn}</Text>
-              <Text style={styles.subtitle}>{person.subtitleEn}</Text>
-              {person.isFeatured && (
-                <View style={styles.featuredBadge}>
-                  <Award size={12} color="#FFFFFF" />
-                  <Text style={styles.featuredText}>Featured</Text>
-                </View>
-              )}
+      <ScrollView
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+        bounces={true}
+      >
+        <SectionCard style={styles.hero}>
+          <View style={styles.heroContent}>
+            <View style={[styles.avatarWrap, { backgroundColor: colors.cinnabarGlow }]}>
+              <Text style={[styles.avatarText, { color: colors.primary }]}>{person.nameCn?.[0] ?? person.nameEn?.[0]}</Text>
             </View>
-          </SectionCard>
+            <Text style={[styles.nameEn, { color: colors.text }]}>{person.nameEn}</Text>
+            <Text style={[styles.nameCn, { color: colors.primary }]}>{person.nameCn}</Text>
+            <Text style={[styles.subtitle, { color: colors.mutedText }]}>{person.subtitleEn}</Text>
+            {person.isFeatured && (
+              <View style={[styles.featuredBadge, { backgroundColor: colors.primary }]}>
+                <Award size={12} color="#FFFFFF" />
+                <Text style={styles.featuredText}>Featured</Text>
+              </View>
+            )}
+          </View>
+        </SectionCard>
 
+        <SectionCard style={styles.card}>
+          <View style={styles.sectionHeader}>
+            <BookOpen size={14} color={colors.primary} />
+            <Text style={[styles.sectionTitle, { color: colors.primary }]}>概述 · Overview</Text>
+          </View>
+          <Text style={[styles.summaryText, { color: colors.text }]}>{person.summaryEn}</Text>
+        </SectionCard>
+
+        {person.achievements && person.achievements.length > 0 && (
           <SectionCard style={styles.card}>
             <View style={styles.sectionHeader}>
-              <BookOpen size={14} color={theme.colors.primary} />
-              <Text style={styles.sectionTitle}>Overview</Text>
+              <Award size={14} color={colors.primary} />
+              <Text style={[styles.sectionTitle, { color: colors.primary }]}>主要成就 · Key Achievements</Text>
             </View>
-            <Text style={styles.summaryText}>{person.summaryEn}</Text>
-          </SectionCard>
-
-          {person.achievements && person.achievements.length > 0 && (
-            <SectionCard style={styles.card}>
-              <View style={styles.sectionHeader}>
-                <Award size={14} color={theme.colors.primary} />
-                <Text style={styles.sectionTitle}>Key Achievements</Text>
+            {person.achievements.map((achievement, idx) => (
+              <View key={`achievement-${idx}`} style={styles.listItem}>
+                <View style={[styles.listDot, { backgroundColor: colors.primary }]} />
+                <Text style={[styles.listText, { color: colors.text }]}>{achievement}</Text>
               </View>
-              {person.achievements.map((achievement, idx) => (
-                <View key={`achievement-${idx}`} style={styles.listItem}>
-                  <View style={styles.listDot} />
-                  <Text style={styles.listText}>{achievement}</Text>
+            ))}
+          </SectionCard>
+        )}
+
+        {person.tags && person.tags.length > 0 && (
+          <SectionCard style={styles.card}>
+            <View style={styles.sectionHeader}>
+              <Scroll size={14} color={colors.primary} />
+              <Text style={[styles.sectionTitle, { color: colors.primary }]}>标签 · Tags</Text>
+            </View>
+            <View style={styles.tagWrap}>
+              {person.tags.map((tag, idx) => (
+                <View key={`tag-${idx}`} style={[styles.tagPill, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+                  <Text style={[styles.tagText, { color: colors.text }]}>{tag}</Text>
                 </View>
               ))}
-            </SectionCard>
-          )}
+            </View>
+          </SectionCard>
+        )}
 
-          {person.tags && person.tags.length > 0 && (
-            <SectionCard style={styles.card}>
-              <View style={styles.sectionHeader}>
-                <Scroll size={14} color={theme.colors.primary} />
-                <Text style={styles.sectionTitle}>Tags</Text>
-              </View>
-              <View style={styles.tagWrap}>
-                {person.tags.map((tag, idx) => (
-                  <View key={`tag-${idx}`} style={styles.tagPill}>
-                    <Text style={styles.tagText}>{tag}</Text>
-                  </View>
-                ))}
-              </View>
-            </SectionCard>
-          )}
+        {relatedDynasty && (
+          <SectionCard style={styles.card}>
+            <View style={styles.sectionHeader}>
+              <Users size={14} color={colors.primary} />
+              <Text style={[styles.sectionTitle, { color: colors.primary }]}>历史时期 · Historical Period</Text>
+            </View>
+            <Pressable
+              style={[styles.relatedItem, { backgroundColor: colors.surface, borderColor: colors.border }]}
+              onPress={() => navigation.getParent()?.navigate('History')}
+              accessibilityRole="button"
+              accessibilityLabel={`${relatedDynasty.nameEn} Dynasty`}
+            >
+              <Text style={[styles.relatedItemName, { color: colors.text }]}>{relatedDynasty.nameEn}</Text>
+              <Text style={[styles.relatedItemSub, { color: colors.primary }]}>{relatedDynasty.nameCn}</Text>
+              <Text style={[styles.relatedItemHint, { color: colors.mutedText }]}>{relatedDynasty.years}</Text>
+            </Pressable>
+          </SectionCard>
+        )}
 
-          {relatedDynasty && (
-            <SectionCard style={styles.card}>
-              <View style={styles.sectionHeader}>
-                <Users size={14} color={theme.colors.primary} />
-                <Text style={styles.sectionTitle}>Historical Period</Text>
-              </View>
+        {relatedCities.length > 0 && (
+          <SectionCard style={styles.card}>
+            <View style={styles.sectionHeader}>
+              <MapPin size={14} color={colors.primary} />
+              <Text style={[styles.sectionTitle, { color: colors.primary }]}>相关地点 · Related Places</Text>
+            </View>
+            {relatedCities.map((city) => (
               <Pressable
-                style={styles.relatedItem}
-                onPress={() => navigation.navigate('DynastyDetail', { dynastyId: relatedDynasty.id })}
+                key={city.id}
+                style={[styles.relatedItem, { backgroundColor: colors.surface, borderColor: colors.border }]}
+                onPress={() => navigation.getParent()?.navigate('Places')}
                 accessibilityRole="button"
-                accessibilityLabel={`${relatedDynasty.nameEn} Dynasty`}
+                accessibilityLabel={`${city.nameEn} - ${city.nameCn}`}
               >
-                <Text style={styles.relatedItemName}>{relatedDynasty.nameCn}</Text>
-                <Text style={styles.relatedItemSub}>{relatedDynasty.nameEn} Dynasty</Text>
-                <Text style={styles.relatedItemHint}>{relatedDynasty.years}</Text>
+                <Text style={[styles.relatedItemName, { color: colors.text }]}>{city.nameEn}</Text>
+                <Text style={[styles.relatedItemSub, { color: colors.primary }]}>{city.nameCn}</Text>
               </Pressable>
-            </SectionCard>
-          )}
-
-          {relatedCities.length > 0 && (
-            <SectionCard style={styles.card}>
-              <View style={styles.sectionHeader}>
-                <MapPin size={14} color={theme.colors.primary} />
-                <Text style={styles.sectionTitle}>Related Places</Text>
-              </View>
-              {relatedCities.map((city) => (
-                <Pressable
-                  key={city.id}
-                  style={styles.relatedItem}
-                  onPress={() => navigation.getParent()?.navigate('Places')}
-                  accessibilityRole="button"
-                  accessibilityLabel={`${city.nameEn} - ${city.nameCn}`}
-                >
-                  <Text style={styles.relatedItemName}>{city.nameCn}</Text>
-                  <Text style={styles.relatedItemSub}>{city.nameEn}</Text>
-                </Pressable>
-              ))}
-            </SectionCard>
-          )}
-        </ScrollView>
-      </HandscrollContainer>
+            ))}
+          </SectionCard>
+        )}
+      </ScrollView>
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  safeArea: { flex: 1, backgroundColor: theme.colors.background },
-  topBar: {
-    paddingHorizontal: 24,
-    paddingTop: 10,
-    paddingBottom: 14,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
+  safeArea: {
+    flex: 1,
+    backgroundColor: theme.colors.background,
   },
-  backBtn: { flexDirection: 'row', alignItems: 'center', gap: 6 },
-  backText: { color: theme.colors.text, fontWeight: '700' },
-  topTitle: { color: theme.colors.text, fontSize: 16, fontWeight: '700' },
-  topActions: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  shareBtn: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: theme.colors.cinnabarGlow,
-    alignItems: 'center',
-    justifyContent: 'center',
+  scrollContent: {
+    paddingHorizontal: 20,
+    paddingBottom: 40,
+    gap: 14,
   },
-  bookmarkBtn: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: theme.colors.cinnabarGlow,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  bookmarkBtnActive: {
-    backgroundColor: theme.colors.primary,
-  },
-  content: { paddingHorizontal: 24, paddingBottom: 28, gap: 14 },
   emptyState: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 24 },
   emptyText: { color: theme.colors.mutedText, fontSize: 16 },
   hero: { padding: 20 },
@@ -280,8 +266,8 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   avatarText: { color: theme.colors.primary, fontSize: 28, fontWeight: '800' },
-  nameCn: { color: theme.colors.text, fontSize: 32, fontWeight: '800' },
-  nameEn: { color: theme.colors.primary, fontSize: 18, fontWeight: '700', marginTop: 4 },
+  nameEn: { color: theme.colors.text, fontSize: 24, fontWeight: '800' },
+  nameCn: { color: theme.colors.primary, fontSize: 18, fontWeight: '700', marginTop: 4 },
   subtitle: { color: theme.colors.mutedText, fontSize: 14, marginTop: 8, textAlign: 'center' },
   featuredBadge: {
     flexDirection: 'row',

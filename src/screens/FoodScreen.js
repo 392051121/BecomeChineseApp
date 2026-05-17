@@ -19,7 +19,8 @@ import { recipes } from '../data/recipes';
 import { cities } from '../data/cities';
 import { dynasties } from '../data/dynasties';
 import { SmartImageBlock } from '../components/SmartImageBlock';
-import { SearchBar, useSearch } from '../components/SearchBar';
+import { useSearch } from '../components/SearchBar';
+import { EnhancedSearchBar } from '../components/EnhancedSearchBar';
 import { getLocalImage } from '../assets/localImages';
 import { toggleCollectionItem, addRecentlyViewed, getFavoritesSnapshot } from '../utils/culturalAssets';
 import { ScreenHeader } from '../components/ScreenHeader';
@@ -28,9 +29,11 @@ import { StampFeedback } from '../components/StampFeedback';
 import { RelatedPathCard } from '../components/RelatedPathCard';
 import { EmptyStateCard } from '../components/EmptyStateCard';
 import { PaperTexture } from '../components/PaperTexture';
+import { ScrollToTopButton } from '../components/ScrollToTopButton';
 import { theme } from '../theme/theme';
 import { useTheme } from '../theme/ThemeContext';
 import { logger } from '../utils/errorHandling';
+import { useToast } from '../components/Toast';
 
 const RecipeCard = memo(function RecipeCard({ item, index, onPress }) {
   const isLeftCard = index % 2 === 0;
@@ -75,11 +78,14 @@ const RecipeCard = memo(function RecipeCard({ item, index, onPress }) {
 export function FoodScreen() {
   const navigation = useNavigation();
   const { colors } = useTheme();
+  const toast = useToast();
   const [selectedRecipe, setSelectedRecipe] = useState(null);
   const data = useMemo(() => recipes, []);
   const [bookmarked, setBookmarked] = useState({});
   const [searchQuery, setSearchQuery] = useState('');
   const [refreshing, setRefreshing] = useState(false);
+  const [showScrollTop, setShowScrollTop] = useState(false);
+  const listRef = useRef(null);
 
   // Load bookmark state from AsyncStorage on mount
   useEffect(() => {
@@ -105,6 +111,7 @@ export function FoodScreen() {
   const onOpenRecipe = useCallback((item) => setSelectedRecipe(item), []);
   const onToggleBookmark = useCallback(async (item) => {
     await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
+    const wasBookmarked = bookmarked[item.id];
     setBookmarked((prev) => ({ ...prev, [item.id]: !prev[item.id] }));
     await toggleCollectionItem('recipes', {
       id: item.id,
@@ -113,7 +120,13 @@ export function FoodScreen() {
       imageAsset: item.imageAsset,
       culturalStory: item.culturalStory,
     }).catch(() => {});
-  }, []);
+    // Show toast feedback
+    if (!wasBookmarked) {
+      toast.success(`${item.nameCn} saved to collection`, 'Dish Added');
+    } else {
+      toast.info(`${item.nameCn} removed from collection`, 'Dish Removed');
+    }
+  }, [bookmarked, toast]);
 
   // Track view when recipe is selected
   useEffect(() => {
@@ -125,6 +138,19 @@ export function FoodScreen() {
         nameCn: selectedRecipe.nameCn,
         province: selectedRecipe.province,
       }).catch(() => {});
+
+      // Try to earn stamp after viewing for 3 seconds
+      const timeoutId = setTimeout(async () => {
+        const { earnStamp } = await import('../utils/stampCollection');
+        await earnStamp('food', selectedRecipe, {
+          viewTimeMs: 3000,
+          scrollDepth: 0.7,
+          interactions: 1,
+          expanded: true,
+        });
+      }, 3000);
+
+      return () => clearTimeout(timeoutId);
     }
   }, [selectedRecipe]);
 
@@ -153,11 +179,14 @@ export function FoodScreen() {
         style={styles.header}
         includeTopInset={false}
       />
-      <SearchBar
+      <EnhancedSearchBar
         value={searchQuery}
         onChangeText={setSearchQuery}
         placeholder="Search dishes..."
         onClear={() => setSearchQuery('')}
+        showTrending={true}
+        showCategories={false}
+        showHistory={true}
       />
       <SectionCard style={styles.storyGuideCard} tone="soft">
         <PaperTexture intensity="light" />
@@ -187,6 +216,7 @@ export function FoodScreen() {
   return (
     <SafeAreaView style={styles.safeArea}>
       <FlatList
+        ref={listRef}
         data={filteredRecipes}
         keyExtractor={(item) => item.id}
         numColumns={2}
@@ -207,6 +237,11 @@ export function FoodScreen() {
         contentContainerStyle={styles.listContent}
         columnWrapperStyle={styles.column}
         showsVerticalScrollIndicator={false}
+        onScroll={(e) => {
+          const offsetY = e.nativeEvent.contentOffset.y;
+          setShowScrollTop(offsetY > 400);
+        }}
+        scrollEventThrottle={100}
         refreshControl={
           <RefreshControl
             refreshing={refreshing}
@@ -215,6 +250,10 @@ export function FoodScreen() {
             colors={[colors.primary]}
           />
         }
+      />
+      <ScrollToTopButton
+        visible={showScrollTop}
+        onPress={() => listRef.current?.scrollToOffset({ offset: 0, animated: true })}
       />
 
       <Modal

@@ -43,6 +43,18 @@ function getBadgeProgress(badge, stats) {
     case 'namesSaved':
       current = stats.namesSaved || 0;
       break;
+    case 'citiesViewed':
+      current = stats.citiesViewed || 0;
+      break;
+    case 'recipesViewed':
+      current = stats.recipesViewed || 0;
+      break;
+    case 'dynastiesViewed':
+      current = stats.dynastiesViewed || 0;
+      break;
+    case 'provinceComplete':
+      current = stats.provincesComplete || 0;
+      break;
     default:
       return null;
   }

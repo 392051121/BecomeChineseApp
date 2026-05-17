@@ -264,37 +264,37 @@ export const badges = [
   {
     id: 'rank-explorer',
     category: 'mastery',
-    nameCn: '探索者',
-    nameEn: 'Explorer',
-    descriptionCn: '达到探索者等级',
-    descriptionEn: 'Reach Explorer rank',
+    nameCn: '青铜行者',
+    nameEn: 'Bronze Traveler',
+    descriptionCn: '连接1个省份',
+    descriptionEn: 'Connect 1 province',
     icon: 'award',
     color: '#6B8A94',
-    condition: { type: 'rank', value: 'Explorer' },
+    condition: { type: 'rank', value: 'Bronze Traveler' },
     xp: 20,
   },
   {
     id: 'rank-traveler',
     category: 'mastery',
-    nameCn: '行者',
-    nameEn: 'Traveler',
-    descriptionCn: '达到行者等级',
-    descriptionEn: 'Reach Traveler rank',
+    nameCn: '白银探索者',
+    nameEn: 'Silver Explorer',
+    descriptionCn: '连接4个省份',
+    descriptionEn: 'Connect 4 provinces',
     icon: 'award',
     color: '#E2B05E',
-    condition: { type: 'rank', value: 'Traveler' },
+    condition: { type: 'rank', value: 'Silver Explorer' },
     xp: 50,
   },
   {
     id: 'rank-scholar',
     category: 'mastery',
-    nameCn: '学者',
-    nameEn: 'Scholar',
-    descriptionCn: '达到学者等级',
-    descriptionEn: 'Reach Scholar rank',
+    nameCn: '黄金行者',
+    nameEn: 'Gold Wanderer',
+    descriptionCn: '连接8个省份',
+    descriptionEn: 'Connect 8 provinces',
     icon: 'award',
     color: '#B33B24',
-    condition: { type: 'rank', value: 'Scholar' },
+    condition: { type: 'rank', value: 'Gold Wanderer' },
     xp: 100,
   },
 
@@ -324,6 +324,80 @@ export const badges = [
     condition: { type: 'allFeatures', value: true },
     xp: 80,
   },
+
+  // Exploration View Achievements (viewing content, not just collecting)
+  {
+    id: 'city-view-5',
+    category: 'exploration',
+    nameCn: '城市漫步者',
+    nameEn: 'City Walker',
+    descriptionCn: '浏览5座城市',
+    descriptionEn: 'View 5 cities',
+    icon: 'map-pin',
+    color: '#6B8A94',
+    condition: { type: 'citiesViewed', value: 5 },
+    xp: 15,
+  },
+  {
+    id: 'city-view-15',
+    category: 'exploration',
+    nameCn: '行者无疆',
+    nameEn: 'Globe Trotter',
+    descriptionCn: '浏览15座城市',
+    descriptionEn: 'View 15 cities',
+    icon: 'map-pin',
+    color: '#E2B05E',
+    condition: { type: 'citiesViewed', value: 15 },
+    xp: 40,
+  },
+  {
+    id: 'food-view-5',
+    category: 'exploration',
+    nameCn: '美食鉴赏家',
+    nameEn: 'Food Connoisseur',
+    descriptionCn: '浏览5道美食',
+    descriptionEn: 'View 5 dishes',
+    icon: 'utensils',
+    color: '#6B8A94',
+    condition: { type: 'recipesViewed', value: 5 },
+    xp: 15,
+  },
+  {
+    id: 'food-view-15',
+    category: 'exploration',
+    nameCn: '饕餮之旅',
+    nameEn: 'Culinary Journey',
+    descriptionCn: '浏览15道美食',
+    descriptionEn: 'View 15 dishes',
+    icon: 'utensils',
+    color: '#E2B05E',
+    condition: { type: 'recipesViewed', value: 15 },
+    xp: 40,
+  },
+  {
+    id: 'dynasty-view-5',
+    category: 'exploration',
+    nameCn: '历史探索者',
+    nameEn: 'History Explorer',
+    descriptionCn: '浏览5个朝代',
+    descriptionEn: 'View 5 dynasties',
+    icon: 'scroll',
+    color: '#6B8A94',
+    condition: { type: 'dynastiesViewed', value: 5 },
+    xp: 15,
+  },
+  {
+    id: 'province-complete',
+    category: 'exploration',
+    nameCn: '省份达人',
+    nameEn: 'Province Master',
+    descriptionCn: '浏览某省份所有城市',
+    descriptionEn: 'View all cities in a province',
+    icon: 'globe',
+    color: '#B33B24',
+    condition: { type: 'provinceComplete', value: 1 },
+    xp: 50,
+  },
 ];
 
 /**
@@ -352,17 +426,29 @@ export function checkBadgeUnlocked(badge, stats) {
     case 'namesSaved':
       return stats.namesSaved >= value;
     case 'rank':
-      // Use ordinal comparison for rank progression
-      const rankOrder = ['Wanderer Seed', 'Bronze Traveler', 'Silver Explorer', 'Gold Wanderer', 'Explorer', 'Traveler', 'Scholar'];
-      const currentRankIndex = rankOrder.indexOf(stats.rank);
-      const requiredRankIndex = rankOrder.indexOf(value);
-      return currentRankIndex >= requiredRankIndex && requiredRankIndex !== -1;
+      // Culture rank based on connected provinces
+      // Order: Wanderer Seed < Bronze Traveler < Silver Explorer < Gold Wanderer
+      const cultureRankOrder = ['Wanderer Seed', 'Bronze Traveler', 'Silver Explorer', 'Gold Wanderer'];
+      const currentRankIndex = cultureRankOrder.indexOf(stats.rank);
+      const requiredRankIndex = cultureRankOrder.indexOf(value);
+      // If rank not found, default to lowest
+      const effectiveCurrentIndex = currentRankIndex === -1 ? 0 : currentRankIndex;
+      const effectiveRequiredIndex = requiredRankIndex === -1 ? 0 : requiredRankIndex;
+      return effectiveCurrentIndex >= effectiveRequiredIndex;
     case 'allFeatures':
       // Check for meaningful engagement: at least 1 item saved per category
       return (stats.citiesCollected >= 1 || stats.usedPlaces) &&
              (stats.recipesCollected >= 1 || stats.usedFood) &&
              (stats.dynastiesCollected >= 1 || stats.usedHistory) &&
              (stats.quizTotal >= 1 || stats.usedQuiz);
+    case 'citiesViewed':
+      return stats.citiesViewed >= value;
+    case 'recipesViewed':
+      return stats.recipesViewed >= value;
+    case 'dynastiesViewed':
+      return stats.dynastiesViewed >= value;
+    case 'provinceComplete':
+      return stats.provincesComplete >= value;
     case 'special':
       return false; // Special badges have custom unlock logic
     default:

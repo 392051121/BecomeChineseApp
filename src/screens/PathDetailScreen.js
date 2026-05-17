@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useMemo } from 'react';
 import { Pressable, SafeAreaView, StyleSheet, Text, View, ScrollView } from 'react-native';
-import { ArrowRight, MapPin, Clock, UtensilsCrossed, Scroll, User, Sparkles, Check, Lock, ChevronRight } from 'lucide-react-native';
+import { ArrowRight, ArrowLeft, MapPin, Clock, UtensilsCrossed, Scroll, User, Sparkles, Check, Lock, ChevronRight } from 'lucide-react-native';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import * as Haptics from 'expo-haptics';
 
@@ -10,6 +10,7 @@ import { HandscrollContainer } from '../components/HandscrollContainer';
 import { ScreenHeader } from '../components/ScreenHeader';
 import { SectionCard } from '../components/SectionCard';
 import { StampFeedback } from '../components/StampFeedback';
+import { DetailHeader } from '../components/DetailHeader';
 import { theme } from '../theme/theme';
 import { useTheme } from '../theme/ThemeContext';
 import { availablePaths, pathConfigs } from '../components/PathsSection';
@@ -193,6 +194,10 @@ export function PathDetailScreen() {
 
   return (
     <SafeAreaView style={styles.safeArea}>
+      <DetailHeader
+        title={path?.title || 'Path'}
+        onBack={() => navigation.goBack()}
+      />
       <HandscrollContainer style={styles.scrollShell}>
         <View style={styles.container}>
           {/* Path Header */}

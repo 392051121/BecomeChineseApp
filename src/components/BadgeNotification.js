@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState, createContext, useContext } from 'react';
 import { Animated, Pressable, StyleSheet, Text, View } from 'react-native';
-import { Award, X, Sparkles } from 'lucide-react-native';
+import { Award, X, Sparkles, Star } from 'lucide-react-native';
 import * as Haptics from 'expo-haptics';
 
 import { theme } from '../theme/theme';
@@ -17,6 +17,9 @@ export function BadgeNotificationProvider({ children }) {
   const [notification, setNotification] = useState(null);
   const slideAnim = useRef(new Animated.Value(-100)).current;
   const opacityAnim = useRef(new Animated.Value(0)).current;
+  const scaleAnim = useRef(new Animated.Value(0.5)).current;
+  const stampAnim = useRef(new Animated.Value(0)).current;
+  const glowAnim = useRef(new Animated.Value(0)).current;
   const timeoutRef = useRef(null);
 
   function showBadgeUnlock(badge) {
@@ -28,7 +31,12 @@ export function BadgeNotificationProvider({ children }) {
     setNotification(badge);
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
 
-    // Animate in
+    // Reset animations
+    scaleAnim.setValue(0.5);
+    stampAnim.setValue(0);
+    glowAnim.setValue(0);
+
+    // Animate in with stamp effect
     Animated.parallel([
       Animated.spring(slideAnim, {
         toValue: 0,
@@ -41,7 +49,48 @@ export function BadgeNotificationProvider({ children }) {
         duration: theme.motion.durationFast,
         useNativeDriver: true,
       }),
+      Animated.spring(scaleAnim, {
+        toValue: 1,
+        friction: 4,
+        tension: 150,
+        useNativeDriver: true,
+      }),
     ]).start();
+
+    // Stamp slam effect
+    setTimeout(() => {
+      Animated.sequence([
+        Animated.spring(stampAnim, {
+          toValue: 1,
+          friction: 3,
+          tension: 200,
+          useNativeDriver: true,
+        }),
+        Animated.spring(stampAnim, {
+          toValue: 0,
+          friction: 5,
+          tension: 100,
+          useNativeDriver: true,
+        }),
+      ]).start();
+    }, 200);
+
+    // Glow pulse
+    Animated.loop(
+      Animated.sequence([
+        Animated.timing(glowAnim, {
+          toValue: 1,
+          duration: 500,
+          useNativeDriver: true,
+        }),
+        Animated.timing(glowAnim, {
+          toValue: 0.3,
+          duration: 500,
+          useNativeDriver: true,
+        }),
+      ]),
+      { iterations: 4 }
+    ).start();
 
     // Auto dismiss after 5 seconds
     timeoutRef.current = setTimeout(() => {
@@ -74,6 +123,16 @@ export function BadgeNotificationProvider({ children }) {
     };
   }, []);
 
+  const glowScale = glowAnim.interpolate({
+    inputRange: [0, 1],
+    outputRange: [1, 1.1],
+  });
+
+  const stampScale = stampAnim.interpolate({
+    inputRange: [0, 1],
+    outputRange: [1, 1.05],
+  });
+
   return (
     <BadgeNotificationContext.Provider value={{ showBadgeUnlock }}>
       {children}
@@ -82,24 +141,39 @@ export function BadgeNotificationProvider({ children }) {
           style={[
             styles.notificationContainer,
             {
-              transform: [{ translateY: slideAnim }],
+              transform: [{ translateY: slideAnim }, { scale: scaleAnim }],
               opacity: opacityAnim,
             },
           ]}
         >
           <Pressable
-            style={[styles.notificationCard, { borderColor: colors.primary, backgroundColor: isDark ? colors.surface : '#FFF9F5' }]}
+            style={[styles.notificationCard, { borderColor: notification.color || colors.primary, backgroundColor: isDark ? colors.surface : '#FFF9F5' }]}
             onPress={dismissNotification}
           >
-            <View style={[styles.iconWrap, { backgroundColor: colors.cinnabarGlow }]}>
-              <Sparkles size={20} color={notification.color || colors.primary} strokeWidth={2} />
-            </View>
+            {/* Glow effect */}
+            <Animated.View
+              style={[
+                styles.glowEffect,
+                {
+                  backgroundColor: (notification.color || colors.primary) + '20',
+                  transform: [{ scale: glowScale }],
+                },
+              ]}
+            />
+
+            <Animated.View style={[styles.iconWrap, { backgroundColor: (notification.color || colors.primary) + '20', transform: [{ scale: stampScale }] }]}>
+              <Award size={24} color={notification.color || colors.primary} strokeWidth={2} />
+              <View style={[styles.starBadge, { backgroundColor: notification.color || colors.primary }]}>
+                <Star size={10} color="#FFFFFF" strokeWidth={2} fill="#FFFFFF" />
+              </View>
+            </Animated.View>
             <View style={styles.content}>
-              <Text style={[styles.title, { color: colors.primary }]}>Badge Unlocked!</Text>
+              <Text style={[styles.title, { color: notification.color || colors.primary }]}>Achievement Unlocked!</Text>
               <Text style={[styles.badgeName, { color: colors.text }]}>{notification.nameEn}</Text>
-              <Text style={[styles.badgeNameCn, { color: colors.primary }]}>{notification.nameCn}</Text>
-              <View style={[styles.xpPill, { backgroundColor: colors.goldLeaf }]}>
-                <Text style={[styles.xpText, { color: colors.success }]}>+{notification.xp} XP</Text>
+              <Text style={[styles.badgeNameCn, { color: notification.color || colors.primary }]}>{notification.nameCn}</Text>
+              <View style={[styles.xpPill, { backgroundColor: (notification.color || colors.primary) + '20' }]}>
+                <Sparkles size={10} color={notification.color || colors.primary} strokeWidth={2} />
+                <Text style={[styles.xpText, { color: notification.color || colors.primary }]}>+{notification.xp} XP</Text>
               </View>
             </View>
             <Pressable style={styles.closeBtn} onPress={dismissNotification}>
@@ -124,18 +198,37 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 12,
-    borderRadius: 16,
-    borderWidth: 1,
+    borderRadius: 20,
+    borderWidth: 2,
     borderColor: theme.colors.primary,
     backgroundColor: '#FFF9F5',
     padding: 16,
     ...theme.shadows.strong,
+    overflow: 'hidden',
+  },
+  glowEffect: {
+    position: 'absolute',
+    top: -20,
+    left: -20,
+    right: -20,
+    bottom: -20,
+    borderRadius: 40,
   },
   iconWrap: {
-    width: 48,
-    height: 48,
-    borderRadius: 14,
-    backgroundColor: theme.colors.cinnabarGlow,
+    width: 56,
+    height: 56,
+    borderRadius: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
+    position: 'relative',
+  },
+  starBadge: {
+    position: 'absolute',
+    top: -4,
+    right: -4,
+    width: 20,
+    height: 20,
+    borderRadius: 10,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -161,16 +254,17 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   xpPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
     alignSelf: 'flex-start',
     marginTop: 6,
-    backgroundColor: theme.colors.goldLeaf,
-    paddingHorizontal: 8,
-    paddingVertical: 3,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
     borderRadius: 999,
   },
   xpText: {
-    color: theme.colors.success,
-    fontSize: 10,
+    fontSize: 11,
     fontWeight: '800',
   },
   closeBtn: {

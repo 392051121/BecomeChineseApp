@@ -16,9 +16,15 @@ export const STORAGE_KEYS = {
   // Quiz and learning
   WRONG_ANSWERS: `${PREFIX}wrongAnswers`,
   REVIEW_STATS: `${PREFIX}reviewStats`,
+  QUIZ_HIGH_SCORE: `${PREFIX}quizHighScore`,
 
   // Gamification
   UNLOCKED_BADGES: `${PREFIX}unlockedBadgeIds`,
+  DAILY_SIGN_IN: `${PREFIX}dailySignIn`,
+  DAILY_TASKS: `${PREFIX}dailyTasks`,
+  FRIEND_LIST: `${PREFIX}friendList`,
+  USER_CODE: `${PREFIX}userCode`,
+  USER_PERSONALIZATION: `${PREFIX}userPersonalization`,
 
   // User preferences
   THEME: `${PREFIX}theme`,
@@ -27,6 +33,12 @@ export const STORAGE_KEYS = {
 
   // Search
   SEARCH_HISTORY: `${PREFIX}searchHistory`,
+
+  // Exploration Stats
+  EXPLORATION_STATS: `${PREFIX}explorationStats`,
+
+  // Cultural Stamps Collection
+  CULTURAL_STAMPS: `${PREFIX}culturalStamps`,
 };
 
 export default STORAGE_KEYS;

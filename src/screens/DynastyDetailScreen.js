@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useEffect } from 'react';
 import {
   Pressable,
   SafeAreaView,
@@ -19,11 +19,13 @@ import { useTheme } from '../theme/ThemeContext';
 import { HandscrollContainer } from '../components/HandscrollContainer';
 import { ScreenHeader } from '../components/ScreenHeader';
 import { SectionCard } from '../components/SectionCard';
+import { DetailHeader } from '../components/DetailHeader';
 import { PaperTexture } from '../components/PaperTexture';
 import { cities } from '../data/cities';
 import { recipes } from '../data/recipes';
 import { people } from '../data/people';
 import { shareText, generateDynastyShareText } from '../utils/sharing';
+import { earnStamp } from '../utils/stampCollection';
 
 export function DynastyDetailScreen({ route, navigation }) {
   const { colors } = useTheme();
@@ -79,24 +81,31 @@ export function DynastyDetailScreen({ route, navigation }) {
     }
   }, [dynasty]);
 
+  // Track stamp earning - user viewing dynasty details
+  useEffect(() => {
+    if (!dynasty?.id) return;
+
+    const timeoutId = setTimeout(async () => {
+      await earnStamp('dynasty', dynasty, {
+        viewTimeMs: 3000,
+        scrollDepth: 0.7,
+        interactions: 1,
+        expanded: true,
+      });
+    }, 3000);
+
+    return () => clearTimeout(timeoutId);
+  }, [dynasty?.id]);
+
   return (
     <SafeAreaView style={styles.safeArea}>
+      <DetailHeader
+        title="Dynasty Detail"
+        onBack={() => navigation.goBack()}
+        onShare={handleShare}
+        shareLabel="Share this dynasty"
+      />
       <HandscrollContainer>
-        <View style={styles.topBar}>
-          <Pressable style={styles.backBtn} onPress={() => navigation.goBack()} accessibilityRole="button" accessibilityLabel="Go back" accessibilityHint="Double tap to return to previous screen">
-            <ArrowLeft size={16} color={theme.colors.text} strokeWidth={2} />
-            <Text style={styles.backText}>Back</Text>
-          </Pressable>
-          <Text style={styles.topTitle}>Dynasty Detail</Text>
-          <Pressable
-            style={styles.shareBtn}
-            onPress={handleShare}
-            accessibilityRole="button"
-            accessibilityLabel="Share this dynasty"
-          >
-            <Share2 size={18} color={theme.colors.primary} strokeWidth={2} />
-          </Pressable>
-        </View>
 
         <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
           <ScreenHeader
@@ -125,7 +134,7 @@ export function DynastyDetailScreen({ route, navigation }) {
           <SectionCard style={styles.card}>
             <View style={styles.sectionHeader}>
               <BadgeInfo size={14} color={theme.colors.primary} />
-              <Text style={styles.sectionTitle}>Timeline Link</Text>
+              <Text style={styles.sectionTitle}>时间线 · Timeline Link</Text>
             </View>
             <Text style={styles.sectionText}>{dynasty.worldContext}</Text>
             <View style={styles.miniTimeline}>
@@ -139,7 +148,7 @@ export function DynastyDetailScreen({ route, navigation }) {
           <SectionCard style={styles.card}>
             <View style={styles.sectionHeader}>
               <BookOpen size={14} color={theme.colors.primary} />
-              <Text style={styles.sectionTitle}>Rulers</Text>
+              <Text style={styles.sectionTitle}>统治者 · Rulers</Text>
             </View>
             {sections.map((section) => (
               <View key={section.key} style={styles.subSection}>
@@ -161,7 +170,7 @@ export function DynastyDetailScreen({ route, navigation }) {
             <SectionCard style={styles.card}>
               <View style={styles.sectionHeader}>
                 <Users size={14} color={theme.colors.primary} />
-                <Text style={styles.sectionTitle}>Notable Figures</Text>
+                <Text style={styles.sectionTitle}>著名人物 · Notable Figures</Text>
               </View>
               <Text style={styles.sectionHint}>Key personalities who shaped this era</Text>
               {dynasty.famousPeople.map((person, idx) => (
@@ -184,7 +193,7 @@ export function DynastyDetailScreen({ route, navigation }) {
             <SectionCard style={styles.card}>
               <View style={styles.sectionHeader}>
                 <Crown size={14} color={theme.colors.primary} />
-                <Text style={styles.sectionTitle}>Cultural Artifacts</Text>
+                <Text style={styles.sectionTitle}>文化遗产 · Cultural Artifacts</Text>
               </View>
               <Text style={styles.sectionHint}>Treasures and innovations from this era</Text>
               {dynasty.artifacts.map((artifact, idx) => (
@@ -205,7 +214,7 @@ export function DynastyDetailScreen({ route, navigation }) {
             <SectionCard style={styles.card}>
               <View style={styles.sectionHeader}>
                 <Scroll size={14} color={theme.colors.primary} />
-                <Text style={styles.sectionTitle}>Key Events</Text>
+                <Text style={styles.sectionTitle}>重大事件 · Key Events</Text>
               </View>
               {dynasty.keyEvents.map((event, idx) => (
                 <View key={`event-${idx}`} style={styles.eventItem}>
@@ -220,7 +229,7 @@ export function DynastyDetailScreen({ route, navigation }) {
           <SectionCard style={styles.card}>
             <View style={styles.sectionHeader}>
               <Sparkles size={14} color={theme.colors.primary} />
-              <Text style={styles.sectionTitle}>Explore Further</Text>
+              <Text style={styles.sectionTitle}>深入探索 · Explore Further</Text>
             </View>
             <Text style={styles.sectionText}>Continue exploring the culture, places, and flavors connected to this dynasty.</Text>
 
@@ -318,25 +327,6 @@ export function DynastyDetailScreen({ route, navigation }) {
 
 const styles = StyleSheet.create({
   safeArea: { flex: 1, backgroundColor: theme.colors.background },
-  topBar: {
-    paddingHorizontal: 24,
-    paddingTop: 10,
-    paddingBottom: 14,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-  },
-  backBtn: { flexDirection: 'row', alignItems: 'center', gap: 6 },
-  backText: { color: theme.colors.text, fontWeight: '700' },
-  topTitle: { color: theme.colors.text, fontSize: 16, fontWeight: '700' },
-  shareBtn: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: theme.colors.cinnabarGlow,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
   content: { paddingHorizontal: 24, paddingBottom: 28, gap: 14 },
   header: { marginBottom: 4 },
   hero: { overflow: 'hidden' },

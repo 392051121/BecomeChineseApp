@@ -7,7 +7,7 @@
  * - Smooth animations
  */
 
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState, useCallback } from 'react';
 import { Animated, Pressable, StyleSheet, Text, View, Platform } from 'react-native';
 import { CalendarDays, Clock, House, Map, User, UtensilsCrossed, Scroll } from 'lucide-react-native';
 import * as Haptics from 'expo-haptics';
@@ -17,6 +17,12 @@ import { theme } from '../theme/theme';
 import { useTheme } from '../theme/ThemeContext';
 import { getWrongAnswers } from '../utils/wrongAnswers';
 import { logger } from '../utils/errorHandling';
+
+// Simple event emitter for badge refresh
+const badgeListeners = new Set();
+export function notifyBadgeRefresh() {
+  badgeListeners.forEach(listener => listener());
+}
 
 // Tab configuration with bilingual labels
 const tabs = [
@@ -118,6 +124,17 @@ function TabItem({ tab, isActive, onPress, colors, isDark, badgeCount }) {
         >
           {tab.label}
         </Text>
+        {/* Chinese label - only show when active */}
+        {isActive && (
+          <Text
+            style={[
+              styles.labelCn,
+              { color: colors.primary },
+            ]}
+          >
+            {tab.labelCn}
+          </Text>
+        )}
 
         {/* Active indicator dot */}
         {isActive && (
@@ -133,35 +150,28 @@ export function CustomTabBar({ state, navigation }) {
   const currentRoute = state.routes[state.index].name;
   const [wrongAnswersCount, setWrongAnswersCount] = useState(0);
 
-  // Load wrong answers count for Seasons tab badge
-  useEffect(() => {
-    const loadBadgeData = async () => {
-      try {
-        const wrongAnswers = await getWrongAnswers();
-        const unmasteredCount = wrongAnswers.filter(a => !a.mastered).length;
-        setWrongAnswersCount(unmasteredCount);
-      } catch (e) {
-        logger.error('CustomTabBar', 'Failed to load wrong answers count', e);
-      }
-    };
-
-    loadBadgeData();
+  // Memoized function to load badge data
+  const loadBadgeData = useCallback(async () => {
+    try {
+      const wrongAnswers = await getWrongAnswers();
+      const unmasteredCount = wrongAnswers.filter(a => !a.mastered).length;
+      setWrongAnswersCount(unmasteredCount);
+    } catch (e) {
+      logger.error('CustomTabBar', 'Failed to load wrong answers count', e);
+    }
   }, []);
 
-  // Refresh badge when route changes
+  // Load badge data on mount and subscribe to refresh events
   useEffect(() => {
-    const loadBadgeData = async () => {
-      try {
-        const wrongAnswers = await getWrongAnswers();
-        const unmasteredCount = wrongAnswers.filter(a => !a.mastered).length;
-        setWrongAnswersCount(unmasteredCount);
-      } catch (e) {
-        logger.error('CustomTabBar', 'Failed to load wrong answers count', e);
-      }
-    };
-
     loadBadgeData();
-  }, [currentRoute]);
+
+    // Subscribe to badge refresh events
+    badgeListeners.add(loadBadgeData);
+
+    return () => {
+      badgeListeners.delete(loadBadgeData);
+    };
+  }, [loadBadgeData]);
 
   const handlePress = (tabName) => {
     const event = navigation.emit({
@@ -268,9 +278,19 @@ const styles = StyleSheet.create({
     fontWeight: '700',
   },
   label: {
-    fontSize: 10,
+    fontSize: 9,
     marginTop: 2,
-    letterSpacing: 0.2,
+    letterSpacing: 0.1,
+    textAlign: 'center',
+    includeFontPadding: false,
+  },
+  labelCn: {
+    fontSize: 8,
+    marginTop: 1,
+    letterSpacing: 0.1,
+    textAlign: 'center',
+    includeFontPadding: false,
+    fontWeight: '600',
   },
   activeDot: {
     position: 'absolute',
