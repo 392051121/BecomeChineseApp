@@ -1,27 +1,26 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useState, useCallback } from 'react';
 import {
   ActivityIndicator,
   Animated,
   Pressable,
   Platform,
   SafeAreaView,
+  ScrollView,
   StyleSheet,
   Text,
   View,
 } from 'react-native';
-import { Flame, Target, Sunrise, ArrowRight, MapPin, UtensilsCrossed, Scroll, Sparkles, Trophy, Star, BookOpen } from 'lucide-react-native';
-import { useNavigation } from '@react-navigation/native';
+import { Flame, Target, Sunrise, ArrowRight, Sparkles, Star, BookOpen, Zap, Check, X } from 'lucide-react-native';
+import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import * as Haptics from 'expo-haptics';
 
-import {
-  markQuizSolvedToday,
-  getCulturalAssets,
-  getProvinceConnectionMap,
-} from '../utils/culturalAssets';
-import { saveWrongAnswer, getReviewSummary } from '../utils/wrongAnswers';
+import { useDailyQuiz } from '../hooks/useDailyQuiz';
+import { useUserProgress } from '../hooks/useUserProgress';
+import { useCelebrationAnimation } from '../hooks/useCelebrationAnimation';
+import { useRecommendation } from '../hooks/useRecommendation';
+import { getReviewSummary } from '../utils/wrongAnswers';
 import { checkAndNotifyBadges } from '../utils/badgeUnlock';
 import { useBadgeNotification } from '../components/BadgeNotification';
-import { getRecommendedNextStep, getRegionBasedRecommendation } from '../utils/recommendations';
 import { TYPE_COLORS } from '../utils/contentTypes';
 
 import { theme } from '../theme/theme';
@@ -29,18 +28,66 @@ import { useTheme } from '../theme/ThemeContext';
 import { PaperTexture } from '../components/PaperTexture';
 import { StampFeedback } from '../components/StampFeedback';
 import { getSolarTermForDate } from '../utils/calendar';
-import { quizQuestions } from '../data/quiz';
-import { cities } from '../data/cities';
-import { recipes } from '../data/recipes';
-import { dynasties } from '../data/dynasties';
-import { calculateTotalXP, getXPLevel, getUnlockedBadges } from '../data/badges';
-import { XP_CONFIG } from '../config/constants';
 
 export function CalendarScreen() {
   const navigation = useNavigation();
   const { showBadgeUnlock } = useBadgeNotification();
-  const { colors, isDark } = useTheme();
-  const now = useMemo(() => new Date(), []);
+  const { colors } = useTheme();
+
+  // Date state - refreshed on focus to handle midnight crossover
+  const [currentDate, setCurrentDate] = useState(new Date());
+
+  useFocusEffect(
+    useCallback(() => {
+      setCurrentDate(new Date());
+    }, [])
+  );
+
+  const now = currentDate;
+
+  // Custom hooks for business logic
+  const {
+    dailyQuestion,
+    selectedIndex,
+    attemptedToday,
+    answeredCorrectly,
+    streakCount,
+    totalSolved,
+    loading: loadingDailyState,
+    isSubmitting,
+    loadDailyState,
+    submitAnswer,
+  } = useDailyQuiz(now);
+
+  const {
+    userStats,
+    loadUserStats,
+    updateStats,
+  } = useUserProgress();
+
+  const {
+    fadeIn,
+    slide,
+    celebrationOpacity,
+    celebrationTransform,
+    starRotateTransform,
+    rewardPulseOpacity,
+    startEntranceAnimation,
+    triggerCelebration,
+  } = useCelebrationAnimation();
+
+  const { nextStep } = useRecommendation({
+    userStats,
+    attemptedToday,
+    dailyQuestion,
+  });
+
+  // Local state
+  const [showCelebration, setShowCelebration] = useState(false);
+  const [xpGained, setXpGained] = useState(0);
+  const [reviewSummary, setReviewSummary] = useState(null);
+
+  // Date labels
   const solarTerm = useMemo(() => getSolarTermForDate(now), [now]);
   const monthLabel = useMemo(
     () => now.toLocaleString('en-US', { month: 'long' }).toUpperCase(),
@@ -63,179 +110,69 @@ export function CalendarScreen() {
     []
   );
 
-  const fadeIn = useRef(new Animated.Value(0)).current;
-  const slide = useRef(new Animated.Value(12)).current;
-  const rewardPulse = useRef(new Animated.Value(0)).current;
-  const celebrationScale = useRef(new Animated.Value(0)).current;
-  const starRotate = useRef(new Animated.Value(0)).current;
-  const [selectedIndex, setSelectedIndex] = useState(null);
-  const [solved, setSolved] = useState(false);
-  const [streakCount, setStreakCount] = useState(0);
-  const [totalSolved, setTotalSolved] = useState(0);
-  const [loadingDailyState, setLoadingDailyState] = useState(true);
-  const [showCelebration, setShowCelebration] = useState(false);
-  const [xpGained, setXpGained] = useState(0);
-  const [userStats, setUserStats] = useState(null);
-  const [reviewSummary, setReviewSummary] = useState(null);
-  const dailyQuestion = useMemo(() => {
-    const index = now.getDate() % quizQuestions.length;
-    return quizQuestions[index];
-  }, [now]);
-
+  // Entrance animation
   useEffect(() => {
-    const animation = Animated.parallel([
-      Animated.timing(fadeIn, {
-        toValue: 1,
-        duration: theme.motion.durationSlow,
-        useNativeDriver: true,
-      }),
-      Animated.timing(slide, {
-        toValue: 0,
-        duration: theme.motion.durationSlow,
-        useNativeDriver: true,
-      }),
-    ]);
+    const cleanup = startEntranceAnimation();
+    return cleanup;
+  }, [startEntranceAnimation]);
 
-    animation.start();
-
-    return () => {
-      animation.stop();
-      fadeIn.stopAnimation();
-      slide.stopAnimation();
-    };
-  }, [fadeIn, slide]);
-
+  // Load initial data
   useEffect(() => {
     let cancelled = false;
+
     (async () => {
-      try {
-        const assets = await getCulturalAssets();
-        if (!cancelled) {
-          const today = now.toISOString().slice(0, 10);
-          const solvedToday = Boolean(assets?.quiz?.solvedByDate?.[today]);
-          setSelectedIndex(solvedToday ? dailyQuestion.correctIndex : null);
-          setSolved(solvedToday);
-          setStreakCount(assets?.quiz?.streak ?? 0);
-          setTotalSolved(assets?.quiz?.totalSolved ?? 0);
+      await loadDailyState();
+      await loadUserStats();
 
-          // Calculate user stats for XP
-          const connectionMap = getProvinceConnectionMap({
-            favorites: assets?.favorites,
-            cities,
-            recipes,
-            dynasties,
-          });
-          const stats = {
-            quizStreak: assets?.quiz?.streak ?? 0,
-            quizTotal: assets?.quiz?.totalSolved ?? 0,
-            citiesCollected: assets?.favorites?.cities?.length ?? 0,
-            recipesCollected: assets?.favorites?.recipes?.length ?? 0,
-            dynastiesCollected: assets?.favorites?.dynasties?.length ?? 0,
-            provincesConnected: connectionMap.collectedCount,
-            namesGenerated: assets?.stats?.namesGenerated ?? 0,
-            namesSaved: assets?.favorites?.names?.length ?? 0,
-            usedHistory: true,
-            usedFood: true,
-            usedPlaces: true,
-            usedQuiz: true,
-          };
-          setUserStats(stats);
-
-          // Load review summary
-          const summary = await getReviewSummary();
-          if (!cancelled) setReviewSummary(summary);
-        }
-      } catch {
-        // ignore storage issues
-      } finally {
-        if (!cancelled) setLoadingDailyState(false);
-      }
+      const summary = await getReviewSummary();
+      if (!cancelled) setReviewSummary(summary);
     })();
+
     return () => {
       cancelled = true;
     };
-  }, [now, dailyQuestion.correctIndex]);
+  }, [now, loadDailyState, loadUserStats]);
 
+  // Handle answer submission
   async function handleChoice(index) {
-    if (selectedIndex !== null) return;
-    const correct = index === dailyQuestion.correctIndex;
-    setSelectedIndex(index);
-    setSolved(correct);
-    if (correct) {
-      setStreakCount((prev) => prev + 1);
-      setTotalSolved((prev) => prev + 1);
+    if (selectedIndex !== null || isSubmitting) return;
 
-      // Trigger celebration
-      setShowCelebration(true);
-      setXpGained(XP_CONFIG.QUIZ_CORRECT_BASE); // Base XP for correct answer
+    const result = await submitAnswer(index, async ({ correct, xpGained: xp, newStreak, newTotal }) => {
+      if (correct) {
+        setShowCelebration(true);
+        setXpGained(xp);
+        triggerCelebration();
 
-      // Animate celebration
-      Animated.parallel([
-        Animated.sequence([
-          Animated.timing(rewardPulse, { toValue: 1, duration: theme.motion.durationFast, useNativeDriver: true }),
-          Animated.timing(rewardPulse, { toValue: 0, duration: theme.motion.durationFast, useNativeDriver: true }),
-        ]),
-        Animated.spring(celebrationScale, {
-          toValue: 1,
-          friction: 4,
-          tension: 100,
-          useNativeDriver: true,
-        }),
-        Animated.timing(starRotate, {
-          toValue: 1,
-          duration: theme.motion.durationSlow * 2,
-          useNativeDriver: true,
-        }),
-      ]).start();
+        await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
 
-      await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
-      await markQuizSolvedToday({ solved: true }).catch(() => {});
+        // Update stats for badge checking
+        updateStats({ quizStreak: newStreak, quizTotal: newTotal });
 
-      // Check for newly unlocked badges
-      if (userStats && showBadgeUnlock) {
-        const newBadges = await checkAndNotifyBadges(userStats, showBadgeUnlock);
-        if (newBadges.length > 0) {
-          // Add bonus XP for new badge
-          setXpGained((prev) => prev + newBadges.reduce((sum, b) => sum + b.xp, 0));
+        // Check for newly unlocked badges
+        if (showBadgeUnlock && userStats) {
+          const freshStats = {
+            ...userStats,
+            quizStreak: newStreak,
+            quizTotal: newTotal,
+          };
+          const newBadges = await checkAndNotifyBadges(freshStats, showBadgeUnlock);
+          if (newBadges.length > 0) {
+            setXpGained((prev) => prev + newBadges.reduce((sum, b) => sum + b.xp, 0));
+          }
         }
       }
-    } else {
-      // Save wrong answer for review
-      await saveWrongAnswer(dailyQuestion);
+    });
+
+    if (!result.correct) {
       await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error).catch(() => {});
-      await markQuizSolvedToday({ solved: false }).catch(() => {});
     }
+
     await Haptics.selectionAsync().catch(() => {});
   }
 
-  function getRecommendedNextStepLocal() {
-    if (!userStats) return null;
-
-    // Use shared recommendation logic
-    const recommendation = getRecommendedNextStep({
-      solvedToday: true, // Already solved, so skip quiz recommendation
-      citiesCollected: userStats.citiesCollected,
-      recipesCollected: userStats.recipesCollected,
-      dynastiesCollected: userStats.dynastiesCollected,
-    });
-
-    // Override with region-based suggestion if available
-    if (dailyQuestion.region) {
-      const regionRec = getRegionBasedRecommendation(dailyQuestion.region);
-      return {
-        ...regionRec,
-        priority: recommendation?.priority || 'low',
-      };
-    }
-
-    return recommendation;
-  }
-
-  const nextStep = getRecommendedNextStepLocal();
-
   return (
     <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.background }]}>
-      <View style={styles.container}>
+      <ScrollView style={styles.scrollView} contentContainerStyle={styles.container} showsVerticalScrollIndicator={false}>
         <View style={styles.header}>
           <Text style={[styles.headerMonth, { color: colors.text }]}>{monthLabel}</Text>
           <Text style={[styles.headerBrand, { fontFamily: serifFont, color: colors.text }]}>Daily Ritual</Text>
@@ -251,12 +188,12 @@ export function CalendarScreen() {
                 <Sunrise size={14} color={colors.primary} strokeWidth={2} />
                 <Text style={[styles.statusLabel, { color: colors.primary }]}>Today</Text>
               </View>
-              <View style={[styles.statusBadge, solved && styles.statusBadgeDone, { backgroundColor: solved ? colors.goldLeaf : colors.cinnabarGlow }]}>
+              <View style={[styles.statusBadge, answeredCorrectly && styles.statusBadgeDone, { backgroundColor: answeredCorrectly ? colors.goldLeaf : colors.cinnabarGlow }]}>
                 {loadingDailyState ? (
                   <ActivityIndicator size="small" color={colors.primary} />
                 ) : (
-                  <Text style={[styles.statusBadgeText, solved && styles.statusBadgeTextDone, { color: solved ? colors.success : colors.primary }]}>
-                    {solved ? 'Done' : 'Pending'}
+                  <Text style={[styles.statusBadgeText, answeredCorrectly && styles.statusBadgeTextDone, { color: answeredCorrectly ? colors.success : colors.primary }]}>
+                    {attemptedToday ? (answeredCorrectly ? 'Done' : 'Reviewed') : 'Pending'}
                   </Text>
                 )}
               </View>
@@ -266,8 +203,8 @@ export function CalendarScreen() {
               <Text style={[styles.statusTitle, { color: colors.mutedText }]}>{monthLabel} {dayLabel}</Text>
             </View>
             <View style={styles.solarTermRow}>
+              <Text style={[styles.solarTermEn, { color: colors.text }]}>{solarTerm.nameEn}</Text>
               <Text style={[styles.solarTermZh, { color: colors.primary }]}>{solarTerm.nameZh}</Text>
-              <Text style={[styles.solarTermEn, { color: colors.mutedText }]}>{solarTerm.nameEn}</Text>
             </View>
             <Text style={[styles.statusYear, { color: colors.mutedText }]}>{yearLabel}</Text>
             <View style={styles.statusStatsRow}>
@@ -300,15 +237,19 @@ export function CalendarScreen() {
 
         <Animated.View style={[styles.dailyCard, { opacity: fadeIn, transform: [{ translateY: slide }] }]}>
           <Text style={styles.dailyLabel}>Daily Question</Text>
-          <Text style={styles.dailyQuestion}>{dailyQuestion.question}</Text>
+          <Text style={styles.dailyQuestion}>{dailyQuestion?.question}</Text>
           <View style={styles.choiceWrap}>
-            {dailyQuestion.options.map((option, index) => {
-              const isCorrect = solved && index === dailyQuestion.correctIndex;
-              const isWrong = selectedIndex === index && selectedIndex !== null && !isCorrect;
+            {dailyQuestion?.options?.map((option, index) => {
+              const isCorrect = selectedIndex !== null && index === dailyQuestion.correctIndex;
+              const isWrong = selectedIndex === index && selectedIndex !== null && index !== dailyQuestion.correctIndex;
               return (
                 <Pressable
                   key={option}
-                  style={[styles.choiceBtn, isCorrect && styles.choiceBtnCorrect]}
+                  style={[
+                    styles.choiceBtn,
+                    isCorrect && styles.choiceBtnCorrect,
+                    isWrong && styles.choiceBtnWrong,
+                  ]}
                   onPress={() => handleChoice(index)}
                   accessibilityRole="button"
                   accessibilityLabel={`Option ${['A', 'B', 'C', 'D'][index]}: ${option}`}
@@ -319,37 +260,36 @@ export function CalendarScreen() {
                     <Text style={styles.choiceLetter}>{['A', 'B', 'C', 'D'][index]}</Text>
                   </View>
                   <Text style={styles.choiceText}>{option}</Text>
-                  {isWrong ? <View style={styles.wrongTint} /> : null}
+                  {isCorrect && <Check size={18} color={theme.colors.success} strokeWidth={2.5} />}
+                  {isWrong && <X size={18} color={theme.colors.error} strokeWidth={2.5} />}
                 </Pressable>
               );
             })}
           </View>
-          {selectedIndex !== null ? (
-            <Animated.View style={{ opacity: rewardPulse.interpolate({ inputRange: [0, 1], outputRange: [1, 0.95] }) }}>
+          {selectedIndex !== null && dailyQuestion ? (
+            <Animated.View style={{ opacity: rewardPulseOpacity }}>
               <Text style={styles.explanation}>{dailyQuestion.explanation}</Text>
-              {solved ? <StampFeedback label="Correct" active={true} style={styles.stampFeedback} tone="gold" /> : null}
+              <StampFeedback
+                label={answeredCorrectly ? "Correct" : "Wrong"}
+                active={true}
+                style={styles.stampFeedback}
+                tone={answeredCorrectly ? "gold" : "error"}
+              />
             </Animated.View>
           ) : null}
         </Animated.View>
 
-        {/* Celebration & Next Step Guidance */}
-        {showCelebration && solved && (
+        {/* Celebration Card */}
+        {showCelebration && answeredCorrectly && (
           <Animated.View style={[
             styles.celebrationCard,
             {
-              opacity: celebrationScale,
-              transform: [{ scale: celebrationScale }],
+              opacity: celebrationOpacity,
+              transform: celebrationTransform,
             }
           ]}>
             <View style={styles.celebrationHeader}>
-              <Animated.View style={{
-                transform: [{
-                  rotate: starRotate.interpolate({
-                    inputRange: [0, 1],
-                    outputRange: ['0deg', '360deg'],
-                  }),
-                }],
-              }}>
+              <Animated.View style={{ transform: [{ rotate: starRotateTransform }] }}>
                 <Star size={28} color={theme.colors.primary} strokeWidth={2} fill={theme.colors.primary} />
               </Animated.View>
               <Text style={styles.celebrationTitle}>Excellent!</Text>
@@ -404,7 +344,7 @@ export function CalendarScreen() {
         )}
 
         {/* Wrong answer encouragement */}
-        {selectedIndex !== null && !solved && (
+        {selectedIndex !== null && !answeredCorrectly && (
           <Animated.View style={[
             styles.encouragementCard,
             {
@@ -432,7 +372,29 @@ export function CalendarScreen() {
             )}
           </Animated.View>
         )}
-      </View>
+
+        {/* Infinite Quiz Mode Entry */}
+        <View style={styles.infiniteQuizCard}>
+          <View style={styles.infiniteQuizHeader}>
+            <Zap size={20} color={colors.primary} strokeWidth={2} />
+            <Text style={styles.infiniteQuizTitle}>Infinite Challenge</Text>
+            <Text style={styles.infiniteQuizTitleCn}>无限挑战</Text>
+          </View>
+          <Text style={styles.infiniteQuizDesc}>
+            How many can you answer correctly in a row? Build combos for bonus XP!
+          </Text>
+          <Pressable
+            style={({ pressed }) => [styles.infiniteQuizBtn, pressed && styles.infiniteQuizBtnPressed]}
+            onPress={() => navigation.navigate('InfiniteQuiz')}
+            accessibilityRole="button"
+            accessibilityLabel="Start Infinite Quiz Challenge"
+            accessibilityHint="Double tap to start endless quiz mode"
+          >
+            <Text style={styles.infiniteQuizBtnText}>Start Challenge</Text>
+            <ArrowRight size={14} color="#FFFFFF" strokeWidth={2} />
+          </Pressable>
+        </View>
+      </ScrollView>
     </SafeAreaView>
   );
 }
@@ -442,8 +404,10 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: theme.colors.background,
   },
-  container: {
+  scrollView: {
     flex: 1,
+  },
+  container: {
     paddingHorizontal: 20,
     paddingTop: 10,
     paddingBottom: 100,
@@ -557,14 +521,13 @@ const styles = StyleSheet.create({
     gap: 8,
     marginTop: 8,
   },
+  solarTermEn: {
+    color: theme.colors.text,
+    fontSize: 18,
+    fontWeight: '700',
+  },
   solarTermZh: {
     color: theme.colors.primary,
-    fontSize: 20,
-    fontWeight: '700',
-    letterSpacing: theme.typography.hanziLetterSpacing * 0.3,
-  },
-  solarTermEn: {
-    color: theme.colors.mutedText,
     fontSize: 14,
     fontWeight: '600',
   },
@@ -671,6 +634,10 @@ const styles = StyleSheet.create({
     borderColor: theme.colors.success,
     backgroundColor: theme.colors.goldLeaf,
   },
+  choiceBtnWrong: {
+    borderColor: theme.colors.error,
+    backgroundColor: 'rgba(239, 68, 68, 0.1)',
+  },
   choiceLetterWrap: {
     width: 26,
     height: 26,
@@ -690,10 +657,6 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '600',
   },
-  wrongTint: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(51, 51, 51, 0.04)',
-  },
   explanation: {
     marginTop: 14,
     color: theme.colors.mutedText,
@@ -704,8 +667,6 @@ const styles = StyleSheet.create({
     marginTop: 12,
     alignItems: 'center',
   },
-
-  // Celebration Card
   celebrationCard: {
     marginTop: 14,
     borderRadius: theme.radii.lg,
@@ -820,8 +781,6 @@ const styles = StyleSheet.create({
     textTransform: 'uppercase',
     letterSpacing: 0.5,
   },
-
-  // Encouragement Card
   encouragementCard: {
     marginTop: 14,
     borderRadius: theme.radii.lg,
@@ -864,6 +823,54 @@ const styles = StyleSheet.create({
   encourageExploreText: {
     color: theme.colors.primary,
     fontSize: 13,
+    fontWeight: '700',
+  },
+  infiniteQuizCard: {
+    marginTop: 20,
+    padding: 16,
+    borderRadius: theme.radii.lg,
+    backgroundColor: theme.colors.card,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+  },
+  infiniteQuizHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  infiniteQuizTitle: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: theme.colors.text,
+  },
+  infiniteQuizTitleCn: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: theme.colors.primary,
+  },
+  infiniteQuizDesc: {
+    marginTop: 8,
+    fontSize: 12,
+    color: theme.colors.mutedText,
+    lineHeight: 18,
+  },
+  infiniteQuizBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    marginTop: 12,
+    backgroundColor: theme.colors.primary,
+    paddingVertical: 12,
+    borderRadius: 999,
+  },
+  infiniteQuizBtnPressed: {
+    opacity: 0.9,
+    transform: [{ scale: 0.98 }],
+  },
+  infiniteQuizBtnText: {
+    color: '#FFFFFF',
+    fontSize: 14,
     fontWeight: '700',
   },
 });

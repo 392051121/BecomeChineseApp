@@ -1,10 +1,11 @@
 import React, { useEffect, useState, useCallback, useMemo } from 'react';
 import { Pressable, RefreshControl, SafeAreaView, StyleSheet, Text, View, FlatList } from 'react-native';
-import { MapPin, UtensilsCrossed, Scroll, ArrowRight, Bookmark, Trophy, Grid3X3, List, User } from 'lucide-react-native';
+import { MapPin, UtensilsCrossed, Scroll, ArrowRight, Bookmark, Trophy, Grid3X3, List, User, Star, Sparkles, Stamp } from 'lucide-react-native';
 import { useNavigation } from '@react-navigation/native';
 import * as Haptics from 'expo-haptics';
 
 import { getCulturalAssets, getCultureRank, getProvinceConnectionMap } from '../utils/culturalAssets';
+import { getStampCollection, getStampStats } from '../utils/stampCollection';
 import { cities as allCities } from '../data/cities';
 import { recipes as allRecipes } from '../data/recipes';
 import { dynasties as allDynasties } from '../data/dynasties';
@@ -12,6 +13,10 @@ import { people as allPeople } from '../data/people';
 import { HandscrollContainer } from '../components/HandscrollContainer';
 import { ScreenHeader } from '../components/ScreenHeader';
 import { SectionCard } from '../components/SectionCard';
+import { EmptyStateCard } from '../components/EmptyStateCard';
+import { RarityBadge, RarityStars, RarityProgressBar } from '../components/RarityBadge';
+import { getItemRarity, getCollectionStats, sortByRarity, addRarityToItem } from '../utils/collectibles';
+import { getRarityColor } from '../config/rarity';
 import { theme } from '../theme/theme';
 import { useTheme } from '../theme/ThemeContext';
 import { FLATLIST_CONFIG, DISPLAY_LIMITS } from '../config/constants';
@@ -26,6 +31,7 @@ const categories = [
 function CollectionItem({ item, type, onPress }) {
   const config = categories.find(c => c.id === type);
   const Icon = config?.icon || Bookmark;
+  const rarity = item.rarity || getItemRarity(type, item.id);
 
   return (
     <Pressable
@@ -39,7 +45,10 @@ function CollectionItem({ item, type, onPress }) {
         <Icon size={18} color={config?.color || theme.colors.primary} strokeWidth={2} />
       </View>
       <View style={styles.itemContent}>
-        <Text style={styles.itemName} numberOfLines={1}>{item.nameEn}</Text>
+        <View style={styles.itemNameRow}>
+          <Text style={styles.itemName} numberOfLines={1}>{item.nameEn}</Text>
+          {rarity !== 'common' && <RarityBadge rarity={rarity} size="small" showLabel={false} />}
+        </View>
         {item.nameCn && <Text style={styles.itemNameCn} numberOfLines={1}>{item.nameCn}</Text>}
         {item.province && <Text style={styles.itemMeta}>{item.province}</Text>}
         {item.region && <Text style={styles.itemMeta}>{item.region}</Text>}
@@ -49,10 +58,14 @@ function CollectionItem({ item, type, onPress }) {
   );
 }
 
-function CategorySummaryCard({ category, items, onPress }) {
+function CategorySummaryCard({ category, items, allItems, onPress }) {
   const Icon = category.icon;
   const count = items?.length || 0;
-  const progress = Math.min(count / 10, 1); // Show progress towards 10 items
+  const total = allItems?.length || 1;
+  const progress = count / total;
+
+  // Calculate rarity stats
+  const stats = getCollectionStats(items, allItems, category.id);
 
   return (
     <Pressable
@@ -72,8 +85,53 @@ function CategorySummaryCard({ category, items, onPress }) {
           <View style={styles.categoryProgressBar}>
             <View style={[styles.categoryProgressFill, { width: `${progress * 100}%`, backgroundColor: category.color }]} />
           </View>
-          <Text style={styles.categoryCount}>{count} saved</Text>
+          <Text style={styles.categoryCount}>{count}/{total}</Text>
         </View>
+        {/* Rarity breakdown */}
+        <View style={styles.rarityRow}>
+          {stats.byRarity.legendary.total > 0 && (
+            <Text style={[styles.rarityDot, { color: '#F59E0B' }]}>★{stats.byRarity.legendary.collected}</Text>
+          )}
+          {stats.byRarity.epic.total > 0 && (
+            <Text style={[styles.rarityDot, { color: '#8B5CF6' }]}>★{stats.byRarity.epic.collected}</Text>
+          )}
+          {stats.byRarity.rare.total > 0 && (
+            <Text style={[styles.rarityDot, { color: '#3B82F6' }]}>★{stats.byRarity.rare.collected}</Text>
+          )}
+        </View>
+      </View>
+      <ArrowRight size={16} color={theme.colors.mutedText} strokeWidth={2} />
+    </Pressable>
+  );
+}
+
+function StampAlbumCard({ stampCount, totalStamps, onPress }) {
+  const progress = totalStamps > 0 ? stampCount / totalStamps : 0;
+
+  return (
+    <Pressable
+      style={({ pressed }) => [styles.stampCard, pressed && styles.stampCardPressed]}
+      onPress={onPress}
+      accessibilityRole="button"
+      accessibilityLabel={`Stamp Album - 印章相册. ${stampCount} stamps collected`}
+      accessibilityHint="Double tap to view stamp collection"
+    >
+      <View style={styles.stampIconWrap}>
+        <Stamp size={24} color={theme.colors.primary} strokeWidth={2} />
+        <View style={styles.stampGlow} />
+      </View>
+      <View style={styles.stampContent}>
+        <Text style={styles.stampLabel}>Stamp Album</Text>
+        <Text style={styles.stampLabelCn}>印章相册</Text>
+        <View style={styles.stampProgressWrap}>
+          <View style={styles.stampProgressBar}>
+            <View style={[styles.stampProgressFill, { width: `${progress * 100}%` }]} />
+          </View>
+          <Text style={styles.stampCount}>{stampCount}/{totalStamps}</Text>
+        </View>
+      </View>
+      <View style={styles.stampBadge}>
+        <Sparkles size={14} color="#F59E0B" strokeWidth={2} />
       </View>
       <ArrowRight size={16} color={theme.colors.mutedText} strokeWidth={2} />
     </Pressable>
@@ -143,6 +201,7 @@ export function CollectionScreen() {
   const [assets, setAssets] = useState(null);
   const [selectedCategory, setSelectedCategory] = useState(null);
   const [viewMode, setViewMode] = useState('grid'); // 'grid' or 'list'
+  const [stampStats, setStampStats] = useState({ total: 0, byRarity: {} });
 
   useEffect(() => {
     let cancelled = false;
@@ -153,11 +212,23 @@ export function CollectionScreen() {
     return () => { cancelled = true; };
   }, []);
 
+  // Load stamp stats
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      const stats = await getStampStats().catch(() => ({ total: 0, byRarity: {} }));
+      if (!cancelled) setStampStats(stats);
+    })();
+    return () => { cancelled = true; };
+  }, []);
+
   // Refresh on focus
   useEffect(() => {
     const unsubscribe = navigation.addListener('focus', async () => {
       const data = await getCulturalAssets().catch(() => null);
       setAssets(data);
+      const stats = await getStampStats().catch(() => ({ total: 0, byRarity: {} }));
+      setStampStats(stats);
     });
     return unsubscribe;
   }, [navigation]);
@@ -179,6 +250,11 @@ export function CollectionScreen() {
   function handleCategoryPress(categoryId) {
     setSelectedCategory(selectedCategory === categoryId ? null : categoryId);
     Haptics.selectionAsync().catch(() => {});
+  }
+
+  function handleStampAlbumPress() {
+    Haptics.selectionAsync().catch(() => {});
+    navigation.navigate('StampCollection');
   }
 
   function handleItemPress(item, type) {
@@ -256,16 +332,46 @@ export function CollectionScreen() {
           {/* Milestone Progress */}
           <MilestoneCard collected={totalCollected} rank={rank} />
 
+          {/* Stamp Album Entry */}
+          <Pressable
+            style={({ pressed }) => [styles.stampCard, pressed && styles.stampCardPressed]}
+            onPress={handleStampAlbumPress}
+            accessibilityRole="button"
+            accessibilityLabel="Stamp Album - 印章相册"
+            accessibilityHint="Double tap to view stamp collection"
+          >
+            <View style={styles.stampIconWrap}>
+              <Stamp size={24} color={theme.colors.primary} strokeWidth={2} />
+              <View style={styles.stampGlow} />
+            </View>
+            <View style={styles.stampContent}>
+              <Text style={styles.stampLabel}>Stamp Album</Text>
+              <Text style={styles.stampLabelCn}>印章相册</Text>
+              <View style={styles.stampProgressWrap}>
+                <View style={styles.stampProgressBar}>
+                  <View style={[styles.stampProgressFill, { width: `${(stampStats.total / 50) * 100}%` }]} />
+                </View>
+                <Text style={styles.stampCount}>{stampStats.total}/50</Text>
+              </View>
+            </View>
+            <View style={styles.stampBadge}>
+              <Sparkles size={14} color="#F59E0B" strokeWidth={2} />
+            </View>
+            <ArrowRight size={16} color={theme.colors.mutedText} strokeWidth={2} />
+          </Pressable>
+
           {/* Category Cards */}
           <View style={styles.categoriesSection}>
             <Text style={styles.sectionLabel}>Categories</Text>
             {categories.map((cat) => {
               const catItems = cat.id === 'cities' ? cities : cat.id === 'recipes' ? recipes : cat.id === 'dynasties' ? dynasties : people;
+              const allCatItems = cat.id === 'cities' ? allCities : cat.id === 'recipes' ? allRecipes : cat.id === 'dynasties' ? allDynasties : allPeople;
               return (
                 <CategorySummaryCard
                   key={cat.id}
                   category={cat}
                   items={catItems}
+                  allItems={allCatItems}
                   onPress={handleCategoryPress}
                 />
               );
@@ -316,9 +422,10 @@ export function CollectionScreen() {
                     const type = item.type || selectedCategory;
                     const config = categories.find(c => c.id === type);
                     const Icon = config?.icon || Bookmark;
+                    const rarity = item.rarity || getItemRarity(type, item.id);
                     return (
                       <Pressable
-                        style={styles.gridItem}
+                        style={[styles.gridItem, rarity !== 'common' && styles.gridItemRare]}
                         onPress={() => handleItemPress(item, type)}
                         accessibilityRole="button"
                         accessibilityLabel={`${item.nameEn}${item.nameCn ? ` - ${item.nameCn}` : ''}`}
@@ -326,6 +433,11 @@ export function CollectionScreen() {
                       >
                         <View style={[styles.gridItemIcon, { backgroundColor: `${config?.color || theme.colors.primary}18` }]}>
                           <Icon size={20} color={config?.color || theme.colors.primary} strokeWidth={2} />
+                          {rarity !== 'common' && (
+                            <View style={[styles.gridRarityBadge, { backgroundColor: getRarityColor(rarity) }]}>
+                              <Text style={styles.gridRarityText}>★</Text>
+                            </View>
+                          )}
                         </View>
                         <Text style={styles.gridItemName} numberOfLines={1}>{item.nameEn}</Text>
                         {item.nameCn && <Text style={styles.gridItemNameCn} numberOfLines={1}>{item.nameCn}</Text>}
@@ -349,23 +461,16 @@ export function CollectionScreen() {
 
           {/* Empty State */}
           {totalCollected === 0 && (
-            <SectionCard style={styles.emptyCard} tone="panel">
-              <Bookmark size={32} color={theme.colors.mutedText} strokeWidth={1.5} />
-              <Text style={styles.emptyTitle}>Start Your Collection</Text>
-              <Text style={styles.emptyText}>
-                Save cities, dishes, and dynasties to build your personal cultural atlas.
-              </Text>
-              <Pressable
-                style={styles.exploreBtn}
-                onPress={() => navigation.getParent()?.navigate('Places')}
-                accessibilityRole="button"
-                accessibilityLabel="Explore Places"
-                accessibilityHint="Double tap to start exploring"
-              >
-                <Text style={styles.exploreBtnText}>Explore Places</Text>
-                <ArrowRight size={14} color="#FFFFFF" strokeWidth={2} />
-              </Pressable>
-            </SectionCard>
+            <EmptyStateCard
+              style={styles.emptyCard}
+              title="Start Your Collection"
+              titleCn="开始收藏"
+              description="Save cities, dishes, and dynasties to build your personal cultural atlas."
+              icon={Bookmark}
+              action="Explore Places"
+              onAction={() => navigation.getParent()?.navigate('Places')}
+              centered
+            />
           )}
         </View>
       </HandscrollContainer>
@@ -500,6 +605,84 @@ const styles = StyleSheet.create({
     marginTop: 1,
   },
 
+  // Stamp Album Card
+  stampCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    marginTop: 14,
+    borderRadius: theme.radii.md,
+    borderWidth: 0.5,
+    borderColor: theme.colors.border,
+    backgroundColor: theme.colors.card,
+    padding: 14,
+  },
+  stampCardPressed: {
+    opacity: 0.94,
+    transform: [{ scale: 0.995 }],
+  },
+  stampIconWrap: {
+    width: 48,
+    height: 48,
+    borderRadius: 14,
+    backgroundColor: `${theme.colors.primary}15`,
+    alignItems: 'center',
+    justifyContent: 'center',
+    position: 'relative',
+  },
+  stampGlow: {
+    position: 'absolute',
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: `${theme.colors.primary}08`,
+  },
+  stampContent: {
+    flex: 1,
+  },
+  stampLabel: {
+    color: theme.colors.text,
+    fontSize: 15,
+    fontWeight: '700',
+  },
+  stampLabelCn: {
+    color: theme.colors.primary,
+    fontSize: 12,
+    fontWeight: '600',
+    marginTop: 1,
+  },
+  stampProgressWrap: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginTop: 8,
+  },
+  stampProgressBar: {
+    flex: 1,
+    height: 4,
+    backgroundColor: 'rgba(51, 51, 51, 0.08)',
+    borderRadius: 2,
+    overflow: 'hidden',
+  },
+  stampProgressFill: {
+    height: 4,
+    backgroundColor: theme.colors.primary,
+    borderRadius: 2,
+  },
+  stampCount: {
+    color: theme.colors.mutedText,
+    fontSize: 11,
+    fontWeight: '700',
+  },
+  stampBadge: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    backgroundColor: `${theme.colors.primary}10`,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+
   // Categories Section
   categoriesSection: {
     marginTop: 20,
@@ -570,6 +753,15 @@ const styles = StyleSheet.create({
     fontSize: 11,
     fontWeight: '700',
   },
+  rarityRow: {
+    flexDirection: 'row',
+    gap: 8,
+    marginTop: 6,
+  },
+  rarityDot: {
+    fontSize: 10,
+    fontWeight: '700',
+  },
 
   // Items Section
   itemsSection: {
@@ -613,10 +805,16 @@ const styles = StyleSheet.create({
   itemContent: {
     flex: 1,
   },
+  itemNameRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
   itemName: {
     color: theme.colors.text,
     fontSize: 14,
     fontWeight: '600',
+    flex: 1,
   },
   itemNameCn: {
     color: theme.colors.primary,
@@ -648,6 +846,9 @@ const styles = StyleSheet.create({
     borderColor: theme.colors.border,
     backgroundColor: theme.colors.card,
   },
+  gridItemRare: {
+    borderWidth: 1,
+  },
   gridItemIcon: {
     width: 44,
     height: 44,
@@ -655,6 +856,22 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: 8,
+    position: 'relative',
+  },
+  gridRarityBadge: {
+    position: 'absolute',
+    top: -4,
+    right: -4,
+    width: 16,
+    height: 16,
+    borderRadius: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  gridRarityText: {
+    color: '#FFFFFF',
+    fontSize: 10,
+    fontWeight: '700',
   },
   gridItemName: {
     color: theme.colors.text,
@@ -679,35 +896,6 @@ const styles = StyleSheet.create({
   // Empty State
   emptyCard: {
     marginTop: 20,
-    padding: 24,
-    alignItems: 'center',
-  },
-  emptyTitle: {
-    marginTop: 12,
-    color: theme.colors.text,
-    fontSize: 18,
-    fontWeight: '700',
-  },
-  emptyText: {
-    marginTop: 8,
-    color: theme.colors.mutedText,
-    fontSize: 13,
-    textAlign: 'center',
-    lineHeight: 20,
-  },
-  exploreBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    marginTop: 16,
-    backgroundColor: theme.colors.primary,
-    paddingHorizontal: 20,
-    paddingVertical: 12,
-    borderRadius: 999,
-  },
-  exploreBtnText: {
-    color: '#FFFFFF',
-    fontSize: 13,
-    fontWeight: '800',
+    marginHorizontal: 0,
   },
 });

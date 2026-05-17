@@ -1,6 +1,7 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Pressable, RefreshControl, SafeAreaView, FlatList, StyleSheet, Text, View } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import {
   Anchor,
   Book,
@@ -24,11 +25,15 @@ import { cities } from '../data/cities';
 import { recipes } from '../data/recipes';
 import { people } from '../data/people';
 import { RelatedPathCard } from '../components/RelatedPathCard';
+import { ScrollToTopButton } from '../components/ScrollToTopButton';
 import { ScreenHeader } from '../components/ScreenHeader';
 import { SectionCard } from '../components/SectionCard';
 import { addRecentlyViewed } from '../utils/culturalAssets';
 import { theme } from '../theme/theme';
 import { useTheme } from '../theme/ThemeContext';
+import { logger } from '../utils/errorHandling';
+
+const EXPANDED_SECTIONS_KEY = 'becomeChinese_historyExpandedSections';
 
 function contributionIcon(iconKey) {
   switch (iconKey) {
@@ -60,6 +65,18 @@ function getEmperorSections(item) {
   }
 }
 
+// Memoized emperor sections cache
+const emperorSectionsCache = new Map();
+
+function getEmperorSectionsMemoized(item) {
+  if (emperorSectionsCache.has(item.id)) {
+    return emperorSectionsCache.get(item.id);
+  }
+  const sections = getEmperorSections(item);
+  emperorSectionsCache.set(item.id, sections);
+  return sections;
+}
+
 export function HistoryScreen() {
   const navigation = useNavigation();
   const { colors } = useTheme();
@@ -72,6 +89,48 @@ export function HistoryScreen() {
     return initial;
   });
   const [refreshing, setRefreshing] = useState(false);
+  const [showScrollTop, setShowScrollTop] = useState(false);
+  const [sectionsLoaded, setSectionsLoaded] = useState(false);
+  const listRef = useRef(null);
+
+  // Load persisted expanded sections from AsyncStorage
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const raw = await AsyncStorage.getItem(EXPANDED_SECTIONS_KEY);
+        if (!cancelled && raw) {
+          const persisted = JSON.parse(raw);
+          // Merge persisted state with default state (only for keys that exist)
+          const merged = { ...expandedSections };
+          dynasties.forEach((item) => {
+            const chapterKey = `${item.id}-chapter`;
+            const emperorKey = `${item.id}-emperors`;
+            if (persisted[chapterKey] !== undefined) {
+              merged[chapterKey] = persisted[chapterKey];
+            }
+            if (persisted[emperorKey] !== undefined) {
+              merged[emperorKey] = persisted[emperorKey];
+            }
+          });
+          setExpandedSections(merged);
+        }
+        if (!cancelled) setSectionsLoaded(true);
+      } catch (e) {
+        logger.error('HistoryScreen', 'Failed to load expanded sections', e);
+        if (!cancelled) setSectionsLoaded(true);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, []);
+
+  // Persist expanded sections to AsyncStorage when changed
+  useEffect(() => {
+    if (!sectionsLoaded) return; // Don't save until loaded
+    AsyncStorage.setItem(EXPANDED_SECTIONS_KEY, JSON.stringify(expandedSections)).catch((e) => {
+      logger.error('HistoryScreen', 'Failed to save expanded sections', e);
+    });
+  }, [expandedSections, sectionsLoaded]);
 
   const chapterStats = useMemo(() => ({
     total: dynasties.length,
@@ -100,6 +159,17 @@ export function HistoryScreen() {
           nameCn: item.nameCn,
           province: item.province_id,
         }).catch(() => {});
+
+        // Try to earn stamp after viewing for 3 seconds
+        setTimeout(async () => {
+          const { earnStamp } = await import('../utils/stampCollection');
+          await earnStamp('dynasty', item, {
+            viewTimeMs: 3000,
+            scrollDepth: 0.7,
+            interactions: 1,
+            expanded: true,
+          });
+        }, 3000);
       }
       return newState;
     });
@@ -114,6 +184,8 @@ export function HistoryScreen() {
       const relatedCity = cities.find((city) => city.province_id === item.province_id);
       const relatedFood = recipes.find((recipe) => recipe.province_id === item.province_id);
       const Icon = contributionIcon(item.contribution?.icon);
+      // Get people for this dynasty, exclude emperors (they're shown in emperors section)
+      const dynastyPeople = people.filter(p => p.dynastyId === item.id && !p.tags?.includes('emperor'));
 
       return (
         <SectionCard style={styles.chapterCard} tone={index % 2 === 0 ? 'soft' : 'panel'}>
@@ -187,12 +259,12 @@ export function HistoryScreen() {
                 accessibilityLabel={emperorOpen ? "Hide rulers" : "Show rulers"}
                 accessibilityHint="Double tap to toggle rulers section"
               >
-                <Text style={[styles.sectionTitle, { color: colors.text }]}>{getEmperorSections(item)[0].title}</Text>
+                <Text style={[styles.sectionTitle, { color: colors.text }]}>{getEmperorSectionsMemoized(item)[0].title}</Text>
                 <Text style={[styles.sectionToggleText, { color: colors.primary }]}>{emperorOpen ? 'Hide rulers' : 'Show rulers'}</Text>
               </Pressable>
               {emperorOpen ? (
                 <View style={styles.emperorList}>
-                  {getEmperorSections(item)[0].emperors.map((e, idx) => (
+                  {getEmperorSectionsMemoized(item)[0].emperors.map((e, idx) => (
                     <View key={`${item.id}-${idx}-${e.name}`} style={[styles.emperorRow, { borderColor: colors.border }]}>
                       <Text style={[styles.emperorName, { color: colors.text }]}>{e.name}</Text>
                       {e.nameZh ? <Text style={[styles.emperorNameZh, { color: colors.primary }]}>{e.nameZh}</Text> : null}
@@ -202,6 +274,37 @@ export function HistoryScreen() {
                   ))}
                 </View>
               ) : null}
+
+              {/* Notable People for this dynasty */}
+              {dynastyPeople.length > 0 && (
+                <View style={styles.peopleSection}>
+                  <View style={styles.peopleHeaderInline}>
+                    <User size={14} color={colors.primary} strokeWidth={2} />
+                    <Text style={[styles.peopleSectionTitle, { color: colors.text }]}>Notable Figures</Text>
+                    <Text style={[styles.peopleSectionTitleCn, { color: colors.primary }]}>历史人物</Text>
+                  </View>
+                  <View style={styles.peopleGridInline}>
+                    {dynastyPeople.map((person) => (
+                      <Pressable
+                        key={person.id}
+                        style={[styles.personCardInline, { backgroundColor: colors.surface, borderColor: colors.border }]}
+                        onPress={() => navigation.getParent()?.navigate('History', {
+                          screen: 'PersonDetail',
+                          params: { personId: person.id, person }
+                        })}
+                        accessibilityRole="button"
+                        accessibilityLabel={`${person.nameEn} - ${person.nameCn}`}
+                      >
+                        <View style={[styles.personIconWrapInline, { backgroundColor: `${colors.primary}15` }]}>
+                          <User size={16} color={colors.primary} strokeWidth={2} />
+                        </View>
+                        <Text style={[styles.personNameInline, { color: colors.text }]} numberOfLines={1}>{person.nameEn}</Text>
+                        <Text style={[styles.personNameCnInline, { color: colors.primary }]} numberOfLines={1}>{person.nameCn}</Text>
+                      </Pressable>
+                    ))}
+                  </View>
+                </View>
+              )}
             </View>
           ) : null}
         </SectionCard>
@@ -241,54 +344,25 @@ export function HistoryScreen() {
     </View>
   ), [chapterStats, colors]);
 
-  const featuredPeople = useMemo(() => people.filter(p => p.isFeatured), []);
-
-  const ListFooter = useMemo(() => (
-    <View style={styles.peopleSection}>
-      <View style={styles.peopleHeader}>
-        <User size={18} color={colors.primary} strokeWidth={2} />
-        <Text style={[styles.peopleTitle, { color: colors.text }]}>Notable Figures</Text>
-        <Text style={[styles.peopleTitleCn, { color: colors.primary }]}>历史人物</Text>
-      </View>
-      <Text style={[styles.peopleSubtitle, { color: colors.mutedText }]}>
-        Explore influential people throughout Chinese history
-      </Text>
-      <View style={styles.peopleGrid}>
-        {featuredPeople.map((person) => (
-          <Pressable
-            key={person.id}
-            style={[styles.personCard, { backgroundColor: colors.card, borderColor: colors.border }]}
-            onPress={() => navigation.navigate('PersonDetail', { personId: person.id, person })}
-            accessibilityRole="button"
-            accessibilityLabel={`${person.nameEn} - ${person.nameCn}`}
-            accessibilityHint="Double tap to view details"
-          >
-            <View style={[styles.personIconWrap, { backgroundColor: `${colors.primary}15` }]}>
-              <User size={20} color={colors.primary} strokeWidth={2} />
-            </View>
-            <Text style={[styles.personName, { color: colors.text }]} numberOfLines={1}>{person.nameEn}</Text>
-            <Text style={[styles.personNameCn, { color: colors.primary }]} numberOfLines={1}>{person.nameCn}</Text>
-            <Text style={[styles.personSubtitle, { color: colors.mutedText }]} numberOfLines={1}>{person.subtitleEn}</Text>
-          </Pressable>
-        ))}
-      </View>
-    </View>
-  ), [featuredPeople, colors, navigation]);
-
   return (
     <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.background }]}>
       <FlatList
+        ref={listRef}
         data={dynasties}
         keyExtractor={(item) => item.id}
         renderItem={renderDynastyItem}
         ListHeaderComponent={ListHeader}
-        ListFooterComponent={ListFooter}
         initialNumToRender={4}
         maxToRenderPerBatch={2}
         windowSize={5}
         removeClippedSubviews
         contentContainerStyle={styles.listContent}
         showsVerticalScrollIndicator={false}
+        onScroll={(e) => {
+          const offsetY = e.nativeEvent.contentOffset.y;
+          setShowScrollTop(offsetY > 400);
+        }}
+        scrollEventThrottle={100}
         refreshControl={
           <RefreshControl
             refreshing={refreshing}
@@ -297,6 +371,10 @@ export function HistoryScreen() {
             colors={[colors.primary]}
           />
         }
+      />
+      <ScrollToTopButton
+        visible={showScrollTop}
+        onPress={() => listRef.current?.scrollToOffset({ offset: 0, animated: true })}
       />
     </SafeAreaView>
   );
@@ -346,7 +424,7 @@ const styles = StyleSheet.create({
 
   relatedCard: { borderRadius: theme.radii.sm, borderWidth: 0.5, backgroundColor: theme.colors.surface, padding: 12, gap: 8 },
   relatedLead: { color: theme.colors.mutedText, fontSize: 11 },
-  relatedPathWrap: { flexDirection: 'row', gap: 8 },
+  relatedPathWrap: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   relatedText: { color: theme.colors.mutedText, fontSize: 12 },
 
   sectionToggle: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: 10 },
@@ -360,16 +438,14 @@ const styles = StyleSheet.create({
   emperorReign: { marginTop: 2, color: theme.colors.mutedText, fontSize: 10 },
   emperorAch: { marginTop: 4, color: theme.colors.text, fontSize: 12, lineHeight: 18 },
 
-  // People section
-  peopleSection: { marginTop: 24, marginBottom: 20 },
-  peopleHeader: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 4 },
-  peopleTitle: { fontSize: 18, fontWeight: '800', marginLeft: 4 },
-  peopleTitleCn: { fontSize: 13, fontWeight: '600', marginLeft: 6 },
-  peopleSubtitle: { fontSize: 12, marginBottom: 12 },
-  peopleGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
-  personCard: { width: '48%', borderRadius: theme.radii.md, borderWidth: 0.5, padding: 12, alignItems: 'center' },
-  personIconWrap: { width: 44, height: 44, borderRadius: 12, alignItems: 'center', justifyContent: 'center', marginBottom: 8 },
-  personName: { fontSize: 13, fontWeight: '700', textAlign: 'center' },
-  personNameCn: { fontSize: 11, fontWeight: '600', marginTop: 2 },
-  personSubtitle: { fontSize: 10, marginTop: 4, textAlign: 'center' },
+  // People section inline
+  peopleSection: { marginTop: 12 },
+  peopleHeaderInline: { flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 8 },
+  peopleSectionTitle: { fontSize: 12, fontWeight: '700' },
+  peopleSectionTitleCn: { fontSize: 10, fontWeight: '600' },
+  peopleGridInline: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
+  personCardInline: { borderRadius: theme.radii.sm, borderWidth: 0.5, padding: 10, alignItems: 'center', flex: 1, minWidth: 70, maxWidth: 100 },
+  personIconWrapInline: { width: 32, height: 32, borderRadius: 8, alignItems: 'center', justifyContent: 'center', marginBottom: 4 },
+  personNameInline: { fontSize: 11, fontWeight: '600', textAlign: 'center' },
+  personNameCnInline: { fontSize: 10, fontWeight: '500', marginTop: 1 },
 });

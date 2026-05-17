@@ -1,7 +1,7 @@
-import React, { memo, useCallback, useEffect, useMemo, useState } from 'react';
+import React, { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { FlatList, Pressable, RefreshControl, SafeAreaView, StyleSheet, Text, View } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
-import { Bookmark, Lightbulb, MapPin, Sparkles } from 'lucide-react-native';
+import { Bookmark, Lightbulb, MapPin, Share2, Sparkles } from 'lucide-react-native';
 import * as Haptics from 'expo-haptics';
 
 import { cities } from '../data/cities';
@@ -11,16 +11,26 @@ import { SmartImageBlock } from '../components/SmartImageBlock';
 import { StampFeedback } from '../components/StampFeedback';
 import { RelatedPathCard } from '../components/RelatedPathCard';
 import { ChinaConnectionMap } from '../components/ChinaConnectionMap';
-import { SearchBar, useSearch } from '../components/SearchBar';
+import { InteractiveChinaMap, MiniMapCard } from '../components/InteractiveMap';
+import { ScrollToTopButton } from '../components/ScrollToTopButton';
+import { useSearch } from '../components/SearchBar';
+import { EnhancedSearchBar } from '../components/EnhancedSearchBar';
+import { ShareStyleSelector } from '../components/ShareStyleSelector';
+import { ContentShareCard } from '../components/ContentShareCard';
 import { getLocalImage } from '../assets/localImages';
-import { toggleCollectionItem, addRecentlyViewed, getFavoritesSnapshot } from '../utils/culturalAssets';
+import { toggleCollectionItem, addRecentlyViewed, getFavoritesSnapshot, getCulturalAssets } from '../utils/culturalAssets';
+import { trackViewedItem } from '../utils/explorationStats';
+import { shareContentCard } from '../utils/contentShare';
+import { useStampEarning } from '../hooks/useStampEarning';
 import { ScreenHeader } from '../components/ScreenHeader';
 import { SectionCard } from '../components/SectionCard';
+import { EmptyStateCard } from '../components/EmptyStateCard';
 import { theme } from '../theme/theme';
 import { useTheme } from '../theme/ThemeContext';
 import { logger } from '../utils/errorHandling';
+import { useToast } from '../components/Toast';
 
-const CityCard = memo(function CityCard({ item, isActive, isBookmarked, onActivate, onBookmark, navigation }) {
+const CityCard = memo(function CityCard({ item, isActive, isBookmarked, onActivate, onBookmark, onShare, navigation }) {
   const relatedFood = recipes.find((recipe) => recipe.province_id === item.province_id);
   const relatedDynasty = dynasties.find((dynasty) => dynasty.province_id === item.province_id);
 
@@ -34,8 +44,11 @@ const CityCard = memo(function CityCard({ item, isActive, isBookmarked, onActiva
         nameCn: item.nameCn,
         province: item.province,
       }).catch(() => {});
+
+      // Track exploration for achievements
+      trackViewedItem('city', item).catch(() => {});
     }
-  }, [isActive, item.id, item.nameEn, item.nameCn, item.province]);
+  }, [isActive, item]);
 
   return (
     <SectionCard style={styles.cardWrap} tone="soft">
@@ -74,20 +87,30 @@ const CityCard = memo(function CityCard({ item, isActive, isBookmarked, onActiva
           <Text style={styles.metaKicker}>City character</Text>
           <Text style={styles.metaTitle}>{item.character ?? item.vibe ?? item.summaryEn}</Text>
         </View>
-        <Pressable
-          style={[styles.bookmarkBtn, isBookmarked && styles.bookmarkBtnActive]}
-          onPress={() => onBookmark(item.id)}
-          accessibilityRole="button"
-          accessibilityLabel={isBookmarked ? "Saved - tap to remove" : "Save city"}
-          accessibilityHint="Double tap to toggle bookmark"
-        >
-          <Bookmark
-            size={15}
-            color={isBookmarked ? '#FFFFFF' : theme.colors.primary}
-            fill={isBookmarked ? theme.colors.primary : 'transparent'}
-            strokeWidth={2}
-          />
-        </Pressable>
+        <View style={styles.actionBtns}>
+          <Pressable
+            style={styles.shareBtn}
+            onPress={() => onShare(item)}
+            accessibilityRole="button"
+            accessibilityLabel="Share city"
+          >
+            <Share2 size={15} color={theme.colors.primary} strokeWidth={2} />
+          </Pressable>
+          <Pressable
+            style={[styles.bookmarkBtn, isBookmarked && styles.bookmarkBtnActive]}
+            onPress={() => onBookmark(item.id)}
+            accessibilityRole="button"
+            accessibilityLabel={isBookmarked ? "Saved - tap to remove" : "Save city"}
+            accessibilityHint="Double tap to toggle bookmark"
+          >
+            <Bookmark
+              size={15}
+              color={isBookmarked ? '#FFFFFF' : theme.colors.primary}
+              fill={isBookmarked ? theme.colors.primary : 'transparent'}
+              strokeWidth={2}
+            />
+          </Pressable>
+        </View>
       </View>
       {isBookmarked ? <StampFeedback label="Saved" active={true} style={styles.bookmarkStamp} shape="round" /> : null}
 
@@ -173,22 +196,54 @@ const CityCard = memo(function CityCard({ item, isActive, isBookmarked, onActiva
 export function TravelScreen() {
   const navigation = useNavigation();
   const { colors } = useTheme();
+  const toast = useToast();
   const data = useMemo(() => cities, []);
   const [activeCityId, setActiveCityId] = useState(cities[0]?.id ?? null);
   const [bookmarked, setBookmarked] = useState({});
   const [searchQuery, setSearchQuery] = useState('');
   const [refreshing, setRefreshing] = useState(false);
+  const [collectionStats, setCollectionStats] = useState({});
+  const [showScrollTop, setShowScrollTop] = useState(false);
+  const [shareItem, setShareItem] = useState(null);
+  const [showShareModal, setShowShareModal] = useState(false);
+  const shareCardRef = useRef(null);
+  const listRef = useRef(null);
 
-  // Load bookmark state from AsyncStorage on mount
+  // Load bookmark state and collection stats from AsyncStorage on mount
   useEffect(() => {
-    getFavoritesSnapshot().then((favorites) => {
-      const cityFavorites = favorites?.cities || [];
-      const bookmarkState = {};
-      cityFavorites.forEach((city) => {
-        if (city.id) bookmarkState[city.id] = true;
-      });
-      setBookmarked(bookmarkState);
-    }).catch((e) => { logger.error('TravelScreen', 'Failed to load favorites', e); });
+    const loadData = async () => {
+      try {
+        const [favorites, assets] = await Promise.all([
+          getFavoritesSnapshot(),
+          getCulturalAssets(),
+        ]);
+
+        const cityFavorites = favorites?.cities || [];
+        const bookmarkState = {};
+        cityFavorites.forEach((city) => {
+          if (city.id) bookmarkState[city.id] = true;
+        });
+        setBookmarked(bookmarkState);
+
+        // Calculate collection stats per province
+        const stats = {};
+        cities.forEach(city => {
+          if (city.province_id) {
+            if (!stats[city.province_id]) {
+              stats[city.province_id] = { collected: 0, total: 0 };
+            }
+            stats[city.province_id].total += 1;
+            if (bookmarkState[city.id]) {
+              stats[city.province_id].collected += 1;
+            }
+          }
+        });
+        setCollectionStats(stats);
+      } catch (e) {
+        logger.error('TravelScreen', 'Failed to load data', e);
+      }
+    };
+    loadData();
   }, []);
 
   const { filterItems } = useSearch(data, ['nameEn', 'nameCn', 'province']);
@@ -202,8 +257,41 @@ export function TravelScreen() {
   }, []);
 
   const activateCity = useCallback((cityId) => setActiveCityId(cityId), []);
+
+  // Track stamp earning for active city
+  useEffect(() => {
+    if (!activeCityId) return;
+
+    const city = cities.find(c => c.id === activeCityId);
+    if (!city) return;
+
+    let timeoutId;
+    let hasEarned = false;
+
+    // Try to earn stamp after viewing for 3 seconds
+    timeoutId = setTimeout(async () => {
+      if (!hasEarned) {
+        const { earnStamp } = await import('../utils/stampCollection');
+        const stamp = await earnStamp('city', city, {
+          viewTimeMs: 3000,
+          scrollDepth: 0.7,
+          interactions: 1,
+          expanded: true,
+        });
+        if (stamp) {
+          hasEarned = true;
+        }
+      }
+    }, 3000);
+
+    return () => {
+      clearTimeout(timeoutId);
+    };
+  }, [activeCityId]);
+
   const toggleBookmark = useCallback(async (item) => {
     await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
+    const wasBookmarked = bookmarked[item.id];
     setBookmarked((prev) => ({ ...prev, [item.id]: !prev[item.id] }));
     await toggleCollectionItem('cities', {
       id: item.id,
@@ -212,7 +300,24 @@ export function TravelScreen() {
       imageAsset: item.imageAsset,
       tagline: item.tagline,
     }).catch(() => {});
+    // Show toast feedback
+    if (!wasBookmarked) {
+      toast.success(`${item.nameCn} saved to collection`, 'City Added');
+    } else {
+      toast.info(`${item.nameCn} removed from collection`, 'City Removed');
+    }
+  }, [bookmarked, toast]);
+
+  const handleShare = useCallback((item) => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
+    setShareItem(item);
+    setShowShareModal(true);
   }, []);
+
+  const handleShareConfirm = useCallback(async (style) => {
+    if (!shareItem) return;
+    await shareContentCard(shareCardRef, shareItem, 'city');
+  }, [shareItem]);
 
   const renderCityCard = useCallback(
     ({ item }) => (
@@ -222,13 +327,23 @@ export function TravelScreen() {
         isBookmarked={!!bookmarked[item.id]}
         onActivate={activateCity}
         onBookmark={() => toggleBookmark(item)}
+        onShare={handleShare}
         navigation={navigation}
       />
     ),
-    [activeCityId, bookmarked, activateCity, toggleBookmark, navigation]
+    [activeCityId, bookmarked, activateCity, toggleBookmark, handleShare, navigation]
   );
 
-  const connectedProvinces = useMemo(() => new Set(cities.filter((city) => city.province_id).map((city) => city.province_id)), []);
+  const connectedProvinces = useMemo(() => {
+    const provinceSet = new Set();
+    // Add all provinces that have cities
+    cities.forEach(city => {
+      if (city.province_id) {
+        provinceSet.add(city.province_id);
+      }
+    });
+    return provinceSet;
+  }, []);
 
   const ListHeader = useMemo(() => (
     <>
@@ -240,11 +355,14 @@ export function TravelScreen() {
         includeTopInset={false}
       />
 
-      <SearchBar
+      <EnhancedSearchBar
         value={searchQuery}
         onChangeText={setSearchQuery}
         placeholder="Search cities..."
         onClear={() => setSearchQuery('')}
+        showTrending={true}
+        showCategories={false}
+        showHistory={true}
       />
 
       <SectionCard style={styles.cityLeadCard} tone="soft">
@@ -267,24 +385,46 @@ export function TravelScreen() {
       <Text style={styles.heroTitle}>A symbolic provincial guide</Text>
       <Text style={styles.heroText}>Use it as a thread, not the destination. The city stories carry the page.</Text>
       <View style={styles.mapWrap}>
-        <ChinaConnectionMap connectedProvinces={connectedProvinces} />
+        <InteractiveChinaMap
+          connectedProvinces={connectedProvinces}
+          collectionStats={collectionStats}
+          onProvincePress={(province) => {
+            // Find first city in this province
+            const provinceCityIndex = filteredCities.findIndex(c => c.province_id === province.id);
+            if (provinceCityIndex !== -1) {
+              const provinceCity = filteredCities[provinceCityIndex];
+              setActiveCityId(provinceCity.id);
+              // Scroll to the city card (accounting for header height)
+              // Each card is roughly 300px tall, plus header offset
+              const headerHeight = 200; // Approximate header height
+              const cardHeight = 350; // Approximate card height
+              const offset = headerHeight + (provinceCityIndex * cardHeight);
+              listRef.current?.scrollToOffset({ offset: Math.max(0, offset - 50), animated: true });
+            }
+          }}
+        />
       </View>
     </SectionCard>
-  ), [connectedProvinces]);
+  ), [connectedProvinces, collectionStats, filteredCities]);
 
   return (
     <SafeAreaView style={styles.safeArea}>
       <FlatList
+        ref={listRef}
         data={filteredCities}
         keyExtractor={(item) => item.id}
         renderItem={renderCityCard}
         ListHeaderComponent={ListHeader}
         ListFooterComponent={ListFooter}
         ListEmptyComponent={
-          <SectionCard style={styles.emptyCard} tone="soft">
-            <Text style={styles.emptyTitle}>No city stories yet.</Text>
-            <Text style={styles.emptyText}>Return later or explore another module to keep the atlas moving.</Text>
-          </SectionCard>
+          <EmptyStateCard
+            style={styles.emptyCard}
+            title="No city stories yet"
+            titleCn="暂无城市"
+            description="Return later or explore another module to keep the atlas moving."
+            icon={MapPin}
+            centered
+          />
         }
         initialNumToRender={4}
         maxToRenderPerBatch={4}
@@ -293,6 +433,11 @@ export function TravelScreen() {
         removeClippedSubviews
         contentContainerStyle={styles.listContent}
         showsVerticalScrollIndicator={false}
+        onScroll={(e) => {
+          const offsetY = e.nativeEvent.contentOffset.y;
+          setShowScrollTop(offsetY > 400);
+        }}
+        scrollEventThrottle={100}
         refreshControl={
           <RefreshControl
             refreshing={refreshing}
@@ -301,6 +446,17 @@ export function TravelScreen() {
             colors={[colors.primary]}
           />
         }
+      />
+      <ScrollToTopButton
+        visible={showScrollTop}
+        onPress={() => listRef.current?.scrollToOffset({ offset: 0, animated: true })}
+      />
+      <ShareStyleSelector
+        visible={showShareModal}
+        onClose={() => setShowShareModal(false)}
+        onShare={handleShareConfirm}
+        item={shareItem}
+        type="city"
       />
     </SafeAreaView>
   );
@@ -322,9 +478,7 @@ const styles = StyleSheet.create({
 
   mapCard: { marginBottom: 10, padding: 12, backgroundColor: theme.colors.panel },
 
-  emptyCard: { padding: 16, alignItems: 'center' },
-  emptyTitle: { color: theme.colors.text, fontSize: 14, fontWeight: '700' },
-  emptyText: { marginTop: 4, color: theme.colors.mutedText, fontSize: 12 },
+  emptyCard: { marginHorizontal: 20, marginTop: 20 },
 
   // Cleaner card
   cardWrap: { borderRadius: theme.radii.md, overflow: 'hidden' },
@@ -347,6 +501,8 @@ const styles = StyleSheet.create({
   metaKicker: { color: theme.colors.primary, fontSize: 10, fontWeight: '800', textTransform: 'uppercase' },
   metaTitle: { marginTop: 4, color: theme.colors.text, fontSize: 14, fontWeight: '700' },
 
+  actionBtns: { flexDirection: 'row', gap: 8 },
+  shareBtn: { width: 40, height: 40, borderRadius: 8, borderWidth: 0.5, alignItems: 'center', justifyContent: 'center' },
   bookmarkBtn: { width: 40, height: 40, borderRadius: 8, borderWidth: 0.5, alignItems: 'center', justifyContent: 'center' },
   bookmarkBtnActive: { backgroundColor: theme.colors.primary, borderColor: theme.colors.primary },
   bookmarkStamp: { marginTop: 6 },
@@ -372,7 +528,7 @@ const styles = StyleSheet.create({
 
   relatedCard: { borderRadius: theme.radii.sm, borderWidth: 0.5, backgroundColor: theme.colors.surface, padding: 10, gap: 4 },
   relatedLead: { color: theme.colors.mutedText, fontSize: 11 },
-  relatedPathWrap: { flexDirection: 'row', gap: 8, marginTop: 6 },
+  relatedPathWrap: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 6 },
   relatedText: { color: theme.colors.mutedText, fontSize: 12 },
 
   tapHint: { marginTop: 8, color: theme.colors.mutedText, fontSize: 11, textAlign: 'center' },

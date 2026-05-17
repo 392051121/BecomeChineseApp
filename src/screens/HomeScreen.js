@@ -1,65 +1,60 @@
 import React, { useEffect, useMemo, useState, useCallback } from 'react';
-import { Pressable, RefreshControl, SafeAreaView, StyleSheet, Text, View } from 'react-native';
-import { CalendarDays, Clock, Map, Sparkles, User, UtensilsCrossed, ArrowRight, Flame, Target, MapPin, History, Bookmark, Trophy, Star, Zap, BookOpen } from 'lucide-react-native';
+import { Platform, Pressable, RefreshControl, SafeAreaView, StatusBar, StyleSheet, Text, View } from 'react-native';
+import { CalendarDays, Clock, Map, UtensilsCrossed, ArrowRight, Flame, Target, Bookmark, Trophy, Star, Zap, Scroll, User, BookOpen } from 'lucide-react-native';
 import { useNavigation } from '@react-navigation/native';
 
 import { getCultureRank, getCulturalAssets, getProvinceConnectionMap, getRecentlyViewed } from '../utils/culturalAssets';
-import { getTypeIcon, getTypeScreen } from '../utils/contentTypes';
-import { getRecommendedNextStep, getHomeScreenRecommendation } from '../utils/recommendations';
+import { getTypeScreen } from '../utils/contentTypes';
+import { getRecommendedNextStep } from '../utils/recommendations';
 import { getWrongAnswers } from '../utils/wrongAnswers';
-import { getUserInterests } from '../screens/OnboardingScreen';
 import { logger } from '../utils/errorHandling';
+import { getSignInStatus } from '../utils/dailySignIn';
 import { cities } from '../data/cities';
 import { recipes } from '../data/recipes';
 import { dynasties } from '../data/dynasties';
-import { getUpcomingFestivals } from '../data/festivals';
 import { HandscrollContainer } from '../components/HandscrollContainer';
-import { ScreenHeader } from '../components/ScreenHeader';
 import { SectionCard } from '../components/SectionCard';
-import { PaperTexture } from '../components/PaperTexture';
-import { PathsSection } from '../components/PathsSection';
-import { BadgeSummaryCard } from '../components/BadgesSection';
+import { DailySignInModal, DailySignInButton } from '../components/DailySignInModal';
+import { DailyTasksModal, DailyTasksButton } from '../components/DailyTasksModal';
+import { getTasksSummary } from '../utils/dailyTasks';
 import { SkeletonHomeScreen } from '../components/Skeleton';
 import { calculateTotalXP, getXPLevel } from '../data/badges';
+import { getXPProgress } from '../config/gamification';
 import { theme } from '../theme/theme';
 import { useTheme } from '../theme/ThemeContext';
-import { XP_CONFIG } from '../config/constants';
 
 const quickActions = [
   { id: 'history', label: 'History', labelCn: '历史', icon: Clock, target: 'History', color: '#B33B24' },
   { id: 'food', label: 'Food', labelCn: '美食', icon: UtensilsCrossed, target: 'Food', color: '#E2B05E' },
   { id: 'places', label: 'Places', labelCn: '城市', icon: Map, target: 'Places', color: '#6B8A94' },
-  { id: 'people', label: 'People', labelCn: '人物', icon: User, target: 'History', color: '#8B7355' },
-];
-
-// Compact quick action chips for header
-const quickChips = [
-  { id: 'quiz', label: 'Quiz', labelCn: '问答', icon: CalendarDays, target: 'Seasons' },
-  { id: 'collection', label: 'Collection', labelCn: '收藏', icon: Bookmark, target: 'Profile', screen: 'Collection' },
-  { id: 'calendar', label: 'Calendar', labelCn: '日历', icon: CalendarDays, target: 'Seasons' },
 ];
 
 export function HomeScreen() {
   const navigation = useNavigation();
   const { colors, isDark } = useTheme();
   const [assets, setAssets] = useState(null);
-  const [recentlyViewed, setRecentlyViewed] = useState([]);
   const [wrongAnswersCount, setWrongAnswersCount] = useState(0);
-  const [userPreferences, setUserPreferences] = useState(null);
   const [refreshing, setRefreshing] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const [signInStatus, setSignInStatus] = useState(null);
+  const [showSignInModal, setShowSignInModal] = useState(false);
+  const [tasksSummary, setTasksSummary] = useState(null);
+  const [showTasksModal, setShowTasksModal] = useState(false);
+  const [recentlyViewed, setRecentlyViewed] = useState([]);
 
   const loadData = useCallback(async () => {
-    const [assetsData, recentData, wrongData, prefsData] = await Promise.all([
+    const [assetsData, wrongData, signInData, tasksData, recentData] = await Promise.all([
       getCulturalAssets().catch((e) => { logger.error('HomeScreen', 'Failed to load cultural assets', e); return null; }),
-      getRecentlyViewed().catch((e) => { logger.error('HomeScreen', 'Failed to load recently viewed', e); return []; }),
       getWrongAnswers().catch((e) => { logger.error('HomeScreen', 'Failed to load wrong answers', e); return []; }),
-      getUserInterests().catch((e) => { logger.error('HomeScreen', 'Failed to load user interests', e); return null; }),
+      getSignInStatus().catch((e) => { logger.error('HomeScreen', 'Failed to load sign-in status', e); return null; }),
+      getTasksSummary().catch((e) => { logger.error('HomeScreen', 'Failed to load tasks summary', e); return null; }),
+      getRecentlyViewed().catch((e) => { logger.error('HomeScreen', 'Failed to load recently viewed', e); return []; }),
     ]);
     setAssets(assetsData);
-    setRecentlyViewed(recentData);
     setWrongAnswersCount(wrongData.filter(a => !a.mastered).length);
-    setUserPreferences(prefsData);
+    setSignInStatus(signInData);
+    setTasksSummary(tasksData);
+    setRecentlyViewed(recentData);
     setIsLoading(false);
   }, []);
 
@@ -87,14 +82,10 @@ export function HomeScreen() {
     [assets]
   );
   const connected = connectionMap.collectedCount;
-  const rank = getCultureRank(connected);
 
   const collectedCities = assets?.favorites?.cities ?? [];
   const collectedRecipes = assets?.favorites?.recipes ?? [];
   const collectedDynasties = assets?.favorites?.dynasties ?? [];
-  const totalCollected = collectedCities.length + collectedRecipes.length + collectedDynasties.length;
-
-  const lastViewedItem = recentlyViewed[0];
 
   // Calculate XP and level
   const userStats = useMemo(() => ({
@@ -114,24 +105,7 @@ export function HomeScreen() {
 
   const totalXP = useMemo(() => calculateTotalXP(userStats), [userStats]);
   const xpLevel = useMemo(() => getXPLevel(totalXP), [totalXP]);
-
-  // Get upcoming festivals
-  const upcomingFestivals = useMemo(() => getUpcomingFestivals(new Date(), 2), []);
-
-  // Get personalized next step recommendation
-  const nextStepRecommendation = useMemo(() => {
-    return getRecommendedNextStep({
-      solvedToday,
-      citiesCollected: collectedCities.length,
-      recipesCollected: collectedRecipes.length,
-      dynastiesCollected: collectedDynasties.length,
-      wrongAnswersCount,
-      userPreferences: userPreferences ? {
-        primaryInterest: userPreferences.interests?.[0] || 'comprehensive',
-        goal: userPreferences.goal || 'casual',
-      } : undefined,
-    });
-  }, [solvedToday, collectedCities, collectedRecipes, collectedDynasties, wrongAnswersCount, userPreferences]);
+  const xpProgress = useMemo(() => getXPProgress(totalXP), [totalXP]);
 
   // Show skeleton while loading
   if (isLoading) {
@@ -156,7 +130,7 @@ export function HomeScreen() {
         }
       >
         <View style={styles.container}>
-          {/* Compact Header with Level & Quick Chips */}
+          {/* Compact Header with Level */}
           <View style={styles.compactHeader}>
             <View style={styles.headerTopRow}>
               {/* Level Badge */}
@@ -168,7 +142,7 @@ export function HomeScreen() {
               {/* XP Progress */}
               <View style={styles.xpProgressWrap}>
                 <View style={[styles.xpProgressTrack, { backgroundColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(51,51,51,0.08)' }]}>
-                  <View style={[styles.xpProgressFill, { width: `${Math.min(totalXP / XP_CONFIG.MAX_LEVEL_THRESHOLD * 100, 100)}%`, backgroundColor: colors.primary }]} />
+                  <View style={[styles.xpProgressFill, { width: `${xpProgress.percentage}%`, backgroundColor: colors.primary }]} />
                 </View>
                 <Text style={[styles.xpLabel, { color: colors.mutedText }]}>{totalXP} XP</Text>
               </View>
@@ -179,36 +153,9 @@ export function HomeScreen() {
                 <Text style={[styles.levelTitleCn, { color: colors.primary }]}>{xpLevel.titleCn}</Text>
               </View>
             </View>
-
-            {/* Quick Chips Row */}
-            <View style={styles.quickChipsRow}>
-              {quickChips.map((chip) => {
-                const ChipIcon = chip.icon;
-                return (
-                  <Pressable
-                    key={chip.id}
-                    style={({ pressed }) => [styles.quickChip, pressed && styles.quickChipPressed]}
-                    onPress={() => {
-                      if (chip.screen) {
-                        navigation.getParent()?.navigate(chip.target, { screen: chip.screen });
-                      } else {
-                        navigation.getParent()?.navigate(chip.target);
-                      }
-                    }}
-                    accessibilityRole="button"
-                    accessibilityLabel={`${chip.label} - ${chip.labelCn}`}
-                    accessibilityHint={`Double tap to go to ${chip.label}`}
-                  >
-                    <ChipIcon size={12} color={colors.primary} strokeWidth={2} />
-                    <Text style={styles.quickChipLabel}>{chip.label}</Text>
-                    <Text style={styles.quickChipLabelCn}>{chip.labelCn}</Text>
-                  </Pressable>
-                );
-              })}
-            </View>
           </View>
 
-          {/* Compact Task Card */}
+          {/* Daily Quiz Card */}
           <Pressable
             style={({ pressed }) => [styles.taskCard, pressed && styles.taskCardPressed, !solvedToday && styles.taskCardPending]}
             onPress={() => navigation.getParent()?.navigate('Seasons')}
@@ -238,10 +185,6 @@ export function HomeScreen() {
                   <Target size={12} color={colors.primary} strokeWidth={2} />
                   <Text style={styles.taskStatValue}>{solved}</Text>
                 </View>
-                <View style={styles.taskStatItem}>
-                  <MapPin size={12} color={colors.primary} strokeWidth={2} />
-                  <Text style={styles.taskStatValue}>{connected}</Text>
-                </View>
               </View>
               {!solvedToday && (
                 <View style={styles.taskAction}>
@@ -251,63 +194,6 @@ export function HomeScreen() {
               )}
             </View>
           </Pressable>
-
-          {/* Next Step Recommendation */}
-          {solvedToday && nextStepRecommendation && (
-            <Pressable
-              style={({ pressed }) => [styles.nextStepCard, pressed && styles.nextStepCardPressed]}
-              onPress={() => navigation.navigate(nextStepRecommendation.screen)}
-              accessibilityRole="button"
-              accessibilityLabel={`Next step: ${nextStepRecommendation.label} - ${nextStepRecommendation.labelCn}`}
-              accessibilityHint={`Double tap to ${nextStepRecommendation.reason}`}
-            >
-              <View style={styles.nextStepIconWrap}>
-                <nextStepRecommendation.icon size={20} color={theme.colors.primary} strokeWidth={2} />
-              </View>
-              <View style={styles.nextStepContent}>
-                <View style={styles.nextStepHeader}>
-                  <Text style={styles.nextStepLabel}>{nextStepRecommendation.label}</Text>
-                  {nextStepRecommendation.priority === 'high' && (
-                    <View style={styles.priorityBadge}>
-                      <Zap size={10} color="#FFFFFF" strokeWidth={2} />
-                    </View>
-                  )}
-                </View>
-                <Text style={styles.nextStepLabelCn}>{nextStepRecommendation.labelCn}</Text>
-                <Text style={styles.nextStepReason}>{nextStepRecommendation.reason}</Text>
-              </View>
-              <ArrowRight size={16} color={theme.colors.primary} strokeWidth={2} />
-            </Pressable>
-          )}
-
-          {/* Achievement Summary - Compact */}
-          <BadgeSummaryCard stats={userStats} compact />
-
-          {/* Upcoming Festivals */}
-          {upcomingFestivals.length > 0 && (
-            <View style={styles.festivalSection}>
-              <View style={styles.festivalHeader}>
-                <CalendarDays size={14} color={colors.primary} strokeWidth={2} />
-                <Text style={styles.festivalTitle}>Upcoming</Text>
-                <Text style={styles.festivalTitleCn}>节日</Text>
-              </View>
-              <View style={styles.festivalRow}>
-                {upcomingFestivals.map((festival) => (
-                  <Pressable
-                    key={festival.id}
-                    style={[styles.festivalCard, { backgroundColor: colors.card, borderColor: colors.border }]}
-                    onPress={() => navigation.getParent()?.navigate('Seasons')}
-                    accessibilityRole="button"
-                    accessibilityLabel={`${festival.nameEn} - ${festival.nameCn}`}
-                  >
-                    <Text style={styles.festivalNameCn}>{festival.nameCn}</Text>
-                    <Text style={styles.festivalNameEn}>{festival.nameEn}</Text>
-                    <Text style={styles.festivalDays}>{festival.daysUntil === 0 ? 'Today' : `${festival.daysUntil}d`}</Text>
-                  </Pressable>
-                ))}
-              </View>
-            </View>
-          )}
 
           {/* Explore Grid - 2x2 Cards */}
           <View style={styles.exploreSection}>
@@ -324,6 +210,8 @@ export function HomeScreen() {
                     style={({ pressed }) => [styles.exploreCard, pressed && styles.exploreCardPressed]}
                     onPress={() => navigation.navigate(action.target)}
                     accessibilityRole="button"
+                    accessibilityLabel={`${action.label} - ${action.labelCn}`}
+                    accessibilityHint={`Double tap to explore ${action.label}`}
                   >
                     <View style={[styles.exploreIconWrap, { backgroundColor: `${action.color}15` }]}>
                       <ActionIcon size={24} color={action.color} strokeWidth={2} />
@@ -338,8 +226,132 @@ export function HomeScreen() {
               })}
             </View>
           </View>
+
+          {/* Quick Links */}
+          <View style={styles.quickLinksRow}>
+            <Pressable
+              style={[styles.quickLinkBtn, { backgroundColor: colors.cinnabarGlow }]}
+              onPress={() => navigation.getParent()?.navigate('Profile', { screen: 'Collection' })}
+              accessibilityRole="button"
+              accessibilityLabel="View Collection"
+              accessibilityHint="Double tap to see your saved items"
+            >
+              <Bookmark size={14} color={colors.primary} strokeWidth={2} />
+              <Text style={[styles.quickLinkText, { color: colors.primary }]}>Collection</Text>
+            </Pressable>
+            <Pressable
+              style={[styles.quickLinkBtn, { backgroundColor: colors.cinnabarGlow }]}
+              onPress={() => navigation.getParent()?.navigate('Seasons')}
+              accessibilityRole="button"
+              accessibilityLabel="Open Calendar"
+              accessibilityHint="Double tap to view calendar and daily quiz"
+            >
+              <CalendarDays size={14} color={colors.primary} strokeWidth={2} />
+              <Text style={[styles.quickLinkText, { color: colors.primary }]}>Calendar</Text>
+            </Pressable>
+          </View>
+
+          {/* Daily Sign-in & Tasks Buttons */}
+          <View style={styles.dailyButtonsRow}>
+            <DailySignInButton
+              onPress={() => setShowSignInModal(true)}
+              signedIn={signInStatus?.hasSignedInToday}
+              streak={signInStatus?.currentStreak || 0}
+            />
+            <DailyTasksButton
+              onPress={() => setShowTasksModal(true)}
+              completedCount={tasksSummary?.completedCount || 0}
+              totalCount={tasksSummary?.totalCount || 3}
+            />
+          </View>
+
+          {/* Wrong Answers Review Prompt */}
+          {wrongAnswersCount > 0 && (
+            <Pressable
+              style={({ pressed }) => [styles.reviewPromptCard, pressed && styles.reviewPromptPressed, { borderColor: colors.primary }]}
+              onPress={() => navigation.getParent()?.navigate('Seasons', { screen: 'WrongAnswerReview' })}
+              accessibilityRole="button"
+              accessibilityLabel={`${wrongAnswersCount} questions waiting for review`}
+            >
+              <View style={styles.reviewPromptLeft}>
+                <View style={[styles.reviewPromptIcon, { backgroundColor: colors.cinnabarGlow }]}>
+                  <BookOpen size={16} color={colors.primary} strokeWidth={2} />
+                </View>
+                <View style={styles.reviewPromptContent}>
+                  <Text style={styles.reviewPromptTitle}>Review Wrong Answers</Text>
+                  <Text style={styles.reviewPromptTitleCn}>复习错题</Text>
+                  <Text style={[styles.reviewPromptHint, { color: colors.mutedText }]}>
+                    {wrongAnswersCount} questions waiting
+                  </Text>
+                </View>
+              </View>
+              <View style={[styles.reviewPromptAction, { backgroundColor: colors.primary }]}>
+                <Text style={styles.reviewPromptActionText}>Review</Text>
+                <ArrowRight size={12} color="#FFFFFF" strokeWidth={2} />
+              </View>
+            </Pressable>
+          )}
+
+          {/* Recently Viewed - Continue Reading */}
+          {recentlyViewed.length > 0 && (
+            <View style={styles.recentSection}>
+              <View style={styles.recentHeader}>
+                <Clock size={14} color={colors.primary} strokeWidth={2} />
+                <Text style={styles.recentTitle}>Continue Reading</Text>
+                <Text style={styles.recentTitleCn}>继续浏览</Text>
+              </View>
+              <View style={styles.recentList}>
+                {recentlyViewed.slice(0, 4).map((item) => {
+                  const typeConfig = {
+                    city: { icon: Map, color: '#6B8A94', screen: 'Places' },
+                    recipe: { icon: UtensilsCrossed, color: '#E2B05E', screen: 'Food' },
+                    dynasty: { icon: Scroll, color: '#B33B24', screen: 'History' },
+                    person: { icon: User, color: '#8B7355', screen: 'History' },
+                  };
+                  const config = typeConfig[item.type] || typeConfig.city;
+                  const IconComponent = config.icon;
+                  return (
+                    <Pressable
+                      key={`${item.type}-${item.id}`}
+                      style={({ pressed }) => [styles.recentCard, pressed && styles.recentCardPressed, { borderColor: colors.border }]}
+                      onPress={() => navigation.getParent()?.navigate(config.screen)}
+                      accessibilityRole="button"
+                      accessibilityLabel={`${item.nameEn} - ${item.nameCn}`}
+                    >
+                      <View style={[styles.recentIconWrap, { backgroundColor: `${config.color}15` }]}>
+                        <IconComponent size={16} color={config.color} strokeWidth={2} />
+                      </View>
+                      <View style={styles.recentCardContent}>
+                        <Text style={[styles.recentCardName, { color: colors.text }]} numberOfLines={1}>{item.nameEn}</Text>
+                        <Text style={[styles.recentCardNameCn, { color: colors.primary }]} numberOfLines={1}>{item.nameCn}</Text>
+                      </View>
+                      <ArrowRight size={12} color={colors.mutedText} strokeWidth={2} />
+                    </Pressable>
+                  );
+                })}
+              </View>
+            </View>
+          )}
         </View>
       </HandscrollContainer>
+
+      {/* Daily Sign-in Modal */}
+      <DailySignInModal
+        visible={showSignInModal}
+        onClose={() => setShowSignInModal(false)}
+        onSignIn={(result) => {
+          loadData();
+        }}
+      />
+
+      {/* Daily Tasks Modal */}
+      <DailyTasksModal
+        visible={showTasksModal}
+        onClose={() => setShowTasksModal(false)}
+        onClaim={(result) => {
+          loadData();
+        }}
+      />
     </SafeAreaView>
   );
 }
@@ -351,6 +363,7 @@ const styles = StyleSheet.create({
 
   // Compact Header
   compactHeader: {
+    marginTop: Platform.OS === 'android' ? (StatusBar.currentHeight || 24) + 8 : 16,
     marginBottom: 10,
   },
   headerTopRow: {
@@ -404,40 +417,7 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
 
-  // Quick Chips
-  quickChipsRow: {
-    flexDirection: 'row',
-    gap: 8,
-    marginTop: 10,
-  },
-  quickChip: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-    backgroundColor: theme.colors.cinnabarGlow,
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    borderRadius: 999,
-    borderWidth: 0.5,
-    borderColor: theme.colors.borderAccent,
-  },
-  quickChipPressed: {
-    opacity: 0.9,
-    transform: [{ scale: 0.97 }],
-  },
-  quickChipLabel: {
-    color: theme.colors.primary,
-    fontSize: 10,
-    fontWeight: '700',
-  },
-  quickChipLabelCn: {
-    color: theme.colors.primary,
-    fontSize: 9,
-    fontWeight: '600',
-    opacity: 0.8,
-  },
-
-  // Compact Task Card
+  // Task Card
   taskCard: {
     borderRadius: theme.radii.md,
     borderWidth: 0.5,
@@ -584,266 +564,147 @@ const styles = StyleSheet.create({
     bottom: 10,
   },
 
-  // Next Step Card
-  nextStepCard: {
-    marginTop: 10,
+  // Quick Links
+  quickLinksRow: {
     flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-    borderRadius: theme.radii.md,
-    borderWidth: 0.5,
-    borderColor: theme.colors.borderAccent,
-    backgroundColor: theme.colors.softCard,
-    padding: 12,
-    ...theme.shadows.subtle,
-  },
-  nextStepCardPressed: {
-    opacity: 0.94,
-    transform: [{ scale: 0.98 }],
-  },
-  nextStepIconWrap: {
-    width: 40,
-    height: 40,
-    borderRadius: 12,
-    backgroundColor: theme.colors.cinnabarGlow,
-    alignItems: 'center',
     justifyContent: 'center',
+    gap: 12,
+    marginTop: 16,
   },
-  nextStepContent: {
-    flex: 1,
-  },
-  nextStepHeader: {
+  quickLinkBtn: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderRadius: 999,
   },
-  nextStepLabel: {
+  quickLinkText: {
+    fontSize: 12,
+    fontWeight: '700',
+  },
+
+  // Daily Buttons Row
+  dailyButtonsRow: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    gap: 12,
+    marginTop: 12,
+  },
+
+  // Review Prompt Card
+  reviewPromptCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginTop: 14,
+    borderRadius: theme.radii.md,
+    borderWidth: 1,
+    backgroundColor: theme.colors.cinnabarGlow,
+    padding: 14,
+  },
+  reviewPromptPressed: {
+    opacity: 0.95,
+    transform: [{ scale: 0.98 }],
+  },
+  reviewPromptLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    flex: 1,
+  },
+  reviewPromptIcon: {
+    width: 40,
+    height: 40,
+    borderRadius: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  reviewPromptContent: {
+    flex: 1,
+  },
+  reviewPromptTitle: {
     color: theme.colors.text,
     fontSize: 14,
     fontWeight: '700',
   },
-  priorityBadge: {
-    backgroundColor: theme.colors.primary,
-    width: 16,
-    height: 16,
-    borderRadius: 8,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  nextStepLabelCn: {
+  reviewPromptTitleCn: {
     color: theme.colors.primary,
     fontSize: 11,
     fontWeight: '600',
     marginTop: 1,
   },
-  nextStepReason: {
-    color: theme.colors.mutedText,
-    fontSize: 10,
-    marginTop: 1,
+  reviewPromptHint: {
+    fontSize: 11,
+    marginTop: 2,
   },
-
-  // Resume Card
-  resumeCard: {
-    marginTop: 10,
-  },
-  resumeCardPressed: {
-    opacity: 0.94,
-  },
-  resumeCardInner: {
-    padding: 12,
-    backgroundColor: theme.colors.surface,
-  },
-  resumeTopRow: {
+  reviewPromptAction: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
-    gap: 8,
-  },
-  resumeLabelWrap: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 5,
-  },
-  sectionLabel: {
-    color: theme.colors.primary,
-    fontSize: 10,
-    letterSpacing: 1,
-    textTransform: 'uppercase',
-    fontWeight: '800',
-  },
-  resumeItemRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-    marginTop: 10,
-  },
-  resumeItemIcon: {
-    width: 36,
-    height: 36,
-    borderRadius: 10,
-    backgroundColor: theme.colors.cinnabarGlow,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  resumeItemContent: {
-    flex: 1,
-  },
-  resumeItemTitle: {
-    color: theme.colors.text,
-    fontSize: 15,
-    fontWeight: '700',
-  },
-  resumeItemTitleZh: {
-    color: theme.colors.primary,
-    fontSize: 12,
-    fontWeight: '600',
-    marginTop: 1,
-  },
-  resumeItemSub: {
-    color: theme.colors.mutedText,
-    fontSize: 10,
-    marginTop: 1,
-  },
-  resumeMetaRow: {
-    flexDirection: 'row',
-    gap: 6,
-    marginTop: 10,
-  },
-  rankPill: {
-    backgroundColor: theme.colors.cinnabarGlow,
-    paddingHorizontal: 10,
-    paddingVertical: 5,
+    gap: 4,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
     borderRadius: 999,
   },
-  rankPillText: {
-    color: theme.colors.primary,
-    fontSize: 10,
-    fontWeight: '700',
-  },
-  collectedPill: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 3,
-    backgroundColor: theme.colors.inkWash,
-    paddingHorizontal: 8,
-    paddingVertical: 5,
-    borderRadius: 999,
-  },
-  collectedPillText: {
-    color: theme.colors.mutedText,
-    fontSize: 9,
+  reviewPromptActionText: {
+    color: '#FFFFFF',
+    fontSize: 11,
     fontWeight: '700',
   },
 
-  // Recent Card
-  recentCard: {
-    marginTop: 10,
-    padding: 12,
-    backgroundColor: theme.colors.softCard,
+  // Recently Viewed Section
+  recentSection: {
+    marginTop: 18,
   },
   recentHeader: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
+    gap: 6,
     marginBottom: 10,
   },
-  recentLabelWrap: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 5,
-  },
-  recentCount: {
-    color: theme.colors.mutedText,
-    fontSize: 10,
-    fontWeight: '700',
-  },
-  recentList: {
-    gap: 6,
-  },
-  recentItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    borderRadius: theme.radii.md,
-    borderWidth: 0.5,
-    borderColor: theme.colors.border,
-    backgroundColor: theme.colors.surface,
-    paddingHorizontal: 10,
-    paddingVertical: 8,
-  },
-  recentItemPressed: {
-    opacity: 0.9,
-    backgroundColor: theme.colors.card,
-  },
-  recentItemIcon: {
-    width: 28,
-    height: 28,
-    borderRadius: 8,
-    backgroundColor: theme.colors.cinnabarGlow,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  recentItemContent: {
-    flex: 1,
-  },
-  recentItemName: {
-    color: theme.colors.text,
-    fontSize: 12,
-    fontWeight: '600',
-  },
-  recentItemNameZh: {
-    color: theme.colors.primary,
-    fontSize: 10,
-    fontWeight: '500',
-    marginTop: 1,
-  },
-
-  // Festival Section
-  festivalSection: {
-    marginTop: 10,
-  },
-  festivalHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    marginBottom: 8,
-  },
-  festivalTitle: {
+  recentTitle: {
     color: theme.colors.text,
     fontSize: 14,
     fontWeight: '700',
   },
-  festivalTitleCn: {
+  recentTitleCn: {
     color: theme.colors.primary,
     fontSize: 11,
     fontWeight: '600',
   },
-  festivalRow: {
-    flexDirection: 'row',
+  recentList: {
     gap: 8,
   },
-  festivalCard: {
-    flex: 1,
+  recentCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
     borderRadius: theme.radii.md,
     borderWidth: 0.5,
-    padding: 10,
+    backgroundColor: theme.colors.card,
+    padding: 12,
+  },
+  recentCardPressed: {
+    opacity: 0.95,
+    backgroundColor: theme.colors.surface,
+  },
+  recentIconWrap: {
+    width: 36,
+    height: 36,
+    borderRadius: 10,
     alignItems: 'center',
+    justifyContent: 'center',
   },
-  festivalNameCn: {
-    color: theme.colors.text,
-    fontSize: 16,
-    fontWeight: '800',
+  recentCardContent: {
+    flex: 1,
   },
-  festivalNameEn: {
-    color: theme.colors.primary,
-    fontSize: 10,
+  recentCardName: {
+    fontSize: 13,
     fontWeight: '600',
-    marginTop: 2,
   },
-  festivalDays: {
-    color: theme.colors.mutedText,
-    fontSize: 9,
-    marginTop: 4,
-    fontWeight: '700',
+  recentCardNameCn: {
+    fontSize: 11,
+    fontWeight: '500',
+    marginTop: 1,
   },
 });
