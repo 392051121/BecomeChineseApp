@@ -2,6 +2,7 @@ import React from 'react';
 import { createStackNavigator } from '@react-navigation/stack';
 
 import { CalendarScreen } from '../screens/CalendarScreen';
+import { SolarTermDetailScreen } from '../screens/SolarTermDetailScreen';
 import { WrongAnswerReviewScreen } from '../screens/WrongAnswerReviewScreen';
 import { InfiniteQuizScreen } from '../screens/InfiniteQuizScreen';
 
@@ -15,6 +16,7 @@ export function SeasonsStack() {
       }}
     >
       <Stack.Screen name="SeasonsMain" component={CalendarScreen} />
+      <Stack.Screen name="SolarTermDetail" component={SolarTermDetailScreen} />
       <Stack.Screen name="WrongAnswerReview" component={WrongAnswerReviewScreen} />
       <Stack.Screen name="InfiniteQuiz" component={InfiniteQuizScreen} />
     </Stack.Navigator>

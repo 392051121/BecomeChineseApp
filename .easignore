@@ -1,0 +1,39 @@
+# EAS Build ignore file
+# Files and directories to exclude from EAS Build uploads
+# This reduces upload size and build time
+
+# Documentation
+docs/
+*.md
+
+# Test files
+src/__tests__/
+src/__mocks__/
+
+# Coverage reports
+coverage/
+
+# Build outputs
+dist/
+dist-test/
+temp-export/
+temp-check/
+
+# Git
+.git/
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+npm-debug.log*
+
+# Temporary files
+*.tmp
+*.temp

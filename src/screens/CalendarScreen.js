@@ -10,7 +10,7 @@ import {
   Text,
   View,
 } from 'react-native';
-import { Flame, Target, Sunrise, ArrowRight, Sparkles, Star, BookOpen, Zap, Check, X } from 'lucide-react-native';
+import { Flame, Target, Sunrise, ArrowRight, Sparkles, Star, BookOpen, Zap, Check, X, Leaf, UtensilsCrossed, Map, CalendarDays } from 'lucide-react-native';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import * as Haptics from 'expo-haptics';
 
@@ -21,13 +21,17 @@ import { useRecommendation } from '../hooks/useRecommendation';
 import { getReviewSummary } from '../utils/wrongAnswers';
 import { checkAndNotifyBadges } from '../utils/badgeUnlock';
 import { useBadgeNotification } from '../components/BadgeNotification';
-import { TYPE_COLORS } from '../utils/contentTypes';
+import { TYPE_COLORS, getTypeScreen } from '../utils/contentTypes';
 
 import { theme } from '../theme/theme';
 import { useTheme } from '../theme/ThemeContext';
 import { PaperTexture } from '../components/PaperTexture';
 import { StampFeedback } from '../components/StampFeedback';
 import { getSolarTermForDate } from '../utils/calendar';
+import { getCurrentSolarTerm, getSolarTermById, solarTerms } from '../data/solarTerms';
+import { getBeginnerNote } from '../utils/culturalContext';
+import { SectionCard } from '../components/SectionCard';
+import { ExploreNextSection } from '../components/ExploreNextSection';
 
 export function CalendarScreen() {
   const navigation = useNavigation();
@@ -86,9 +90,28 @@ export function CalendarScreen() {
   const [showCelebration, setShowCelebration] = useState(false);
   const [xpGained, setXpGained] = useState(0);
   const [reviewSummary, setReviewSummary] = useState(null);
+  const [showQuiz, setShowQuiz] = useState(false);
+
+  // Get enriched solar term data
+  const solarTermBasic = useMemo(() => getSolarTermForDate(now), [now]);
+  const solarTerm = useMemo(() => {
+    const enriched = getCurrentSolarTerm(now);
+    return enriched || {
+      id: solarTermBasic.id,
+      englishName: solarTermBasic.nameEn,
+      chineseName: solarTermBasic.nameZh,
+      pinyin: '',
+      meaning: solarTermBasic.nameEn,
+      natureChange: '',
+      custom: '',
+      food: [],
+      beginnerNote: getBeginnerNote('season'),
+      dailyAction: 'Notice one seasonal change around you.',
+      relatedContent: [],
+    };
+  }, [now, solarTermBasic]);
 
   // Date labels
-  const solarTerm = useMemo(() => getSolarTermForDate(now), [now]);
   const monthLabel = useMemo(
     () => now.toLocaleString('en-US', { month: 'long' }).toUpperCase(),
     [now]
@@ -170,114 +193,244 @@ export function CalendarScreen() {
     await Haptics.selectionAsync().catch(() => {});
   }
 
+  // Get season color
+  const seasonColor = useMemo(() => {
+    switch (solarTerm.season) {
+      case 'spring': return '#6F8F72'; // Bamboo Green
+      case 'summer': return '#C49A4A'; // Muted Gold
+      case 'autumn': return '#8A6A4F'; // Tea Brown
+      case 'winter': return '#5F8FA8'; // Lake Blue
+      default: return colors.primary;
+    }
+  }, [solarTerm.season, colors.primary]);
+
   return (
     <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.background }]}>
       <ScrollView style={styles.scrollView} contentContainerStyle={styles.container} showsVerticalScrollIndicator={false}>
+        {/* Header */}
         <View style={styles.header}>
           <Text style={[styles.headerMonth, { color: colors.text }]}>{monthLabel}</Text>
-          <Text style={[styles.headerBrand, { fontFamily: serifFont, color: colors.text }]}>Daily Ritual</Text>
+          <Text style={[styles.headerBrand, { fontFamily: serifFont, color: colors.text }]}>Seasonal Note</Text>
           <Text style={[styles.headerYear, { color: colors.text }]}>{yearLabel}</Text>
         </View>
 
-        <View style={[styles.heroCard, { backgroundColor: colors.softCard, borderColor: colors.borderAccent }]}>
+        {/* Main Seasonal Card - The Hero */}
+        <View style={[styles.seasonalHeroCard, { backgroundColor: colors.softCard, borderColor: colors.borderAccent }]}>
           <PaperTexture />
 
-          <View style={styles.heroInner}>
-            <View style={styles.statusTopRow}>
-              <View style={styles.statusLabelWrap}>
-                <Sunrise size={14} color={colors.primary} strokeWidth={2} />
-                <Text style={[styles.statusLabel, { color: colors.primary }]}>Today</Text>
+          <View style={styles.seasonalHeroInner}>
+            {/* Date Display */}
+            <View style={styles.seasonalDateRow}>
+              <View style={styles.seasonalDateLeft}>
+                <Text style={[styles.seasonalMonthZh, { color: colors.text }]}>{monthLabelZh}</Text>
+                <Text style={[styles.seasonalDay, { color: colors.text }]}>{dayLabel}</Text>
               </View>
-              <View style={[styles.statusBadge, answeredCorrectly && styles.statusBadgeDone, { backgroundColor: answeredCorrectly ? colors.goldLeaf : colors.cinnabarGlow }]}>
-                {loadingDailyState ? (
-                  <ActivityIndicator size="small" color={colors.primary} />
-                ) : (
-                  <Text style={[styles.statusBadgeText, answeredCorrectly && styles.statusBadgeTextDone, { color: answeredCorrectly ? colors.success : colors.primary }]}>
-                    {attemptedToday ? (answeredCorrectly ? 'Done' : 'Reviewed') : 'Pending'}
-                  </Text>
+              <View style={styles.seasonalDateRight}>
+                <Text style={[styles.seasonalTermEn, { color: colors.text }]}>{solarTerm.englishName}</Text>
+                <Text style={[styles.seasonalTermZh, { color: seasonColor }]}>{solarTerm.chineseName}</Text>
+                {solarTerm.pinyin && (
+                  <Text style={[styles.seasonalPinyin, { color: colors.mutedText }]}>{solarTerm.pinyin}</Text>
                 )}
               </View>
             </View>
-            <View style={styles.dateRow}>
-              <Text style={[styles.statusTitleZh, { color: colors.text }]}>{monthLabelZh}{dayLabel}日</Text>
-              <Text style={[styles.statusTitle, { color: colors.mutedText }]}>{monthLabel} {dayLabel}</Text>
+
+            {/* Meaning */}
+            <View style={styles.seasonalMeaningBox}>
+              <Text style={[styles.seasonalMeaning, { color: colors.text }]}>{solarTerm.meaning}</Text>
             </View>
-            <View style={styles.solarTermRow}>
-              <Text style={[styles.solarTermEn, { color: colors.text }]}>{solarTerm.nameEn}</Text>
-              <Text style={[styles.solarTermZh, { color: colors.primary }]}>{solarTerm.nameZh}</Text>
-            </View>
-            <Text style={[styles.statusYear, { color: colors.mutedText }]}>{yearLabel}</Text>
-            <View style={styles.statusStatsRow}>
-              <View style={[styles.statusStat, { borderColor: colors.border, backgroundColor: colors.surface }]}>
-                <Flame size={14} color={colors.primary} strokeWidth={2} />
-                <Text style={[styles.statusStatValue, { color: colors.text }]}>{streakCount}</Text>
-                <Text style={[styles.statusStatLabel, { color: colors.mutedText }]}>Streak</Text>
+
+            {/* Nature Change */}
+            {solarTerm.natureChange && (
+              <View style={[styles.seasonalSection, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+                <View style={styles.seasonalSectionHeader}>
+                  <Leaf size={16} color={seasonColor} strokeWidth={2} />
+                  <Text style={[styles.seasonalSectionTitle, { color: seasonColor }]}>Nature</Text>
+                </View>
+                <Text style={[styles.seasonalSectionText, { color: colors.mutedText }]}>{solarTerm.natureChange}</Text>
               </View>
-              <View style={[styles.statusStat, { borderColor: colors.border, backgroundColor: colors.surface }]}>
-                <Target size={14} color={colors.primary} strokeWidth={2} />
-                <Text style={[styles.statusStatValue, { color: colors.text }]}>{totalSolved}</Text>
-                <Text style={[styles.statusStatLabel, { color: colors.mutedText }]}>Solved</Text>
+            )}
+
+            {/* Custom */}
+            {solarTerm.custom && (
+              <View style={[styles.seasonalSection, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+                <View style={styles.seasonalSectionHeader}>
+                  <Sparkles size={16} color={seasonColor} strokeWidth={2} />
+                  <Text style={[styles.seasonalSectionTitle, { color: seasonColor }]}>Custom</Text>
+                </View>
+                <Text style={[styles.seasonalSectionText, { color: colors.mutedText }]}>{solarTerm.custom}</Text>
               </View>
-              {reviewSummary && reviewSummary.pending > 0 && (
-                <Pressable
-                  style={styles.reviewStat}
-                  onPress={() => navigation.navigate('WrongAnswerReview')}
-                  accessibilityRole="button"
-                  accessibilityLabel={`${reviewSummary.pending} questions to review`}
-                  accessibilityHint="Double tap to review wrong answers"
-                >
-                  <BookOpen size={14} color={TYPE_COLORS.dynasty} strokeWidth={2} />
-                  <Text style={styles.reviewStatValue}>{reviewSummary.pending}</Text>
-                  <Text style={styles.reviewStatLabel}>Review</Text>
-                </Pressable>
-              )}
+            )}
+
+            {/* Food */}
+            {solarTerm.food && solarTerm.food.length > 0 && (
+              <View style={[styles.seasonalSection, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+                <View style={styles.seasonalSectionHeader}>
+                  <UtensilsCrossed size={16} color={seasonColor} strokeWidth={2} />
+                  <Text style={[styles.seasonalSectionTitle, { color: seasonColor }]}>Seasonal Food</Text>
+                </View>
+                <View style={styles.seasonalFoodTags}>
+                  {solarTerm.food.map((food, index) => (
+                    <View key={index} style={[styles.seasonalFoodTag, { backgroundColor: colors.cinnabarGlow }]}>
+                      <Text style={[styles.seasonalFoodTagText, { color: colors.primary }]}>{food}</Text>
+                    </View>
+                  ))}
+                </View>
+              </View>
+            )}
+
+            {/* Daily Action */}
+            <View style={[styles.dailyActionCard, { backgroundColor: `${seasonColor}15`, borderColor: seasonColor }]}>
+              <Text style={[styles.dailyActionLabel, { color: seasonColor }]}>Today's Gentle Action</Text>
+              <Text style={[styles.dailyActionText, { color: colors.text }]}>{solarTerm.dailyAction}</Text>
             </View>
+
+            {/* Beginner Note */}
+            <Text style={[styles.beginnerNote, { color: colors.mutedText }]}>{solarTerm.beginnerNote}</Text>
           </View>
         </View>
 
-        <Animated.View style={[styles.dailyCard, { opacity: fadeIn, transform: [{ translateY: slide }] }]}>
-          <Text style={styles.dailyLabel}>Daily Question</Text>
-          <Text style={styles.dailyQuestion}>{dailyQuestion?.question}</Text>
-          <View style={styles.choiceWrap}>
-            {dailyQuestion?.options?.map((option, index) => {
-              const isCorrect = selectedIndex !== null && index === dailyQuestion.correctIndex;
-              const isWrong = selectedIndex === index && selectedIndex !== null && index !== dailyQuestion.correctIndex;
-              return (
+        {/* Related Content */}
+        {solarTerm.relatedContent && solarTerm.relatedContent.length > 0 && (
+          <SectionCard style={styles.relatedSection} tone="soft">
+            <Text style={[styles.relatedTitle, { color: colors.text }]}>Explore This Season</Text>
+            <View style={styles.relatedItems}>
+              {solarTerm.relatedContent.slice(0, 3).map((item, index) => (
                 <Pressable
-                  key={option}
-                  style={[
-                    styles.choiceBtn,
-                    isCorrect && styles.choiceBtnCorrect,
-                    isWrong && styles.choiceBtnWrong,
-                  ]}
-                  onPress={() => handleChoice(index)}
+                  key={index}
+                  style={[styles.relatedItem, { backgroundColor: colors.surface, borderColor: colors.border }]}
+                  onPress={() => navigation.getParent()?.navigate('Explore', {
+                    screen: getTypeScreen(item.type),
+                    params: { id: item.id }
+                  })}
                   accessibilityRole="button"
-                  accessibilityLabel={`Option ${['A', 'B', 'C', 'D'][index]}: ${option}`}
-                  accessibilityHint={selectedIndex !== null ? "Answer already submitted" : "Double tap to select this answer"}
-                  disabled={selectedIndex !== null}
+                  accessibilityLabel={item.reason}
                 >
-                  <View style={styles.choiceLetterWrap}>
-                    <Text style={styles.choiceLetter}>{['A', 'B', 'C', 'D'][index]}</Text>
+                  <View style={styles.relatedItemContent}>
+                    <Text style={[styles.relatedItemReason, { color: colors.mutedText }]}>{item.reason}</Text>
                   </View>
-                  <Text style={styles.choiceText}>{option}</Text>
-                  {isCorrect && <Check size={18} color={theme.colors.success} strokeWidth={2.5} />}
-                  {isWrong && <X size={18} color={theme.colors.error} strokeWidth={2.5} />}
+                  <ArrowRight size={14} color={colors.mutedText} strokeWidth={2} />
                 </Pressable>
-              );
-            })}
+              ))}
+            </View>
+          </SectionCard>
+        )}
+
+        {/* Browse All Solar Terms */}
+        <SectionCard style={styles.browseTermsSection} tone="soft">
+          <View style={styles.browseTermsHeader}>
+            <CalendarDays size={16} color={seasonColor} strokeWidth={2} />
+            <Text style={[styles.browseTermsTitle, { color: colors.primary }]}>All 24 Solar Terms</Text>
           </View>
-          {selectedIndex !== null && dailyQuestion ? (
-            <Animated.View style={{ opacity: rewardPulseOpacity }}>
-              <Text style={styles.explanation}>{dailyQuestion.explanation}</Text>
-              <StampFeedback
-                label={answeredCorrectly ? "Correct" : "Wrong"}
-                active={true}
-                style={styles.stampFeedback}
-                tone={answeredCorrectly ? "gold" : "error"}
-              />
-            </Animated.View>
-          ) : null}
-        </Animated.View>
+          <Text style={[styles.browseTermsHint, { color: colors.mutedText }]}>
+            Explore the full Chinese calendar through seasonal changes
+          </Text>
+          <View style={styles.termsGrid}>
+            {solarTerms.filter(t => t.season === solarTerm.season).map((term) => (
+              <Pressable
+                key={term.id}
+                style={({ pressed }) => [
+                  styles.termCard,
+                  { backgroundColor: colors.card, borderColor: term.id === solarTerm.id ? seasonColor : colors.border },
+                  pressed && styles.termCardPressed,
+                ]}
+                onPress={() => navigation.navigate('SolarTermDetail', { termId: term.id })}
+                accessibilityRole="button"
+                accessibilityLabel={`${term.englishName} - ${term.chineseName}`}
+              >
+                <Text style={[styles.termNumber, { color: seasonColor }]}>#{term.order}</Text>
+                <Text style={[styles.termNameEn, { color: colors.text }]} numberOfLines={1}>{term.englishName}</Text>
+                <Text style={[styles.termNameZh, { color: seasonColor }]} numberOfLines={1}>{term.chineseName}</Text>
+              </Pressable>
+            ))}
+          </View>
+          <Pressable
+            style={({ pressed }) => [styles.browseAllBtn, { backgroundColor: `${seasonColor}15` }, pressed && styles.browseAllBtnPressed]}
+            onPress={() => navigation.getParent()?.navigate('Explore', { screen: 'Seasons' })}
+            accessibilityRole="button"
+            accessibilityLabel="Browse all 24 solar terms"
+          >
+            <CalendarDays size={14} color={seasonColor} strokeWidth={2} />
+            <Text style={[styles.browseAllText, { color: seasonColor }]}>View all 24 terms</Text>
+            <ArrowRight size={12} color={seasonColor} strokeWidth={2} />
+          </Pressable>
+        </SectionCard>
+
+        {/* Optional Mini Quiz - Collapsed by default */}
+        <Pressable
+          style={[styles.quizToggleCard, { backgroundColor: colors.card, borderColor: colors.border }]}
+          onPress={() => setShowQuiz(!showQuiz)}
+          accessibilityRole="button"
+          accessibilityLabel={showQuiz ? "Hide daily quiz" : "Show daily quiz"}
+        >
+          <View style={styles.quizToggleHeader}>
+            <View style={styles.quizToggleLeft}>
+              <Zap size={18} color={colors.primary} strokeWidth={2} />
+              <View>
+                <Text style={[styles.quizToggleTitle, { color: colors.text }]}>Optional Quiz</Text>
+                <Text style={[styles.quizToggleSubtitle, { color: colors.mutedText }]}>
+                  {showQuiz ? 'Tap to hide' : 'Test your knowledge'}
+                </Text>
+              </View>
+            </View>
+            <View style={styles.quizToggleStats}>
+              <View style={styles.quizStatItem}>
+                <Flame size={12} color={colors.primary} strokeWidth={2} />
+                <Text style={[styles.quizStatValue, { color: colors.text }]}>{streakCount}</Text>
+              </View>
+              <View style={styles.quizStatItem}>
+                <Target size={12} color={colors.primary} strokeWidth={2} />
+                <Text style={[styles.quizStatValue, { color: colors.text }]}>{totalSolved}</Text>
+              </View>
+            </View>
+          </View>
+        </Pressable>
+
+        {/* Quiz Content - Only shown when expanded */}
+        {showQuiz && (
+          <Animated.View style={[styles.quizCard, { opacity: fadeIn, transform: [{ translateY: slide }] }]}>
+            <Text style={styles.quizLabel}>Daily Question</Text>
+            <Text style={styles.quizQuestion}>{dailyQuestion?.question}</Text>
+            <View style={styles.choiceWrap}>
+              {dailyQuestion?.options?.map((option, index) => {
+                const isCorrect = selectedIndex !== null && index === dailyQuestion.correctIndex;
+                const isWrong = selectedIndex === index && selectedIndex !== null && index !== dailyQuestion.correctIndex;
+                return (
+                  <Pressable
+                    key={option}
+                    style={[
+                      styles.choiceBtn,
+                      isCorrect && styles.choiceBtnCorrect,
+                      isWrong && styles.choiceBtnWrong,
+                    ]}
+                    onPress={() => handleChoice(index)}
+                    accessibilityRole="button"
+                    accessibilityLabel={`Option ${['A', 'B', 'C', 'D'][index]}: ${option}`}
+                    accessibilityHint={selectedIndex !== null ? "Answer already submitted" : "Double tap to select this answer"}
+                    disabled={selectedIndex !== null}
+                  >
+                    <View style={styles.choiceLetterWrap}>
+                      <Text style={styles.choiceLetter}>{['A', 'B', 'C', 'D'][index]}</Text>
+                    </View>
+                    <Text style={styles.choiceText}>{option}</Text>
+                    {isCorrect && <Check size={18} color={theme.colors.success} strokeWidth={2.5} />}
+                    {isWrong && <X size={18} color={theme.colors.error} strokeWidth={2.5} />}
+                  </Pressable>
+                );
+              })}
+            </View>
+            {selectedIndex !== null && dailyQuestion ? (
+              <Animated.View style={{ opacity: rewardPulseOpacity }}>
+                <Text style={styles.explanation}>{dailyQuestion.explanation}</Text>
+                <StampFeedback
+                  label={answeredCorrectly ? "Correct" : "Wrong"}
+                  active={true}
+                  style={styles.stampFeedback}
+                  tone={answeredCorrectly ? "gold" : "error"}
+                />
+              </Animated.View>
+            ) : null}
+          </Animated.View>
+        )}
 
         {/* Celebration Card */}
         {showCelebration && answeredCorrectly && (
@@ -292,8 +445,8 @@ export function CalendarScreen() {
               <Animated.View style={{ transform: [{ rotate: starRotateTransform }] }}>
                 <Star size={28} color={theme.colors.primary} strokeWidth={2} fill={theme.colors.primary} />
               </Animated.View>
-              <Text style={styles.celebrationTitle}>Excellent!</Text>
-              <Text style={styles.celebrationTitleCn}>太棒了</Text>
+              <Text style={styles.celebrationTitle}>Well Done!</Text>
+              <Text style={styles.celebrationTitleCn}>做得好</Text>
             </View>
 
             <View style={styles.xpGainRow}>
@@ -309,42 +462,24 @@ export function CalendarScreen() {
               )}
             </View>
 
-            {nextStep && (
-              <Pressable
-                style={styles.nextStepCard}
-                onPress={() => navigation.navigate(nextStep.screen)}
-                accessibilityRole="button"
-                accessibilityLabel={`Next step: ${nextStep.label} - ${nextStep.labelCn}`}
-                accessibilityHint={`Double tap to ${nextStep.reason}`}
-              >
-                <View style={styles.nextStepIconWrap}>
-                  <nextStep.icon size={20} color={theme.colors.primary} strokeWidth={2} />
-                </View>
-                <View style={styles.nextStepContent}>
-                  <Text style={styles.nextStepLabel}>{nextStep.label}</Text>
-                  <Text style={styles.nextStepLabelCn}>{nextStep.labelCn}</Text>
-                  <Text style={styles.nextStepReason}>{nextStep.reason}</Text>
-                </View>
-                <ArrowRight size={16} color={theme.colors.primary} strokeWidth={2} />
-              </Pressable>
-            )}
-
             <View style={styles.celebrationActions}>
               <Pressable
                 style={styles.continueBtn}
-                onPress={() => navigation.getParent()?.navigate('Home')}
+                onPress={() => {
+                  setShowCelebration(false);
+                  setShowQuiz(false);
+                }}
                 accessibilityRole="button"
-                accessibilityLabel="Back to Home"
-                accessibilityHint="Double tap to return to home screen"
+                accessibilityLabel="Continue"
               >
-                <Text style={styles.continueBtnText}>Back to Home</Text>
+                <Text style={styles.continueBtnText}>Continue</Text>
               </Pressable>
             </View>
           </Animated.View>
         )}
 
         {/* Wrong answer encouragement */}
-        {selectedIndex !== null && !answeredCorrectly && (
+        {showQuiz && selectedIndex !== null && !answeredCorrectly && (
           <Animated.View style={[
             styles.encouragementCard,
             {
@@ -357,43 +492,31 @@ export function CalendarScreen() {
             <Text style={styles.encouragementText}>
               Every question teaches something new. Try again tomorrow!
             </Text>
-            {nextStep && (
-              <Pressable
-                style={styles.encourageExploreBtn}
-                onPress={() => navigation.navigate(nextStep.screen)}
-                accessibilityRole="button"
-                accessibilityLabel={`Explore ${nextStep.screen}`}
-                accessibilityHint="Double tap to continue learning"
-              >
-                <nextStep.icon size={16} color={theme.colors.primary} strokeWidth={2} />
-                <Text style={styles.encourageExploreText}>Explore {nextStep.screen}</Text>
-                <ArrowRight size={14} color={theme.colors.primary} strokeWidth={2} />
-              </Pressable>
-            )}
           </Animated.View>
         )}
 
-        {/* Infinite Quiz Mode Entry */}
-        <View style={styles.infiniteQuizCard}>
-          <View style={styles.infiniteQuizHeader}>
-            <Zap size={20} color={colors.primary} strokeWidth={2} />
-            <Text style={styles.infiniteQuizTitle}>Infinite Challenge</Text>
-            <Text style={styles.infiniteQuizTitleCn}>无限挑战</Text>
-          </View>
-          <Text style={styles.infiniteQuizDesc}>
-            How many can you answer correctly in a row? Build combos for bonus XP!
-          </Text>
+        {/* Review Prompt - Only if there are wrong answers */}
+        {reviewSummary && reviewSummary.pending > 0 && (
           <Pressable
-            style={({ pressed }) => [styles.infiniteQuizBtn, pressed && styles.infiniteQuizBtnPressed]}
-            onPress={() => navigation.navigate('InfiniteQuiz')}
+            style={[styles.reviewPromptCard, { backgroundColor: colors.card, borderColor: colors.border }]}
+            onPress={() => navigation.navigate('WrongAnswerReview')}
             accessibilityRole="button"
-            accessibilityLabel="Start Infinite Quiz Challenge"
-            accessibilityHint="Double tap to start endless quiz mode"
+            accessibilityLabel={`${reviewSummary.pending} questions to review`}
           >
-            <Text style={styles.infiniteQuizBtnText}>Start Challenge</Text>
-            <ArrowRight size={14} color="#FFFFFF" strokeWidth={2} />
+            <View style={styles.reviewPromptLeft}>
+              <View style={[styles.reviewPromptIcon, { backgroundColor: colors.cinnabarGlow }]}>
+                <BookOpen size={16} color={colors.primary} strokeWidth={2} />
+              </View>
+              <View style={styles.reviewPromptContent}>
+                <Text style={[styles.reviewPromptTitle, { color: colors.text }]}>Review Wrong Answers</Text>
+                <Text style={[styles.reviewPromptHint, { color: colors.mutedText }]}>
+                  {reviewSummary.pending} questions waiting
+                </Text>
+              </View>
+            </View>
+            <ArrowRight size={16} color={colors.mutedText} strokeWidth={2} />
           </Pressable>
-        </View>
+        )}
       </ScrollView>
     </SafeAreaView>
   );
@@ -445,8 +568,9 @@ const styles = StyleSheet.create({
     letterSpacing: theme.typography.hanziLetterSpacing * 0.5,
     fontWeight: '600',
   },
-  heroCard: {
-    minHeight: 280,
+
+  // Seasonal Hero Card
+  seasonalHeroCard: {
     backgroundColor: theme.colors.softCard,
     borderRadius: theme.radii.lg,
     borderWidth: 0.5,
@@ -454,160 +578,207 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
     ...theme.shadows.strong,
   },
-  heroInner: {
+  seasonalHeroInner: {
     paddingHorizontal: 18,
     paddingVertical: 18,
   },
-  statusTopRow: {
+  seasonalDateRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
-    marginBottom: 12,
+    marginBottom: 16,
   },
-  statusLabelWrap: {
-    flexDirection: 'row',
+  seasonalDateLeft: {
     alignItems: 'center',
-    gap: 6,
+    marginRight: 16,
   },
-  statusLabel: {
-    color: theme.colors.primary,
-    fontSize: 11,
-    letterSpacing: 1.4,
-    textTransform: 'uppercase',
+  seasonalMonthZh: {
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  seasonalDay: {
+    fontSize: 42,
+    fontWeight: '800',
+    lineHeight: 50,
+  },
+  seasonalDateRight: {
+    flex: 1,
+  },
+  seasonalTermEn: {
+    fontSize: 22,
     fontWeight: '800',
   },
-  statusBadge: {
-    backgroundColor: theme.colors.cinnabarGlow,
+  seasonalTermZh: {
+    fontSize: 16,
+    fontWeight: '600',
+    marginTop: 2,
+  },
+  seasonalPinyin: {
+    fontSize: 12,
+    marginTop: 2,
+  },
+  seasonalMeaningBox: {
+    marginTop: 12,
+    paddingBottom: 12,
+    borderBottomWidth: 0.5,
+    borderBottomColor: theme.colors.border,
+  },
+  seasonalMeaning: {
+    fontSize: 15,
+    lineHeight: 22,
+    fontWeight: '500',
+  },
+
+  // Seasonal Sections
+  seasonalSection: {
+    marginTop: 12,
+    borderRadius: theme.radii.md,
     borderWidth: 0.5,
-    borderColor: theme.colors.borderAccent,
+    padding: 12,
+  },
+  seasonalSectionHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginBottom: 6,
+  },
+  seasonalSectionTitle: {
+    fontSize: 12,
+    fontWeight: '800',
+    letterSpacing: 1,
+    textTransform: 'uppercase',
+  },
+  seasonalSectionText: {
+    fontSize: 13,
+    lineHeight: 20,
+  },
+  seasonalFoodTags: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+    marginTop: 4,
+  },
+  seasonalFoodTag: {
     paddingHorizontal: 10,
     paddingVertical: 5,
     borderRadius: 999,
   },
-  statusBadgeDone: {
-    backgroundColor: theme.colors.goldLeaf,
-    borderColor: 'rgba(184, 115, 51, 0.30)',
-  },
-  statusBadgeText: {
-    color: theme.colors.primary,
-    fontSize: 11,
-    fontWeight: '800',
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
-  },
-  statusBadgeTextDone: {
-    color: theme.colors.success,
-  },
-  dateRow: {
-    flexDirection: 'row',
-    alignItems: 'baseline',
-    gap: 12,
-  },
-  statusTitleZh: {
-    color: theme.colors.text,
-    fontSize: 36,
-    lineHeight: 44,
-    fontWeight: '700',
-    letterSpacing: theme.typography.hanziLetterSpacing * 0.5,
-  },
-  statusTitle: {
-    color: theme.colors.mutedText,
-    fontSize: 16,
-    fontWeight: '600',
-  },
-  solarTermRow: {
-    flexDirection: 'row',
-    alignItems: 'baseline',
-    gap: 8,
-    marginTop: 8,
-  },
-  solarTermEn: {
-    color: theme.colors.text,
-    fontSize: 18,
-    fontWeight: '700',
-  },
-  solarTermZh: {
-    color: theme.colors.primary,
-    fontSize: 14,
-    fontWeight: '600',
-  },
-  statusYear: {
-    marginTop: 6,
-    color: theme.colors.mutedText,
+  seasonalFoodTagText: {
     fontSize: 12,
-    letterSpacing: 0.8,
+    fontWeight: '600',
   },
-  statusStatsRow: {
+
+  // Daily Action
+  dailyActionCard: {
+    marginTop: 16,
+    borderRadius: theme.radii.md,
+    borderWidth: 1,
+    padding: 14,
+  },
+  dailyActionLabel: {
+    fontSize: 10,
+    fontWeight: '900',
+    letterSpacing: 1.2,
+    textTransform: 'uppercase',
+  },
+  dailyActionText: {
+    marginTop: 6,
+    fontSize: 14,
+    lineHeight: 21,
+    fontWeight: '600',
+  },
+  beginnerNote: {
+    marginTop: 12,
+    fontSize: 12,
+    lineHeight: 18,
+    fontStyle: 'italic',
+  },
+
+  // Related Section
+  relatedSection: {
+    marginTop: 14,
+  },
+  relatedTitle: {
+    fontSize: 16,
+    fontWeight: '700',
+    marginBottom: 10,
+  },
+  relatedItems: {
+    gap: 8,
+  },
+  relatedItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    borderRadius: theme.radii.md,
+    borderWidth: 0.5,
+    padding: 12,
+  },
+  relatedItemContent: {
+    flex: 1,
+  },
+  relatedItemReason: {
+    fontSize: 13,
+    lineHeight: 18,
+  },
+
+  // Quiz Toggle
+  quizToggleCard: {
+    marginTop: 14,
+    borderRadius: theme.radii.lg,
+    borderWidth: 0.5,
+    padding: 14,
+    ...theme.shadows.subtle,
+  },
+  quizToggleHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  quizToggleLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+  },
+  quizToggleTitle: {
+    fontSize: 15,
+    fontWeight: '700',
+  },
+  quizToggleSubtitle: {
+    fontSize: 12,
+    marginTop: 1,
+  },
+  quizToggleStats: {
     flexDirection: 'row',
     gap: 12,
-    marginTop: 14,
   },
-  statusStat: {
-    flex: 1,
+  quizStatItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
-    borderRadius: theme.radii.md,
-    borderWidth: 0.5,
-    borderColor: theme.colors.border,
-    backgroundColor: theme.colors.surface,
-    paddingHorizontal: 10,
-    paddingVertical: 8,
+    gap: 4,
   },
-  statusStatValue: {
-    color: theme.colors.text,
-    fontSize: 16,
-    fontWeight: '800',
-  },
-  statusStatLabel: {
-    color: theme.colors.mutedText,
-    fontSize: 10,
-    letterSpacing: 0.8,
-    textTransform: 'uppercase',
+  quizStatValue: {
+    fontSize: 14,
     fontWeight: '700',
   },
-  reviewStat: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    borderRadius: theme.radii.md,
-    borderWidth: 0.5,
-    borderColor: TYPE_COLORS.dynasty,
-    backgroundColor: 'rgba(179, 59, 36, 0.08)',
-    paddingHorizontal: 10,
-    paddingVertical: 8,
-  },
-  reviewStatValue: {
-    color: TYPE_COLORS.dynasty,
-    fontSize: 16,
-    fontWeight: '800',
-  },
-  reviewStatLabel: {
-    color: TYPE_COLORS.dynasty,
-    fontSize: 10,
-    letterSpacing: 0.8,
-    textTransform: 'uppercase',
-    fontWeight: '700',
-  },
-  dailyCard: {
-    marginTop: 14,
+
+  // Quiz Content
+  quizCard: {
+    marginTop: 8,
     borderRadius: theme.radii.lg,
     borderWidth: 0.5,
     borderColor: theme.colors.border,
     backgroundColor: theme.colors.card,
     paddingHorizontal: 16,
     paddingVertical: 16,
-    ...theme.shadows.subtle,
   },
-  dailyLabel: {
+  quizLabel: {
     color: theme.colors.primary,
     fontSize: 11,
     letterSpacing: 1.8,
     textTransform: 'uppercase',
     fontWeight: '800',
   },
-  dailyQuestion: {
+  quizQuestion: {
     marginTop: 10,
     color: theme.colors.text,
     fontSize: 16,
@@ -667,6 +838,8 @@ const styles = StyleSheet.create({
     marginTop: 12,
     alignItems: 'center',
   },
+
+  // Celebration
   celebrationCard: {
     marginTop: 14,
     borderRadius: theme.radii.lg,
@@ -727,45 +900,8 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: '700',
   },
-  nextStepCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-    borderRadius: theme.radii.md,
-    borderWidth: 0.5,
-    borderColor: theme.colors.border,
-    backgroundColor: theme.colors.surface,
-    padding: 14,
-  },
-  nextStepIconWrap: {
-    width: 44,
-    height: 44,
-    borderRadius: 12,
-    backgroundColor: theme.colors.cinnabarGlow,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  nextStepContent: {
-    flex: 1,
-  },
-  nextStepLabel: {
-    color: theme.colors.text,
-    fontSize: 15,
-    fontWeight: '700',
-  },
-  nextStepLabelCn: {
-    color: theme.colors.primary,
-    fontSize: 12,
-    fontWeight: '600',
-    marginTop: 1,
-  },
-  nextStepReason: {
-    color: theme.colors.mutedText,
-    fontSize: 11,
-    marginTop: 2,
-  },
   celebrationActions: {
-    marginTop: 16,
+    marginTop: 8,
     alignItems: 'center',
   },
   continueBtn: {
@@ -781,6 +917,8 @@ const styles = StyleSheet.create({
     textTransform: 'uppercase',
     letterSpacing: 0.5,
   },
+
+  // Encouragement
   encouragementCard: {
     marginTop: 14,
     borderRadius: theme.radii.lg,
@@ -810,67 +948,112 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     lineHeight: 20,
   },
-  encourageExploreBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
+
+  // Review Prompt
+  reviewPromptCard: {
     marginTop: 14,
-    backgroundColor: theme.colors.cinnabarGlow,
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    borderRadius: 999,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    borderRadius: theme.radii.md,
+    borderWidth: 0.5,
+    padding: 14,
   },
-  encourageExploreText: {
-    color: theme.colors.primary,
-    fontSize: 13,
+  reviewPromptLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    flex: 1,
+  },
+  reviewPromptIcon: {
+    width: 36,
+    height: 36,
+    borderRadius: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  reviewPromptContent: {
+    flex: 1,
+  },
+  reviewPromptTitle: {
+    fontSize: 14,
     fontWeight: '700',
   },
-  infiniteQuizCard: {
-    marginTop: 20,
-    padding: 16,
-    borderRadius: theme.radii.lg,
-    backgroundColor: theme.colors.card,
-    borderWidth: 1,
-    borderColor: theme.colors.border,
+  reviewPromptHint: {
+    fontSize: 12,
+    marginTop: 2,
   },
-  infiniteQuizHeader: {
+
+  // Browse Solar Terms Section
+  browseTermsSection: {
+    marginTop: 14,
+    padding: 16,
+    borderRadius: 20,
+  },
+  browseTermsHeader: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
+    marginBottom: 6,
   },
-  infiniteQuizTitle: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: theme.colors.text,
-  },
-  infiniteQuizTitleCn: {
+  browseTermsTitle: {
     fontSize: 12,
-    fontWeight: '600',
-    color: theme.colors.primary,
+    fontWeight: '900',
+    letterSpacing: 1.2,
+    textTransform: 'uppercase',
   },
-  infiniteQuizDesc: {
-    marginTop: 8,
+  browseTermsHint: {
     fontSize: 12,
-    color: theme.colors.mutedText,
     lineHeight: 18,
+    marginBottom: 12,
   },
-  infiniteQuizBtn: {
+  termsGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+  },
+  termCard: {
+    width: '31%',
+    borderRadius: 14,
+    borderWidth: 0.5,
+    padding: 10,
+    alignItems: 'center',
+  },
+  termCardPressed: {
+    transform: [{ scale: 0.97 }],
+    opacity: 0.9,
+  },
+  termNumber: {
+    fontSize: 9,
+    fontWeight: '700',
+    marginBottom: 4,
+  },
+  termNameEn: {
+    fontSize: 11,
+    fontWeight: '700',
+    textAlign: 'center',
+  },
+  termNameZh: {
+    fontSize: 10,
+    fontWeight: '600',
+    marginTop: 2,
+    textAlign: 'center',
+  },
+  browseAllBtn: {
+    marginTop: 12,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 8,
-    marginTop: 12,
-    backgroundColor: theme.colors.primary,
-    paddingVertical: 12,
+    gap: 6,
     borderRadius: 999,
+    paddingHorizontal: 14,
+    paddingVertical: 8,
   },
-  infiniteQuizBtnPressed: {
-    opacity: 0.9,
-    transform: [{ scale: 0.98 }],
+  browseAllBtnPressed: {
+    transform: [{ scale: 0.97 }],
   },
-  infiniteQuizBtnText: {
-    color: '#FFFFFF',
-    fontSize: 14,
+  browseAllText: {
+    fontSize: 12,
     fontWeight: '700',
   },
 });
