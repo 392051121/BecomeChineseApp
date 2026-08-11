@@ -1,4 +1,4 @@
-import React, { useMemo, useEffect } from 'react';
+import React, { useMemo, useEffect, useRef } from 'react';
 import {
   Pressable,
   SafeAreaView,
@@ -19,6 +19,7 @@ import { useTheme } from '../theme/ThemeContext';
 import { HandscrollContainer } from '../components/HandscrollContainer';
 import { ScreenHeader } from '../components/ScreenHeader';
 import { SectionCard } from '../components/SectionCard';
+import { LinkedConceptText } from '../components/LinkedConceptText';
 import { DetailHeader } from '../components/DetailHeader';
 import { PaperTexture } from '../components/PaperTexture';
 import { cities } from '../data/cities';
@@ -26,6 +27,7 @@ import { recipes } from '../data/recipes';
 import { people } from '../data/people';
 import { shareText, generateDynastyShareText } from '../utils/sharing';
 import { earnStamp } from '../utils/stampCollection';
+import { useReadingPosition } from '../hooks/useReadingPosition';
 
 export function DynastyDetailScreen({ route, navigation }) {
   const { colors } = useTheme();
@@ -34,6 +36,17 @@ export function DynastyDetailScreen({ route, navigation }) {
     () => dynasties.find((item) => item.id === dynastyId) ?? dynasties[0],
     [dynastyId]
   );
+
+  const scrollRef = useRef(null);
+  const { savedOffset, onScroll, restore } = useReadingPosition(
+    dynasty?.id ? `dynasty:${dynasty.id}` : ''
+  );
+  useEffect(() => {
+    if (!(savedOffset > 0)) return;
+    const t = setTimeout(() => restore(scrollRef), 60);
+    return () => clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [savedOffset, dynasty?.id]);
 
   const speakTerm = (text) => {
     if (!text) return;
@@ -107,7 +120,13 @@ export function DynastyDetailScreen({ route, navigation }) {
       />
       <HandscrollContainer>
 
-        <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+        <ScrollView
+          ref={scrollRef}
+          contentContainerStyle={styles.content}
+          showsVerticalScrollIndicator={false}
+          onScroll={onScroll}
+          scrollEventThrottle={16}
+        >
           <ScreenHeader
             kicker={dynasty?.years ?? 'Dynasty'}
             title={dynasty?.nameEn ?? 'Dynasty'}
@@ -134,21 +153,21 @@ export function DynastyDetailScreen({ route, navigation }) {
           <SectionCard style={styles.card}>
             <View style={styles.sectionHeader}>
               <BadgeInfo size={14} color={theme.colors.primary} />
-              <Text style={styles.sectionTitle}>时间线 · Timeline Link</Text>
+              <Text style={styles.sectionTitle}>Timeline · 时间线</Text>
             </View>
-            <Text style={styles.sectionText}>{dynasty.worldContext}</Text>
+            <LinkedConceptText text={dynasty.worldContext} style={styles.sectionText} />
             <View style={styles.miniTimeline}>
               <Text style={styles.timelineLabel}>Start</Text>
               <View style={styles.timelineLine} />
               <Text style={styles.timelineLabel}>End</Text>
             </View>
-            <Text style={styles.sectionTextMuted}>{dynasty.legacy}</Text>
+            <LinkedConceptText text={dynasty.legacy} style={styles.sectionTextMuted} />
           </SectionCard>
 
           <SectionCard style={styles.card}>
             <View style={styles.sectionHeader}>
               <BookOpen size={14} color={theme.colors.primary} />
-              <Text style={styles.sectionTitle}>统治者 · Rulers</Text>
+              <Text style={styles.sectionTitle}>Rulers · 统治者</Text>
             </View>
             {sections.map((section) => (
               <View key={section.key} style={styles.subSection}>
@@ -170,7 +189,7 @@ export function DynastyDetailScreen({ route, navigation }) {
             <SectionCard style={styles.card}>
               <View style={styles.sectionHeader}>
                 <Users size={14} color={theme.colors.primary} />
-                <Text style={styles.sectionTitle}>著名人物 · Notable Figures</Text>
+                <Text style={styles.sectionTitle}>Notable Figures · 著名人物</Text>
               </View>
               <Text style={styles.sectionHint}>Key personalities who shaped this era</Text>
               {dynasty.famousPeople.map((person, idx) => (
@@ -193,7 +212,7 @@ export function DynastyDetailScreen({ route, navigation }) {
             <SectionCard style={styles.card}>
               <View style={styles.sectionHeader}>
                 <Crown size={14} color={theme.colors.primary} />
-                <Text style={styles.sectionTitle}>文化遗产 · Cultural Artifacts</Text>
+                <Text style={styles.sectionTitle}>Cultural Artifacts · 文化遗产</Text>
               </View>
               <Text style={styles.sectionHint}>Treasures and innovations from this era</Text>
               {dynasty.artifacts.map((artifact, idx) => (
@@ -214,7 +233,7 @@ export function DynastyDetailScreen({ route, navigation }) {
             <SectionCard style={styles.card}>
               <View style={styles.sectionHeader}>
                 <Scroll size={14} color={theme.colors.primary} />
-                <Text style={styles.sectionTitle}>重大事件 · Key Events</Text>
+                <Text style={styles.sectionTitle}>Key Events · 重大事件</Text>
               </View>
               {dynasty.keyEvents.map((event, idx) => (
                 <View key={`event-${idx}`} style={styles.eventItem}>
@@ -229,7 +248,7 @@ export function DynastyDetailScreen({ route, navigation }) {
           <SectionCard style={styles.card}>
             <View style={styles.sectionHeader}>
               <Sparkles size={14} color={theme.colors.primary} />
-              <Text style={styles.sectionTitle}>深入探索 · Explore Further</Text>
+              <Text style={styles.sectionTitle}>Explore Further · 深入探索</Text>
             </View>
             <Text style={styles.sectionText}>Continue exploring the culture, places, and flavors connected to this dynasty.</Text>
 

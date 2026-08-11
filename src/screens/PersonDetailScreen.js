@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
   Platform,
   Pressable,
@@ -19,6 +19,7 @@ import { getLocalImage } from '../assets/localImages';
 import { SmartImageBlock } from '../components/SmartImageBlock';
 import { ScreenHeader } from '../components/ScreenHeader';
 import { SectionCard } from '../components/SectionCard';
+import { LinkedConceptText } from '../components/LinkedConceptText';
 import { DetailHeader } from '../components/DetailHeader';
 import { getFavoritesSnapshot, toggleCollectionItem } from '../utils/culturalAssets';
 import { shareText } from '../utils/sharing';
@@ -26,6 +27,7 @@ import { earnStamp } from '../utils/stampCollection';
 import { theme } from '../theme/theme';
 import { useTheme } from '../theme/ThemeContext';
 import { useToast } from '../components/Toast';
+import { useReadingPosition } from '../hooks/useReadingPosition';
 
 export function PersonDetailScreen({ route, navigation }) {
   const { colors } = useTheme();
@@ -35,6 +37,18 @@ export function PersonDetailScreen({ route, navigation }) {
     () => people.find((item) => item.id === personId) ?? people[0],
     [personId]
   );
+
+  const scrollRef = useRef(null);
+  const { savedOffset, onScroll, restore } = useReadingPosition(
+    person?.id ? `person:${person.id}` : ''
+  );
+  // Restore the saved scroll offset once the content is laid out.
+  useEffect(() => {
+    if (!(savedOffset > 0)) return;
+    const t = setTimeout(() => restore(scrollRef), 60);
+    return () => clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [savedOffset, person?.id]);
 
   const relatedDynasty = useMemo(
     () => dynasties.find((d) => d.id === person?.dynastyId),
@@ -138,9 +152,12 @@ export function PersonDetailScreen({ route, navigation }) {
       />
 
       <ScrollView
+        ref={scrollRef}
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
         bounces={true}
+        onScroll={onScroll}
+        scrollEventThrottle={16}
       >
         <SectionCard style={styles.hero}>
           <View style={styles.heroContent}>
@@ -162,16 +179,16 @@ export function PersonDetailScreen({ route, navigation }) {
         <SectionCard style={styles.card}>
           <View style={styles.sectionHeader}>
             <BookOpen size={14} color={colors.primary} />
-            <Text style={[styles.sectionTitle, { color: colors.primary }]}>概述 · Overview</Text>
+            <Text style={[styles.sectionTitle, { color: colors.primary }]}>Overview · 概述</Text>
           </View>
-          <Text style={[styles.summaryText, { color: colors.text }]}>{person.summaryEn}</Text>
+          <LinkedConceptText text={person.summaryEn} style={[styles.summaryText, { color: colors.text }]} />
         </SectionCard>
 
         {person.achievements && person.achievements.length > 0 && (
           <SectionCard style={styles.card}>
             <View style={styles.sectionHeader}>
               <Award size={14} color={colors.primary} />
-              <Text style={[styles.sectionTitle, { color: colors.primary }]}>主要成就 · Key Achievements</Text>
+              <Text style={[styles.sectionTitle, { color: colors.primary }]}>Key Achievements · 主要成就</Text>
             </View>
             {person.achievements.map((achievement, idx) => (
               <View key={`achievement-${idx}`} style={styles.listItem}>
@@ -186,7 +203,7 @@ export function PersonDetailScreen({ route, navigation }) {
           <SectionCard style={styles.card}>
             <View style={styles.sectionHeader}>
               <Scroll size={14} color={colors.primary} />
-              <Text style={[styles.sectionTitle, { color: colors.primary }]}>标签 · Tags</Text>
+              <Text style={[styles.sectionTitle, { color: colors.primary }]}>Tags · 标签</Text>
             </View>
             <View style={styles.tagWrap}>
               {person.tags.map((tag, idx) => (
@@ -202,7 +219,7 @@ export function PersonDetailScreen({ route, navigation }) {
           <SectionCard style={styles.card}>
             <View style={styles.sectionHeader}>
               <Users size={14} color={colors.primary} />
-              <Text style={[styles.sectionTitle, { color: colors.primary }]}>历史时期 · Historical Period</Text>
+              <Text style={[styles.sectionTitle, { color: colors.primary }]}>Historical Period · 历史时期</Text>
             </View>
             <Pressable
               style={[styles.relatedItem, { backgroundColor: colors.surface, borderColor: colors.border }]}
@@ -221,7 +238,7 @@ export function PersonDetailScreen({ route, navigation }) {
           <SectionCard style={styles.card}>
             <View style={styles.sectionHeader}>
               <MapPin size={14} color={colors.primary} />
-              <Text style={[styles.sectionTitle, { color: colors.primary }]}>相关地点 · Related Places</Text>
+              <Text style={[styles.sectionTitle, { color: colors.primary }]}>Related Places · 相关地点</Text>
             </View>
             {relatedCities.map((city) => (
               <Pressable
