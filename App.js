@@ -11,6 +11,7 @@ import { BadgeNotificationProvider } from './src/components/BadgeNotification';
 import { ToastProvider } from './src/components/Toast';
 import { ThemeProvider, useTheme } from './src/theme/ThemeContext';
 import { ErrorBoundary } from './src/components/ErrorBoundary';
+import { OfflineBanner } from './src/components/OfflineBanner';
 
 SplashScreen.preventAutoHideAsync().catch(() => {
   // Ignore race conditions if already hidden.
@@ -63,6 +64,7 @@ function AppContent() {
       <GlobalPaperBackground />
       <ToastProvider>
         <BadgeNotificationProvider>
+          <OfflineBanner />
           <RootTabs />
         </BadgeNotificationProvider>
       </ToastProvider>

@@ -39,6 +39,12 @@ export const STORAGE_KEYS = {
 
   // Cultural Stamps Collection
   CULTURAL_STAMPS: `${PREFIX}culturalStamps`,
+
+  // Reading positions (per-content scroll offset)
+  READING_POSITIONS: `${PREFIX}readingPositions`,
+
+  // Solar-term "Today's Gentle Action" completion state (per-term)
+  TERM_ACTIONS_DONE: `${PREFIX}termActionsDone`,
 };
 
 export default STORAGE_KEYS;
