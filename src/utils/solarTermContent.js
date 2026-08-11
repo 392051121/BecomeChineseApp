@@ -10,6 +10,9 @@ import { cities } from '../data/cities';
 import { recipes } from '../data/recipes';
 import { dynasties } from '../data/dynasties';
 
+// Re-export for callers that import from this module (HomeScreen, CurrentSolarTermBanner)
+export { getCurrentSolarTerm };
+
 // Season content associations
 const SEASON_ASSOCIATIONS = {
   spring: {

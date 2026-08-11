@@ -1,11 +1,9 @@
 import React, { useEffect, useMemo, useState, useCallback } from 'react';
 import { Platform, Pressable, RefreshControl, SafeAreaView, StatusBar, StyleSheet, Text, View } from 'react-native';
-import { CalendarDays, Clock, Map, UtensilsCrossed, ArrowRight, Flame, Target, Bookmark, Trophy, Star, Zap, Scroll, User, BookOpen } from 'lucide-react-native';
+import { CalendarDays, Clock, Map, UtensilsCrossed, ArrowRight, Flame, Target, Bookmark, Trophy, Star, Zap, Scroll, User, BookOpen, ChevronRight, Leaf } from 'lucide-react-native';
 import { useNavigation } from '@react-navigation/native';
 
-import { getCultureRank, getCulturalAssets, getProvinceConnectionMap, getRecentlyViewed } from '../utils/culturalAssets';
-import { getTypeScreen } from '../utils/contentTypes';
-import { getRecommendedNextStep } from '../utils/recommendations';
+import { getCulturalAssets, getProvinceConnectionMap, getRecentlyViewed } from '../utils/culturalAssets';
 import { getWrongAnswers } from '../utils/wrongAnswers';
 import { logger } from '../utils/errorHandling';
 import { getSignInStatus } from '../utils/dailySignIn';
@@ -13,20 +11,21 @@ import { cities } from '../data/cities';
 import { recipes } from '../data/recipes';
 import { dynasties } from '../data/dynasties';
 import { HandscrollContainer } from '../components/HandscrollContainer';
-import { SectionCard } from '../components/SectionCard';
 import { DailySignInModal, DailySignInButton } from '../components/DailySignInModal';
 import { DailyTasksModal, DailyTasksButton } from '../components/DailyTasksModal';
 import { getTasksSummary } from '../utils/dailyTasks';
 import { SkeletonHomeScreen } from '../components/Skeleton';
 import { calculateTotalXP, getXPLevel } from '../data/badges';
 import { getXPProgress } from '../config/gamification';
+import { getCurrentSolarTerm, getCurrentSeason, getSeasonalColors, getFestivalBonus } from '../utils/solarTermContent';
+import { PaperTexture } from '../components/PaperTexture';
 import { theme } from '../theme/theme';
 import { useTheme } from '../theme/ThemeContext';
 
 const quickActions = [
-  { id: 'history', label: 'History', labelCn: '历史', icon: Clock, target: 'History', color: '#B33B24' },
-  { id: 'food', label: 'Food', labelCn: '美食', icon: UtensilsCrossed, target: 'Food', color: '#E2B05E' },
-  { id: 'places', label: 'Places', labelCn: '城市', icon: Map, target: 'Places', color: '#6B8A94' },
+  { id: 'history', label: 'History', labelCn: '历史', icon: Scroll, target: 'History', color: '#B33B24', seasonKey: 'autumn', prose: 'Rise and fall of dynasties' },
+  { id: 'food', label: 'Food', labelCn: '美食', icon: UtensilsCrossed, target: 'Food', color: '#C88A2D', seasonKey: 'spring', prose: 'A taste of China' },
+  { id: 'places', label: 'Places', labelCn: '城市', icon: Map, target: 'Places', color: '#6B8A94', seasonKey: 'summer', prose: 'Walk the land of China' },
 ];
 
 export function HomeScreen() {
@@ -41,6 +40,7 @@ export function HomeScreen() {
   const [tasksSummary, setTasksSummary] = useState(null);
   const [showTasksModal, setShowTasksModal] = useState(false);
   const [recentlyViewed, setRecentlyViewed] = useState([]);
+  const [seasonMeta, setSeasonMeta] = useState(null);
 
   const loadData = useCallback(async () => {
     const [assetsData, wrongData, signInData, tasksData, recentData] = await Promise.all([
@@ -56,6 +56,15 @@ export function HomeScreen() {
     setTasksSummary(tasksData);
     setRecentlyViewed(recentData);
     setIsLoading(false);
+  }, []);
+
+  // Load current solar term + seasonal identity for the hero
+  useEffect(() => {
+    const term = getCurrentSolarTerm();
+    const season = getCurrentSeason();
+    const seasonColors = getSeasonalColors();
+    const bonus = getFestivalBonus();
+    setSeasonMeta({ term, season, seasonColors, bonus });
   }, []);
 
   const onRefresh = useCallback(async () => {
@@ -107,6 +116,14 @@ export function HomeScreen() {
   const xpLevel = useMemo(() => getXPLevel(totalXP), [totalXP]);
   const xpProgress = useMemo(() => getXPProgress(totalXP), [totalXP]);
 
+  // Hero seasonal styling
+  const seasonText = seasonMeta?.seasonColors?.text || '·';
+  const seasonName = seasonMeta?.season || 'autumn';
+  const heroTermCn = seasonMeta?.term?.nameCn || '';
+  const heroTermEn = seasonMeta?.term?.nameEn || '';
+  const heroSummary = seasonMeta?.term?.summaryEn || '';
+  const isFestival = seasonMeta?.bonus?.isFestival;
+
   // Show skeleton while loading
   if (isLoading) {
     return (
@@ -118,6 +135,11 @@ export function HomeScreen() {
 
   return (
     <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.background }]}>
+      {/* Global 宣纸背景质感 */}
+      <View pointerEvents="none" style={styles.paperWrap}>
+        {!isDark && <PaperTexture style={styles.paperTexture} idPrefix="home_bg" />}
+      </View>
+
       <HandscrollContainer
         style={styles.scrollShell}
         refreshControl={
@@ -130,134 +152,161 @@ export function HomeScreen() {
         }
       >
         <View style={styles.container}>
-          {/* Compact Header with Level */}
-          <View style={styles.compactHeader}>
-            <View style={styles.headerTopRow}>
-              {/* Level Badge */}
-              <View style={[styles.levelBadge, { backgroundColor: colors.cinnabarGlow }]}>
-                <Trophy size={12} color={colors.primary} strokeWidth={2.5} />
-                <Text style={[styles.levelBadgeText, { color: colors.primary }]}>Lv.{xpLevel.level}</Text>
-              </View>
+          {/* ============ HERO 主视觉区 ============ */}
+          <View
+            style={[
+              styles.heroCard,
+              isDark ? styles.heroCardDark : styles.heroCardLight,
+            ]}
+          >
+            <View style={styles.heroGlow} />
+            <PaperTexture style={styles.heroTexture} intensity="strong" idPrefix="home_hero" />
 
-              {/* XP Progress */}
-              <View style={styles.xpProgressWrap}>
-                <View style={[styles.xpProgressTrack, { backgroundColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(51,51,51,0.08)' }]}>
-                  <View style={[styles.xpProgressFill, { width: `${xpProgress.percentage}%`, backgroundColor: colors.primary }]} />
+            {/* 等级小徽章 */}
+            <View style={styles.heroTopRow}>
+              <View style={styles.heroLevelBadge}>
+                <Trophy size={11} color="#F5D78A" strokeWidth={2.5} />
+                <Text style={styles.heroLevelText}>Lv.{xpLevel.level}</Text>
+              </View>
+              {isFestival && (
+                <View style={styles.heroFestivalBadge}>
+                  <Star size={11} color="#F5D78A" strokeWidth={2.5} fill="#F5D78A" />
+                  <Text style={styles.heroFestivalText}>Festival</Text>
                 </View>
-                <Text style={[styles.xpLabel, { color: colors.mutedText }]}>{totalXP} XP</Text>
-              </View>
+              )}
+            </View>
 
-              {/* Level Title */}
-              <View style={styles.levelTitleWrap}>
-                <Text style={[styles.levelTitle, { color: colors.text }]}>{xpLevel.title}</Text>
-                <Text style={[styles.levelTitleCn, { color: colors.primary }]}>{xpLevel.titleCn}</Text>
+            {/* 中央季节大字 + 节气 */}
+            <View style={styles.heroMainRow}>
+              <Text style={styles.heroSeasonChar}>{seasonText}</Text>
+              <View style={styles.heroTermGroup}>
+                <Text style={styles.heroTermEnMain}>{heroTermEn}</Text>
+                <Text style={styles.heroTermCnSub}>{heroTermCn}</Text>
               </View>
+            </View>
+            <View style={styles.heroDivider} />
+            <Text style={styles.heroSummary} numberOfLines={3}>
+              {heroSummary || 'Learn Chinese culture, one story at a time.'}
+            </Text>
+
+            {/* XP 进度 (并入 Hero 底部) */}
+            <View style={styles.heroFooter}>
+              <View style={styles.heroXpTrack}>
+                <View style={[styles.heroXpFill, { width: `${xpProgress.percentage}%` }]} />
+              </View>
+              <Text style={styles.heroXpLabel}>{totalXP} XP · {xpProgress.percentage}%</Text>
+            </View>
+
+            {/* 角落印章 */}
+            <View style={styles.heroSeal}>
+              <Text style={styles.heroSealText}>{xpLevel.titleCn || '行者'}</Text>
             </View>
           </View>
 
-          {/* Daily Quiz Card */}
+          {/* ============ 今日任务卡 ============ */}
           <Pressable
-            style={({ pressed }) => [styles.taskCard, pressed && styles.taskCardPressed, !solvedToday && styles.taskCardPending]}
+            style={({ pressed }) => [styles.taskCard, pressed && styles.taskCardPressed]}
             onPress={() => navigation.getParent()?.navigate('Seasons')}
             accessibilityRole="button"
             accessibilityLabel={!solvedToday ? "Priority task: Complete daily quiz" : "Today's task completed"}
           >
-            <View style={styles.taskContent}>
-              <View style={styles.taskLeft}>
-                <View style={[styles.taskIconWrap, solvedToday && styles.taskIconDone]}>
-                  {solvedToday ? (
-                    <Star size={16} color="#FFFFFF" strokeWidth={2.5} fill="#FFFFFF" />
-                  ) : (
-                    <Zap size={16} color={colors.primary} strokeWidth={2.5} fill={colors.primary} />
-                  )}
-                </View>
-                <View style={styles.taskInfo}>
-                  <Text style={styles.taskTitle}>{solvedToday ? 'Task Complete!' : 'Daily Quiz'}</Text>
-                  <Text style={styles.taskTitleCn}>{solvedToday ? '今日完成' : '每日问答'}</Text>
-                </View>
-              </View>
-              <View style={styles.taskStats}>
-                <View style={styles.taskStatItem}>
-                  <Flame size={12} color={colors.primary} strokeWidth={2} />
-                  <Text style={styles.taskStatValue}>{streak}</Text>
-                </View>
-                <View style={styles.taskStatItem}>
-                  <Target size={12} color={colors.primary} strokeWidth={2} />
-                  <Text style={styles.taskStatValue}>{solved}</Text>
-                </View>
-              </View>
-              {!solvedToday && (
-                <View style={styles.taskAction}>
-                  <Text style={styles.taskActionText}>Start</Text>
-                  <ArrowRight size={12} color="#FFFFFF" strokeWidth={2.5} />
-                </View>
+            <View style={[styles.taskIconWrap, solvedToday && styles.taskIconDone]}>
+              {solvedToday ? (
+                <Star size={18} color="#FFFFFF" strokeWidth={2.5} fill="#FFFFFF" />
+              ) : (
+                <Zap size={18} color="#FFFFFF" strokeWidth={2.5} fill="#FFFFFF" />
               )}
             </View>
+            <View style={styles.taskInfo}>
+              <Text style={styles.taskTitle}>
+                {solvedToday ? "Today's Quiz Done" : 'Daily Quiz'}
+              </Text>
+              <Text style={styles.taskTitleCn}>
+                {solvedToday ? '今日已完成' : '每日一问'}
+              </Text>
+            </View>
+            <View style={styles.taskStats}>
+              <View style={styles.taskStatItem}>
+                <Flame size={13} color="#F5D78A" strokeWidth={2} />
+                <Text style={styles.taskStatValue}>{streak}</Text>
+              </View>
+              <View style={styles.taskStatItem}>
+                <Target size={13} color="#F5D78A" strokeWidth={2} />
+                <Text style={styles.taskStatValue}>{solved}</Text>
+              </View>
+            </View>
+            {!solvedToday && (
+              <ChevronRight size={18} color="rgba(255,255,255,0.85)" strokeWidth={2.5} />
+            )}
           </Pressable>
 
-          {/* Explore Grid - 2x2 Cards */}
-          <View style={styles.exploreSection}>
-            <View style={styles.exploreHeader}>
-              <Text style={styles.exploreTitle}>Explore</Text>
-              <Text style={styles.exploreTitleCn}>探索</Text>
-            </View>
-            <View style={styles.exploreGrid}>
-              {quickActions.map((action) => {
-                const ActionIcon = action.icon;
-                return (
-                  <Pressable
-                    key={action.id}
-                    style={({ pressed }) => [styles.exploreCard, pressed && styles.exploreCardPressed]}
-                    onPress={() => navigation.navigate(action.target)}
-                    accessibilityRole="button"
-                    accessibilityLabel={`${action.label} - ${action.labelCn}`}
-                    accessibilityHint={`Double tap to explore ${action.label}`}
-                  >
-                    <View style={[styles.exploreIconWrap, { backgroundColor: `${action.color}15` }]}>
-                      <ActionIcon size={24} color={action.color} strokeWidth={2} />
-                    </View>
-                    <Text style={styles.exploreCardTitle}>{action.label}</Text>
-                    <Text style={styles.exploreCardTitleCn}>{action.labelCn}</Text>
-                    <View style={styles.exploreCardArrow}>
-                      <ArrowRight size={14} color={colors.mutedText} strokeWidth={2} />
-                    </View>
-                  </Pressable>
-                );
-              })}
-            </View>
+          {/* ============ 探索区 ============ */}
+          <View style={styles.sectionHead}>
+            <Text style={styles.sectionTitle}>Explore</Text>
+            <Text style={styles.sectionTitleCn}>探索</Text>
+            <View style={styles.sectionLine} />
           </View>
 
-          {/* Quick Links */}
-          <View style={styles.quickLinksRow}>
+          <View style={styles.exploreGrid}>
+            {quickActions.map((action) => {
+              const ActionIcon = action.icon;
+              const isHighlight = action.id === 'history';
+              return (
+                <Pressable
+                  key={action.id}
+                  style={({ pressed }) => [
+                    styles.exploreCard,
+                    pressed && styles.exploreCardPressed,
+                    isHighlight && styles.exploreCardHighlight,
+                    { borderColor: colors.border },
+                  ]}
+                  onPress={() => navigation.navigate(action.target)}
+                  accessibilityRole="button"
+                  accessibilityLabel={`${action.label} - ${action.labelCn}`}
+                >
+                  <View style={[styles.exploreIconWrap, { backgroundColor: `${action.color}1A` }]}>
+                    <ActionIcon size={22} color={action.color} strokeWidth={2} />
+                  </View>
+                  <View style={styles.exploreText}>
+                    <Text style={[styles.exploreCardTitle, { color: colors.text }]}>{action.label}</Text>
+                    <Text style={[styles.exploreCardTitleCn, { color: colors.primary }]}>{action.labelCn}</Text>
+                    <Text style={[styles.exploreProse, { color: colors.mutedText }]}>{action.prose}</Text>
+                  </View>
+                  <ArrowRight size={14} color={colors.mutedText} strokeWidth={2} />
+                </Pressable>
+              );
+            })}
+          </View>
+
+          {/* ============ 快捷入口行 ============ */}
+          <View style={styles.quickRow}>
             <Pressable
-              style={[styles.quickLinkBtn, { backgroundColor: colors.cinnabarGlow }]}
+              style={[styles.quickBtn, { backgroundColor: colors.card, borderColor: colors.border }]}
               onPress={() => navigation.getParent()?.navigate('Profile', { screen: 'Collection' })}
               accessibilityRole="button"
               accessibilityLabel="View Collection"
-              accessibilityHint="Double tap to see your saved items"
             >
-              <Bookmark size={14} color={colors.primary} strokeWidth={2} />
-              <Text style={[styles.quickLinkText, { color: colors.primary }]}>Collection</Text>
+              <Bookmark size={15} color={colors.primary} strokeWidth={2.2} />
+              <Text style={[styles.quickBtnText, { color: colors.text }]}>Favorites</Text>
             </Pressable>
             <Pressable
-              style={[styles.quickLinkBtn, { backgroundColor: colors.cinnabarGlow }]}
+              style={[styles.quickBtn, { backgroundColor: colors.card, borderColor: colors.border }]}
               onPress={() => navigation.getParent()?.navigate('Seasons')}
               accessibilityRole="button"
               accessibilityLabel="Open Calendar"
-              accessibilityHint="Double tap to view calendar and daily quiz"
             >
-              <CalendarDays size={14} color={colors.primary} strokeWidth={2} />
-              <Text style={[styles.quickLinkText, { color: colors.primary }]}>Calendar</Text>
+              <CalendarDays size={15} color={colors.primary} strokeWidth={2.2} />
+              <Text style={[styles.quickBtnText, { color: colors.text }]}>Season</Text>
             </Pressable>
-          </View>
-
-          {/* Daily Sign-in & Tasks Buttons */}
-          <View style={styles.dailyButtonsRow}>
             <DailySignInButton
-              onPress={() => setShowSignInModal(true)}
               signedIn={signInStatus?.hasSignedInToday}
               streak={signInStatus?.currentStreak || 0}
+              onPress={() => setShowSignInModal(true)}
             />
+          </View>
+
+          {/* 每日任务独立入口 */}
+          <View style={styles.dailyTasksWrap}>
             <DailyTasksButton
               onPress={() => setShowTasksModal(true)}
               completedCount={tasksSummary?.completedCount || 0}
@@ -265,56 +314,60 @@ export function HomeScreen() {
             />
           </View>
 
-          {/* Wrong Answers Review Prompt */}
+          {/* ============ 错题复习 ============ */}
           {wrongAnswersCount > 0 && (
             <Pressable
-              style={({ pressed }) => [styles.reviewPromptCard, pressed && styles.reviewPromptPressed, { borderColor: colors.primary }]}
+              style={({ pressed }) => [styles.reviewPromptCard, pressed && styles.reviewPromptPressed]}
               onPress={() => navigation.getParent()?.navigate('Seasons', { screen: 'WrongAnswerReview' })}
               accessibilityRole="button"
               accessibilityLabel={`${wrongAnswersCount} questions waiting for review`}
             >
-              <View style={styles.reviewPromptLeft}>
-                <View style={[styles.reviewPromptIcon, { backgroundColor: colors.cinnabarGlow }]}>
-                  <BookOpen size={16} color={colors.primary} strokeWidth={2} />
-                </View>
-                <View style={styles.reviewPromptContent}>
-                  <Text style={styles.reviewPromptTitle}>Review Wrong Answers</Text>
-                  <Text style={styles.reviewPromptTitleCn}>复习错题</Text>
-                  <Text style={[styles.reviewPromptHint, { color: colors.mutedText }]}>
-                    {wrongAnswersCount} questions waiting
-                  </Text>
-                </View>
+              <View style={[styles.reviewPromptIcon, { backgroundColor: colors.cinnabarGlow }]}>
+                <BookOpen size={16} color={colors.primary} strokeWidth={2} />
+              </View>
+              <View style={styles.reviewPromptContent}>
+                <Text style={[styles.reviewPromptTitle, { color: colors.text }]}>Review Wrong Answers</Text>
+                <Text style={[styles.reviewPromptHint, { color: colors.mutedText }]}>
+                  {wrongAnswersCount} question{wrongAnswersCount > 1 ? 's' : ''} to review
+                </Text>
               </View>
               <View style={[styles.reviewPromptAction, { backgroundColor: colors.primary }]}>
                 <Text style={styles.reviewPromptActionText}>Review</Text>
-                <ArrowRight size={12} color="#FFFFFF" strokeWidth={2} />
+                <ArrowRight size={12} color="#FFFFFF" strokeWidth={2.2} />
               </View>
             </Pressable>
           )}
 
-          {/* Recently Viewed - Continue Reading */}
+          {/* ============ 继续浏览 ============ */}
           {recentlyViewed.length > 0 && (
             <View style={styles.recentSection}>
               <View style={styles.recentHeader}>
-                <Clock size={14} color={colors.primary} strokeWidth={2} />
-                <Text style={styles.recentTitle}>Continue Reading</Text>
-                <Text style={styles.recentTitleCn}>继续浏览</Text>
+                <Clock size={14} color={colors.primary} strokeWidth={2.2} />
+                <Text style={[styles.recentTitle, { color: colors.text }]}>Continue</Text>
+                <Text style={[styles.recentTitleCn, { color: colors.primary }]}>继续浏览</Text>
               </View>
               <View style={styles.recentList}>
                 {recentlyViewed.slice(0, 4).map((item) => {
                   const typeConfig = {
-                    city: { icon: Map, color: '#6B8A94', screen: 'Places' },
-                    recipe: { icon: UtensilsCrossed, color: '#E2B05E', screen: 'Food' },
-                    dynasty: { icon: Scroll, color: '#B33B24', screen: 'History' },
-                    person: { icon: User, color: '#8B7355', screen: 'History' },
+                    city: { icon: Map, color: '#6B8A94', tab: 'Places' },
+                    recipe: { icon: UtensilsCrossed, color: '#C88A2D', tab: 'Food' },
+                    dynasty: { icon: Scroll, color: '#B33B24', tab: 'History' },
+                    person: { icon: User, color: '#8B7355', tab: 'History' },
+                    season: {
+                      icon: Leaf,
+                      color: '#C49A4A',
+                      goTo: (nav, id) => nav?.navigate('Seasons', { screen: 'SolarTermDetail', params: { termId: id } }),
+                    },
                   };
                   const config = typeConfig[item.type] || typeConfig.city;
                   const IconComponent = config.icon;
                   return (
                     <Pressable
                       key={`${item.type}-${item.id}`}
-                      style={({ pressed }) => [styles.recentCard, pressed && styles.recentCardPressed, { borderColor: colors.border }]}
-                      onPress={() => navigation.getParent()?.navigate(config.screen)}
+                      style={({ pressed }) => [styles.recentCard, pressed && styles.recentCardPressed, { backgroundColor: colors.card, borderColor: colors.border }]}
+                      onPress={() => (config.goTo
+                        ? config.goTo(navigation.getParent(), item.id)
+                        : navigation.getParent()?.navigate(config.tab))}
                       accessibilityRole="button"
                       accessibilityLabel={`${item.nameEn} - ${item.nameCn}`}
                     >
@@ -358,123 +411,211 @@ export function HomeScreen() {
 
 const styles = StyleSheet.create({
   scrollShell: { flex: 1 },
-  container: { flex: 1, paddingHorizontal: 16, paddingTop: 8, paddingBottom: 100 },
+  container: { flexGrow: 1, paddingHorizontal: 16, paddingTop: Platform.OS === 'android' ? (StatusBar.currentHeight || 24) + 4 : 8, paddingBottom: 100 },
   safeArea: { flex: 1, backgroundColor: theme.colors.background },
+  paperWrap: { ...StyleSheet.absoluteFillObject, overflow: 'hidden' },
+  paperTexture: { opacity: 0.35 },
 
-  // Compact Header
-  compactHeader: {
-    marginTop: Platform.OS === 'android' ? (StatusBar.currentHeight || 24) + 8 : 16,
-    marginBottom: 10,
+  // ===== HERO =====
+  heroCard: {
+    borderRadius: 24,
+    overflow: 'hidden',
+    padding: 20,
+    marginBottom: 14,
+    position: 'relative',
   },
-  headerTopRow: {
+  heroCardLight: {
+    backgroundColor: '#7A2418',
+  },
+  heroCardDark: {
+    backgroundColor: '#3A1610',
+  },
+  heroGlow: {
+    position: 'absolute',
+    right: -70,
+    top: -70,
+    width: 220,
+    height: 220,
+    borderRadius: 110,
+    backgroundColor: 'rgba(229, 74, 62, 0.32)',
+  },
+  heroTexture: {
+    opacity: 0.5,
+  },
+  heroTopRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 18,
+  },
+  heroLevelBadge: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
-  },
-  levelBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 3,
-    backgroundColor: theme.colors.cinnabarGlow,
-    paddingHorizontal: 8,
-    paddingVertical: 4,
+    gap: 5,
+    backgroundColor: 'rgba(245, 215, 138, 0.16)',
+    paddingHorizontal: 10,
+    paddingVertical: 5,
     borderRadius: 999,
+    borderWidth: 0.5,
+    borderColor: 'rgba(245, 215, 138, 0.4)',
   },
-  levelBadgeText: {
-    color: theme.colors.primary,
-    fontSize: 11,
+  heroLevelText: {
+    color: '#F5D78A',
+    fontSize: 12,
     fontWeight: '800',
+    letterSpacing: 0.3,
   },
-  xpProgressWrap: {
-    flex: 1,
+  heroFestivalBadge: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
+    gap: 4,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 999,
+    backgroundColor: 'rgba(245, 158, 11, 0.22)',
   },
-  xpProgressTrack: {
+  heroFestivalText: {
+    color: '#FCD34D',
+    fontSize: 11,
+    fontWeight: '700',
+  },
+  heroMainRow: {
+    alignItems: 'flex-start',
+    flexDirection: 'row',
+    gap: 18,
+    marginBottom: 6,
+  },
+  heroSeasonChar: {
+    color: '#F5D78A',
+    fontSize: 72,
+    fontWeight: '600',
+    lineHeight: 78,
+    opacity: 0.95,
+  },
+  heroTermGroup: {
+    justifyContent: 'center',
     flex: 1,
-    height: 3,
-    borderRadius: 1.5,
+    paddingTop: 4,
+  },
+  heroTermCn: {
+    color: '#FFFFFF',
+    fontSize: 34,
+    fontWeight: '600',
+    letterSpacing: 4,
+  },
+  heroTermEnMain: {
+    color: '#FFFFFF',
+    fontSize: 34,
+    fontWeight: '700',
+    letterSpacing: 0.5,
+  },
+  heroTermCnSub: {
+    color: 'rgba(255,255,255,0.75)',
+    fontSize: 13,
+    fontWeight: '600',
+    letterSpacing: 4,
+    marginTop: 4,
+  },
+  heroDivider: {
+    width: 40,
+    height: 2,
+    borderRadius: 1,
+    backgroundColor: 'rgba(245, 215, 138, 0.7)',
+    marginVertical: 12,
+  },
+  heroSummary: {
+    color: 'rgba(255,255,255,0.92)',
+    fontSize: 13,
+    lineHeight: 20,
+  },
+  heroFooter: {
+    marginTop: 'auto',
+  },
+  heroXpTrack: {
+    height: 4,
+    borderRadius: 2,
+    backgroundColor: 'rgba(255,255,255,0.16)',
     overflow: 'hidden',
   },
-  xpProgressFill: {
-    height: 3,
-    borderRadius: 1.5,
+  heroXpFill: {
+    height: 4,
+    borderRadius: 2,
+    backgroundColor: '#F5D78A',
   },
-  xpLabel: {
+  heroXpLabel: {
+    color: 'rgba(255,255,255,0.72)',
     fontSize: 10,
-    fontWeight: '700',
-  },
-  levelTitleWrap: {
-    alignItems: 'flex-end',
-  },
-  levelTitle: {
-    fontSize: 11,
-    fontWeight: '700',
-  },
-  levelTitleCn: {
-    fontSize: 9,
     fontWeight: '600',
+    marginTop: 6,
+    letterSpacing: 0.4,
+  },
+  heroSeal: {
+    position: 'absolute',
+    right: 18,
+    bottom: 40,
+    width: 40,
+    height: 40,
+    borderRadius: 5,
+    backgroundColor: '#C23A2E',
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1.5,
+    borderColor: 'rgba(255,255,255,0.35)',
+    transform: [{ rotate: '-6deg' }],
+  },
+  heroSealText: {
+    color: 'rgba(255,255,255,0.92)',
+    fontSize: 13,
+    fontWeight: '700',
   },
 
-  // Task Card
+  // ===== 今日任务 =====
   taskCard: {
-    borderRadius: theme.radii.md,
-    borderWidth: 0.5,
-    borderColor: theme.colors.borderAccent,
-    backgroundColor: theme.colors.softCard,
-    padding: 12,
-    marginBottom: 10,
-    ...theme.shadows.subtle,
-  },
-  taskCardPending: {
-    borderColor: theme.colors.primary,
-    borderWidth: 1,
-    backgroundColor: theme.colors.cinnabarGlow,
-  },
-  taskCardPressed: {
-    opacity: 0.95,
-    transform: [{ scale: 0.98 }],
-  },
-  taskContent: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 12,
+    borderRadius: 18,
+    backgroundColor: '#C23A2E',
+    padding: 14,
+    marginBottom: 6,
+    marginTop: 14,
+    ...theme.shadows.medium,
+    shadowColor: '#C23A2E',
   },
-  taskLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-    flex: 1,
+  taskCardPressed: {
+    opacity: 0.95,
+    transform: [{ scale: 0.985 }],
   },
   taskIconWrap: {
-    width: 36,
-    height: 36,
-    borderRadius: 10,
-    backgroundColor: theme.colors.cinnabarGlow,
+    width: 40,
+    height: 40,
+    borderRadius: 12,
     alignItems: 'center',
     justifyContent: 'center',
+    backgroundColor: 'rgba(255,255,255,0.18)',
   },
   taskIconDone: {
-    backgroundColor: theme.colors.success,
+    backgroundColor: 'rgba(212, 145, 74, 0.35)',
   },
   taskInfo: {
     flex: 1,
   },
   taskTitle: {
-    color: theme.colors.text,
+    color: '#FFFFFF',
     fontSize: 15,
-    fontWeight: '700',
+    fontWeight: '800',
   },
   taskTitleCn: {
-    color: theme.colors.primary,
+    color: 'rgba(255,255,255,0.75)',
     fontSize: 11,
     fontWeight: '600',
-    marginTop: 1,
+    marginTop: 2,
+    letterSpacing: 0.3,
   },
   taskStats: {
     flexDirection: 'row',
-    gap: 8,
+    gap: 12,
+    marginRight: 4,
   },
   taskStatItem: {
     flexDirection: 'row',
@@ -482,157 +623,135 @@ const styles = StyleSheet.create({
     gap: 3,
   },
   taskStatValue: {
-    color: theme.colors.text,
-    fontSize: 12,
-    fontWeight: '800',
-  },
-  taskAction: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-    backgroundColor: theme.colors.primary,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 999,
-  },
-  taskActionText: {
-    color: '#FFFFFF',
-    fontSize: 11,
+    color: '#F5D78A',
+    fontSize: 13,
     fontWeight: '800',
   },
 
-  // Explore Section
-  exploreSection: {
-    marginTop: 10,
-  },
-  exploreHeader: {
+  // ===== 探索区 =====
+  sectionHead: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
-    marginBottom: 10,
+    marginTop: 20,
+    marginBottom: 12,
   },
-  exploreTitle: {
-    color: theme.colors.text,
+  sectionTitle: {
     fontSize: 18,
     fontWeight: '800',
+    color: theme.colors.text,
   },
-  exploreTitleCn: {
+  sectionTitleCn: {
+    fontSize: 9,
+    fontWeight: '700',
     color: theme.colors.primary,
-    fontSize: 12,
-    fontWeight: '600',
+    letterSpacing: 1.5,
+    marginTop: 3,
+  },
+  sectionLine: {
+    flex: 1,
+    height: 0.5,
+    backgroundColor: theme.colors.border,
+    marginLeft: 4,
   },
   exploreGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
     gap: 10,
   },
   exploreCard: {
-    width: '48%',
-    borderRadius: theme.radii.md,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    borderRadius: 18,
     borderWidth: 0.5,
-    borderColor: theme.colors.border,
     backgroundColor: theme.colors.card,
     padding: 14,
-    minHeight: 90,
+  },
+  exploreCardHighlight: {
+    ...theme.shadows.subtle,
   },
   exploreCardPressed: {
     opacity: 0.94,
-    transform: [{ scale: theme.motion.tapScale }],
+    transform: [{ scale: 0.99 }],
   },
   exploreIconWrap: {
-    width: 44,
-    height: 44,
-    borderRadius: 12,
+    width: 46,
+    height: 46,
+    borderRadius: 13,
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: 10,
+  },
+  exploreText: {
+    flex: 1,
   },
   exploreCardTitle: {
-    color: theme.colors.text,
-    fontSize: 14,
-    fontWeight: '700',
+    fontSize: 16,
+    fontWeight: '800',
   },
   exploreCardTitleCn: {
-    color: theme.colors.primary,
     fontSize: 11,
     fontWeight: '600',
     marginTop: 1,
+    letterSpacing: 0.5,
   },
-  exploreCardArrow: {
-    position: 'absolute',
-    right: 10,
-    bottom: 10,
+  exploreProse: {
+    fontSize: 11,
+    fontWeight: '500',
+    marginTop: 2,
   },
 
-  // Quick Links
-  quickLinksRow: {
+  // ===== 快捷入口 =====
+  quickRow: {
     flexDirection: 'row',
-    justifyContent: 'center',
-    gap: 12,
-    marginTop: 16,
+    gap: 10,
+    marginTop: 14,
   },
-  quickLinkBtn: {
+  quickBtn: {
+    flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'center',
     gap: 6,
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    borderRadius: 999,
+    paddingVertical: 12,
+    borderRadius: 14,
+    borderWidth: 0.5,
   },
-  quickLinkText: {
-    fontSize: 12,
+  quickBtnText: {
+    fontSize: 13,
     fontWeight: '700',
   },
-
-  // Daily Buttons Row
-  dailyButtonsRow: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    gap: 12,
-    marginTop: 12,
+  dailyTasksWrap: {
+    marginTop: 10,
   },
 
-  // Review Prompt Card
+  // ===== 错题复习 =====
   reviewPromptCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
-    marginTop: 14,
-    borderRadius: theme.radii.md,
+    marginTop: 16,
+    borderRadius: 16,
     borderWidth: 1,
+    borderColor: theme.colors.primary,
     backgroundColor: theme.colors.cinnabarGlow,
-    padding: 14,
+    padding: 12,
   },
   reviewPromptPressed: {
     opacity: 0.95,
-    transform: [{ scale: 0.98 }],
-  },
-  reviewPromptLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-    flex: 1,
+    transform: [{ scale: 0.985 }],
   },
   reviewPromptIcon: {
     width: 40,
     height: 40,
-    borderRadius: 10,
+    borderRadius: 11,
     alignItems: 'center',
     justifyContent: 'center',
   },
   reviewPromptContent: {
     flex: 1,
+    marginLeft: 12,
   },
   reviewPromptTitle: {
-    color: theme.colors.text,
-    fontSize: 14,
+    fontSize: 15,
     fontWeight: '700',
-  },
-  reviewPromptTitleCn: {
-    color: theme.colors.primary,
-    fontSize: 11,
-    fontWeight: '600',
-    marginTop: 1,
   },
   reviewPromptHint: {
     fontSize: 11,
@@ -652,9 +771,9 @@ const styles = StyleSheet.create({
     fontWeight: '700',
   },
 
-  // Recently Viewed Section
+  // ===== 继续浏览 =====
   recentSection: {
-    marginTop: 18,
+    marginTop: 22,
   },
   recentHeader: {
     flexDirection: 'row',
@@ -663,14 +782,14 @@ const styles = StyleSheet.create({
     marginBottom: 10,
   },
   recentTitle: {
-    color: theme.colors.text,
-    fontSize: 14,
-    fontWeight: '700',
+    fontSize: 15,
+    fontWeight: '800',
   },
   recentTitleCn: {
-    color: theme.colors.primary,
-    fontSize: 11,
-    fontWeight: '600',
+    fontSize: 9,
+    fontWeight: '700',
+    letterSpacing: 1.5,
+    marginTop: 3,
   },
   recentList: {
     gap: 8,
@@ -679,14 +798,12 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 10,
-    borderRadius: theme.radii.md,
+    borderRadius: 14,
     borderWidth: 0.5,
-    backgroundColor: theme.colors.card,
     padding: 12,
   },
   recentCardPressed: {
     opacity: 0.95,
-    backgroundColor: theme.colors.surface,
   },
   recentIconWrap: {
     width: 36,
