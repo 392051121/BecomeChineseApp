@@ -49,6 +49,13 @@ Chinese culture, Chinese history, Chinese food, travel China, Chinese cities, dy
 
 Expected Rating: Everyone (3+)
 
+## Pricing & Monetization
+- Model: One-time purchase (paid app, no IAP, no subscription)
+- Price: **$4.99 USD**
+- Rationale: Below the $5.99–$9.99 paid-app band typical of quality travel/culture apps, chosen for solo-first-market pricing to lower the download barrier and build a review base early. Revenue ceiling is intentional — the goal on v1 is user base + reviews, not income.
+- No ads: preserves curation quality; aligns with the "no data collection" privacy posture.
+- Note: Price is set in App Store Connect / Google Play Console backend, NOT in app.json code.
+
 ## Contact Information
 - Developer: Become Chinese Team
 - Website: https://becomechinese.app
