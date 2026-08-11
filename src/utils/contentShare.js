@@ -6,7 +6,7 @@
  */
 
 import { captureRef } from 'react-native-view-shot';
-import { Sharing } from 'expo-sharing';
+import * as Sharing from 'expo-sharing';
 import * as Haptics from 'expo-haptics';
 
 import { theme } from '../theme/theme';

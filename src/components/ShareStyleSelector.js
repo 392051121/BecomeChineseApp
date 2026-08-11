@@ -19,6 +19,7 @@ import * as Haptics from 'expo-haptics';
 import { theme } from '../theme/theme';
 import { useTheme } from '../theme/ThemeContext';
 import { Button } from './Button';
+import { ContentShareCard } from './ContentShareCard';
 import { SHARE_STYLES } from '../utils/contentShare';
 
 const StyleOption = memo(function StyleOption({ style, isSelected, onPress }) {
@@ -73,6 +74,7 @@ export const ShareStyleSelector = memo(function ShareStyleSelector({
   onShare,
   item,
   type,
+  cardRef,
 }) {
   const { colors } = useTheme();
   const [selectedStyle, setSelectedStyle] = useState('ink');
@@ -141,6 +143,18 @@ export const ShareStyleSelector = memo(function ShareStyleSelector({
               />
             ))}
           </View>
+
+          {/* Actual capturable share card (bound to cardRef for view-shot) */}
+          {item && (
+            <View style={styles.cardPreviewWrap} collapsable={false} ref={cardRef}>
+              <ContentShareCard
+                item={item}
+                type={type}
+                cardStyle={selectedStyle}
+                style={styles.cardPreview}
+              />
+            </View>
+          )}
 
           {/* Share button */}
           <Button
@@ -216,6 +230,14 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     marginBottom: 20,
+  },
+  cardPreviewWrap: {
+    alignItems: 'center',
+    alignSelf: 'center',
+    marginBottom: 20,
+  },
+  cardPreview: {
+    transform: [{ scale: 0.7 }],
   },
   styleOption: {
     flex: 1,
