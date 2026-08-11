@@ -4,7 +4,7 @@ import { MapPin, UtensilsCrossed, Scroll, ArrowRight, Bookmark, Trophy, Grid3X3,
 import { useNavigation } from '@react-navigation/native';
 import * as Haptics from 'expo-haptics';
 
-import { getCulturalAssets, getCultureRank, getProvinceConnectionMap } from '../utils/culturalAssets';
+import { getCulturalAssets, getCultureRank, getProvinceConnectionMap, setCollectionActive } from '../utils/culturalAssets';
 import { getStampCollection, getStampStats } from '../utils/stampCollection';
 import { cities as allCities } from '../data/cities';
 import { recipes as allRecipes } from '../data/recipes';
@@ -279,6 +279,12 @@ export function CollectionScreen() {
         screen: detailScreen,
         params: { personId: item.id, person: item }
       });
+    } else if (type === 'recipes') {
+      // Food shows its detail as a bottom sheet keyed by recipeId.
+      navigation.getParent()?.navigate('Food', { recipeId: item.id });
+    } else if (type === 'cities') {
+      // Places highlights the activated city from cityId.
+      navigation.getParent()?.navigate('Places', { cityId: item.id });
     } else {
       // Just navigate to the tab (Places and Food screens handle their own detail views)
       navigation.getParent()?.navigate(targetTab);
@@ -288,6 +294,27 @@ export function CollectionScreen() {
   function toggleViewMode() {
     setViewMode(viewMode === 'grid' ? 'list' : 'grid');
     Haptics.selectionAsync().catch(() => {});
+  }
+
+  function getCategoryCandidates(categoryId) {
+    switch (categoryId) {
+      case 'cities': return allCities;
+      case 'recipes': return allRecipes;
+      case 'dynasties': return allDynasties;
+      case 'people': return allPeople;
+      default: return [];
+    }
+  }
+
+  async function handleBulkAction(categoryId, nextActive) {
+    const cat = categories.find(c => c.id === categoryId);
+    if (!cat) return;
+    Haptics.selectionAsync().catch(() => {});
+    const allItems = getCategoryCandidates(categoryId);
+    const updated = await setCollectionActive(categoryId, nextActive, allItems).catch(() => null);
+    if (updated) {
+      setAssets(updated);
+    }
   }
 
   const displayItems = selectedCategory
@@ -377,6 +404,37 @@ export function CollectionScreen() {
               );
             })}
           </View>
+
+          {/* Bulk actions for a selected category (collect all / clear all) */}
+          {selectedCategory && (
+            <View style={styles.bulkBar}>
+              <Text style={styles.bulkTitle}>
+                {categories.find(c => c.id === selectedCategory)?.label || 'Category'} bulk action
+              </Text>
+              <View style={styles.bulkActions}>
+                <Pressable
+                  style={({ pressed }) => [styles.bulkBtn, styles.bulkBtnPrimary, pressed && styles.bulkBtnPressed]}
+                  onPress={() => handleBulkAction(selectedCategory, true)}
+                  accessibilityRole="button"
+                  accessibilityLabel={`Collect all ${categories.find(c => c.id === selectedCategory)?.label || 'items'} in this category`}
+                  accessibilityHint="Adds every item in this category to your collection"
+                >
+                  <Star size={14} color="#FFFFFF" strokeWidth={2} />
+                  <Text style={styles.bulkBtnTextLight}>Collect all</Text>
+                </Pressable>
+                <Pressable
+                  style={({ pressed }) => [styles.bulkBtn, styles.bulkBtnGhost, pressed && styles.bulkBtnPressed]}
+                  onPress={() => handleBulkAction(selectedCategory, false)}
+                  accessibilityRole="button"
+                  accessibilityLabel={`Clear all ${categories.find(c => c.id === selectedCategory)?.label || 'items'} in this category`}
+                  accessibilityHint="Removes every saved item in this category"
+                >
+                  <Bookmark size={14} color={theme.colors.mutedText} strokeWidth={2} />
+                  <Text style={styles.bulkBtnTextGhost}>Clear all</Text>
+                </Pressable>
+              </View>
+            </View>
+          )}
 
           {/* Collection Items */}
           {displayItems.length > 0 && (
@@ -777,6 +835,58 @@ const styles = StyleSheet.create({
     padding: 6,
     borderRadius: 6,
     backgroundColor: theme.colors.surface,
+  },
+  // Bulk actions bar
+  bulkBar: {
+    marginTop: 16,
+    borderRadius: theme.radii.md,
+    borderWidth: 0.5,
+    borderColor: theme.colors.border,
+    backgroundColor: theme.colors.surface,
+    padding: 12,
+    gap: 10,
+  },
+  bulkTitle: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: theme.colors.mutedText,
+    textTransform: 'uppercase',
+    letterSpacing: 0.4,
+  },
+  bulkActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+  },
+  bulkBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    paddingVertical: 8,
+    paddingHorizontal: 14,
+    borderRadius: theme.radii.sm,
+  },
+  bulkBtnPrimary: {
+    backgroundColor: theme.colors.primary,
+  },
+  bulkBtnGhost: {
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    backgroundColor: 'transparent',
+  },
+  bulkBtnPressed: {
+    opacity: 0.7,
+  },
+  bulkBtnTextLight: {
+    color: '#FFFFFF',
+    fontSize: 13,
+    fontWeight: '600',
+  },
+  bulkBtnTextGhost: {
+    color: theme.colors.mutedText,
+    fontSize: 13,
+    fontWeight: '600',
   },
   itemsList: {
     gap: 8,

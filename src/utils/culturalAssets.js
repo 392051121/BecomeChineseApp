@@ -240,6 +240,34 @@ export async function setCollectionItem(type, item, nextActive) {
   });
 }
 
+/**
+ * Batch set the active/collected state of an entire category.
+ * Used by the "collect all / clear all" bulk entry in the Collection screen.
+ * Unlike the single-item toggle, a batch "collect all" is an explicit user
+ * intent, so it does not slice to MAX_FAVORITES_PER_TYPE (which would silently
+ * drop items such as the 102 cities), and it does not bump the daily "collect"
+ * task progress once per item (which would over-credit a single tap).
+ * @param {string} type  category key ('cities' | 'recipes' | 'dynasties' | 'people')
+ * @param {boolean} nextActive  true => collect all `allItems`; false => clear the category
+ * @param {Array<{id:string}>} [allItems]  full candidate list of this category
+ */
+export async function setCollectionActive(type, nextActive, allItems = []) {
+  if (!type) return getCulturalAssets();
+  return patchCulturalAssets((state) => {
+    const current = normalizeArray(state.favorites?.[type]);
+    const nextList = nextActive
+      ? uniqueById([...current, ...allItems].filter(Boolean))
+      : [];
+    return {
+      ...state,
+      favorites: {
+        ...state.favorites,
+        [type]: nextList,
+      },
+    };
+  });
+}
+
 export async function getFavoritesSnapshot() {
   const assets = await getCulturalAssets();
   return assets.favorites;

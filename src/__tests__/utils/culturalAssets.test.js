@@ -8,6 +8,8 @@ import {
   calculateNextStreak,
   getCultureRank,
   getProvinceConnectionMap,
+  setCollectionActive,
+  invalidateAssetsCache,
 } from '../../utils/culturalAssets';
 
 // Mock dependencies
@@ -207,6 +209,75 @@ describe('Cultural Assets Utilities', () => {
       expect(result.totalCount).toBe(0);
       expect(result.collectedCount).toBe(0);
       expect(result.connectedProvinces.size).toBe(0);
+    });
+  });
+
+  describe('setCollectionActive', () => {
+    const STORAGE_KEY_MOCK = expect.any(String);
+    let lastSaved;
+
+    beforeEach(() => {
+      lastSaved = null;
+      invalidateAssetsCache();
+      // Reset AsyncStorage mock behaviour
+      const storage = require('@react-native-async-storage/async-storage');
+      storage.getItem.mockReset();
+      storage.setItem.mockReset();
+      storage.setItem.mockImplementation(async (key, value) => { lastSaved = JSON.parse(value); });
+    });
+
+    it('collects every item in the category without truncating beyond the per-type limit', async () => {
+      const storage = require('@react-native-async-storage/async-storage');
+      storage.getItem.mockResolvedValue(JSON.stringify({
+        favorites: { cities: [{ id: 'beijing' }], recipes: [], dynasties: [], people: [], names: [] },
+      }));
+      const allCities = Array.from({ length: 102 }, (_, i) => ({ id: `city-${i}` }));
+
+      const result = await setCollectionActive('cities', true, allCities);
+
+      // 1 pre-existing (beijing) + 102 collected = 103, no per-type truncation
+      expect(result.favorites.cities.length).toBe(103);
+      // persisted payload matches
+      expect(lastSaved.favorites.cities.length).toBe(103);
+    });
+
+    it('merges with existing favourites without duplicating ids', async () => {
+      const storage = require('@react-native-async-storage/async-storage');
+      storage.getItem.mockResolvedValue(JSON.stringify({
+        favorites: {
+          cities: [{ id: 'beijing' }, { id: 'shanghai' }],
+          recipes: [], dynasties: [], people: [], names: [],
+        },
+      }));
+      const allCities = [{ id: 'beijing' }, { id: 'chengdu' }, { id: 'guangzhou' }];
+
+      const result = await setCollectionActive('cities', true, allCities);
+
+      expect(result.favorites.cities.map(c => c.id).sort())
+        .toEqual(['beijing', 'chengdu', 'guangzhou', 'shanghai']);
+    });
+
+    it('clears the whole category when nextActive is false', async () => {
+      const storage = require('@react-native-async-storage/async-storage');
+      storage.getItem.mockResolvedValue(JSON.stringify({
+        favorites: {
+          recipes: [{ id: 'dumplings' }, { id: 'tangyuan' }],
+          cities: [], dynasties: [], people: [], names: [],
+        },
+      }));
+
+      const result = await setCollectionActive('recipes', false, []);
+
+      expect(result.favorites.recipes).toEqual([]);
+    });
+
+    it('returns current state when type is missing', async () => {
+      const storage = require('@react-native-async-storage/async-storage');
+      storage.getItem.mockResolvedValue(JSON.stringify({
+        favorites: { cities: [], recipes: [], dynasties: [], people: [], names: [] },
+      }));
+      const result = await setCollectionActive('', true, [{ id: 'x' }]);
+      expect(result.favorites.cities).toEqual([]);
     });
   });
 });
