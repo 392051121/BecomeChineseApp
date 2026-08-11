@@ -6,8 +6,19 @@ import { colors } from '../theme/colors';
 
 // Traditional "xuan paper" (宣纸) texture
 // Ultra-light fiber lines + subtle grain for authentic Chinese paper feel
-export function PaperTexture({ style, intensity = 'normal' }) {
+//
+// NOTE: 'idPrefix' must be unique per-instance when more than one PaperTexture can
+// be on screen at the same time, otherwise the duplicate SVG pattern ids collide
+// under the New Architecture and can stall rendering.
+let _idCounter = 0;
+function nextId(base) {
+  _idCounter += 1;
+  return `${base}_${_idCounter}`;
+}
+
+export function PaperTexture({ style, intensity = 'normal', idPrefix }) {
   const baseOpacity = intensity === 'light' ? 0.6 : intensity === 'strong' ? 1.2 : 1;
+  const uid = idPrefix ? `${idPrefix}_${_idCounter++}` : nextId('fibers');
 
   return (
     <View pointerEvents="none" style={[styles.container, style]}>
@@ -15,7 +26,7 @@ export function PaperTexture({ style, intensity = 'normal' }) {
         <Defs>
           {/* Main fiber pattern - vertical strokes like brush marks */}
           <Pattern
-            id="fibers"
+            id={`${uid}_fibers`}
             x="0"
             y="0"
             width="32"
@@ -35,7 +46,7 @@ export function PaperTexture({ style, intensity = 'normal' }) {
 
           {/* Subtle grain dots */}
           <Pattern
-            id="grain"
+            id={`${uid}_grain`}
             x="0"
             y="0"
             width="64"
@@ -51,8 +62,8 @@ export function PaperTexture({ style, intensity = 'normal' }) {
         </Defs>
 
         {/* Apply patterns */}
-        <Rect x="0" y="0" width="100%" height="100%" fill="url(#fibers)" />
-        <Rect x="0" y="0" width="100%" height="100%" fill="url(#grain)" />
+        <Rect x="0" y="0" width="100%" height="100%" fill={`url(#${uid}_fibers)`} />
+        <Rect x="0" y="0" width="100%" height="100%" fill={`url(#${uid}_grain)`} />
       </Svg>
     </View>
   );

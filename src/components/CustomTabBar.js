@@ -36,21 +36,21 @@ const tabs = [
 
 function TabItem({ tab, isActive, onPress, colors, isDark, badgeCount }) {
   const scaleAnim = useRef(new Animated.Value(1)).current;
-  const inkAnim = useRef(new Animated.Value(0)).current;
+  const sealAnim = useRef(new Animated.Value(0)).current;
   const Icon = tab.icon;
 
   useEffect(() => {
     Animated.parallel([
-      Animated.spring(inkAnim, {
+      Animated.spring(sealAnim, {
         toValue: isActive ? 1 : 0,
-        friction: 5,
-        tension: 100,
+        friction: 6,
+        tension: 120,
         useNativeDriver: true,
       }),
       Animated.spring(scaleAnim, {
-        toValue: isActive ? 1.05 : 1,
-        friction: 5,
-        tension: 100,
+        toValue: isActive ? 1 : 1,
+        friction: 6,
+        tension: 120,
         useNativeDriver: true,
       }),
     ]).start();
@@ -61,17 +61,41 @@ function TabItem({ tab, isActive, onPress, colors, isDark, badgeCount }) {
     onPress(tab.name);
   };
 
-  const inkScale = inkAnim.interpolate({
-    inputRange: [0, 1],
-    outputRange: [0.5, 1],
-  });
-
-  const inkOpacity = inkAnim.interpolate({
-    inputRange: [0, 1],
-    outputRange: [0, 0.15],
-  });
+  const inactiveIconColor = isDark ? 'rgba(255, 255, 255, 0.42)' : 'rgba(27, 23, 21, 0.42)';
+  const inactiveLabelColor = isDark ? 'rgba(255, 255, 255, 0.45)' : 'rgba(27, 23, 21, 0.45)';
 
   const hasBadge = badgeCount > 0;
+
+  // Active tab renders as a raised "seal stamp" capsule in cinnabar, echoing the home hero
+  if (isActive) {
+    return (
+      <Pressable
+        onPress={handlePress}
+        style={styles.tabItem}
+        accessibilityRole="button"
+        accessibilityLabel={tab.label}
+        accessibilityHint="Current screen"
+      >
+        <Animated.View style={[styles.sealPill, { transform: [{ scale: scaleAnim }] }]}>
+          <View style={styles.sealIconWrap}>
+            <Icon size={16} color="#FFFFFF" strokeWidth={2.5} />
+            {hasBadge && (
+              <View style={[styles.badge, styles.badgeOnSeal]}>
+                <Text style={styles.badgeText}>
+                  {badgeCount > 9 ? '9+' : badgeCount}
+                </Text>
+              </View>
+            )}
+          </View>
+          <View style={styles.sealTextWrap}>
+            <Text style={styles.sealLabel}>{tab.label}</Text>
+            <Text style={styles.sealLabelCn}>{tab.labelCn}</Text>
+          </View>
+          <View style={styles.sealTopLine} />
+        </Animated.View>
+      </Pressable>
+    );
+  }
 
   return (
     <Pressable
@@ -79,30 +103,21 @@ function TabItem({ tab, isActive, onPress, colors, isDark, badgeCount }) {
       style={styles.tabItem}
       accessibilityRole="button"
       accessibilityLabel={tab.label}
-      accessibilityHint={isActive ? 'Current screen' : `Go to ${tab.label}`}
+      accessibilityHint={`Go to ${tab.label}`}
     >
       <Animated.View style={[styles.tabContent, { transform: [{ scale: scaleAnim }] }]}>
-        {/* Ink wash background effect */}
+        {/* Soft ink wash for hover-like settle */}
         <Animated.View
           style={[
             styles.inkWash,
             {
-              transform: [{ scale: inkScale }],
-              opacity: inkOpacity,
+              opacity: sealAnim.interpolate({ inputRange: [0, 1], outputRange: [0.04, 0.12] }),
               backgroundColor: colors.primary,
             },
           ]}
         />
-
-        {/* Icon */}
         <View style={styles.iconWrap}>
-          <Icon
-            size={22}
-            color={isActive ? colors.primary : (isDark ? 'rgba(255, 255, 255, 0.45)' : 'rgba(27, 23, 21, 0.45)')}
-            strokeWidth={isActive ? 2.5 : 2}
-          />
-
-          {/* Badge indicator */}
+          <Icon size={22} color={inactiveIconColor} strokeWidth={2} />
           {hasBadge && (
             <View style={[styles.badge, { backgroundColor: colors.primary }]}>
               <Text style={styles.badgeText}>
@@ -111,35 +126,9 @@ function TabItem({ tab, isActive, onPress, colors, isDark, badgeCount }) {
             </View>
           )}
         </View>
-
-        {/* Label */}
-        <Text
-          style={[
-            styles.label,
-            {
-              color: isActive ? colors.primary : (isDark ? 'rgba(255, 255, 255, 0.45)' : 'rgba(27, 23, 21, 0.45)'),
-              fontWeight: isActive ? '700' : '500',
-            },
-          ]}
-        >
+        <Text style={[styles.label, { color: inactiveLabelColor, fontWeight: '500' }]}>
           {tab.label}
         </Text>
-        {/* Chinese label - only show when active */}
-        {isActive && (
-          <Text
-            style={[
-              styles.labelCn,
-              { color: colors.primary },
-            ]}
-          >
-            {tab.labelCn}
-          </Text>
-        )}
-
-        {/* Active indicator dot */}
-        {isActive && (
-          <View style={[styles.activeDot, { backgroundColor: colors.primary }]} />
-        )}
       </Animated.View>
     </Pressable>
   );
@@ -251,9 +240,65 @@ const styles = StyleSheet.create({
   },
   inkWash: {
     position: 'absolute',
-    width: 48,
-    height: 48,
-    borderRadius: 24,
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+  },
+  // Raised "seal stamp" capsule for the active tab
+  sealPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    backgroundColor: '#C23A2E',
+    borderRadius: 16,
+    paddingHorizontal: 9,
+    paddingVertical: 6,
+    overflow: 'visible',
+    borderWidth: 0.5,
+    borderColor: 'rgba(245, 215, 138, 0.35)',
+    shadowColor: '#A32A1E',
+    shadowOpacity: 0.28,
+    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 3 },
+    elevation: 5,
+  },
+  sealTopLine: {
+    position: 'absolute',
+    top: 0,
+    left: 10,
+    right: 10,
+    height: 2,
+    borderRadius: 1,
+    backgroundColor: 'rgba(245, 215, 138, 0.55)',
+  },
+  sealIconWrap: {
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  sealTextWrap: {
+    alignItems: 'flex-start',
+    justifyContent: 'center',
+  },
+  sealLabel: {
+    color: '#FFFFFF',
+    fontSize: 10,
+    fontWeight: '800',
+    letterSpacing: 0.3,
+    textAlign: 'left',
+    includeFontPadding: false,
+  },
+  sealLabelCn: {
+    color: '#F5D78A',
+    fontSize: 9,
+    fontWeight: '700',
+    letterSpacing: 1.2,
+    marginTop: 1,
+    textAlign: 'left',
+    includeFontPadding: false,
+  },
+  badgeOnSeal: {
+    backgroundColor: '#F5D78A',
   },
   iconWrap: {
     width: 28,
@@ -283,20 +328,5 @@ const styles = StyleSheet.create({
     letterSpacing: 0.1,
     textAlign: 'center',
     includeFontPadding: false,
-  },
-  labelCn: {
-    fontSize: 8,
-    marginTop: 1,
-    letterSpacing: 0.1,
-    textAlign: 'center',
-    includeFontPadding: false,
-    fontWeight: '600',
-  },
-  activeDot: {
-    position: 'absolute',
-    bottom: -4,
-    width: 4,
-    height: 4,
-    borderRadius: 2,
   },
 });

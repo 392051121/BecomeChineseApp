@@ -145,12 +145,17 @@ export function ChinaConnectionMap({ connectedProvinces = new Set() }) {
                   key={`label-${province.id}`}
                   x={province.centroid.x}
                   y={province.centroid.y}
-                  fontSize={province.active ? 10 : 8}
-                  fontWeight="700"
-                  fill={province.active ? '#FFFFFF' : 'rgba(51, 51, 51, 0.7)'}
                   textAnchor="middle"
                 >
-                  {province.name}
+                  <Text
+                    style={{
+                      fontSize: province.active ? 10 : 8,
+                      fontWeight: '700',
+                      color: province.active ? '#FFFFFF' : 'rgba(51, 51, 51, 0.7)',
+                    }}
+                  >
+                    {province.name}
+                  </Text>
                 </SvgText>
               )}
             </G>
@@ -183,8 +188,8 @@ export function ChinaConnectionMap({ connectedProvinces = new Set() }) {
             stroke="rgba(51, 51, 51, 0.2)"
             strokeWidth="0.5"
           />
-          <SvgText x="50" y="85" fontSize="7" fill="rgba(51, 51, 51, 0.6)" textAnchor="middle">
-            南海诸岛
+          <SvgText x="50" y="85" textAnchor="middle">
+            <Text style={{ fontSize: 7, color: 'rgba(51, 51, 51, 0.6)' }}>南海诸岛</Text>
           </SvgText>
         </G>
 
@@ -198,7 +203,9 @@ export function ChinaConnectionMap({ connectedProvinces = new Set() }) {
             d="M12 24 L9 12 L12 15 L15 12 Z"
             fill="rgba(51, 51, 51, 0.25)"
           />
-          <SvgText x="12" y="-5" fontSize="8" fill="rgba(51, 51, 51, 0.6)" textAnchor="middle">N</SvgText>
+          <SvgText x="12" y="-5" textAnchor="middle">
+            <Text style={{ fontSize: 8, color: 'rgba(51, 51, 51, 0.6)' }}>N</Text>
+          </SvgText>
         </G>
       </Svg>
 

@@ -5,13 +5,34 @@ import * as Haptics from 'expo-haptics';
 import { theme } from '../theme/theme';
 import { useTheme } from '../theme/ThemeContext';
 
-export function HandscrollContainer({ children, style, refreshControl }) {
+export function HandscrollContainer({
+  children,
+  style,
+  refreshControl,
+  onScroll,
+  scrollEventThrottle = 16,
+  initialScrollOffset = 0,
+  scrollRef,
+}) {
   const { colors, isDark } = useTheme();
   const left = useRef(new Animated.Value(0.5)).current;
   const right = useRef(new Animated.Value(0.5)).current;
   const fade = useRef(new Animated.Value(0)).current;
   const ink = useRef(new Animated.Value(0)).current;
   const veil = useRef(new Animated.Value(0)).current;
+  const internalScrollRef = useRef(null);
+  // Resolve the ScrollView ref: an optional caller-provided ref wins, else the local one.
+  const scrollViewRef = scrollRef || internalScrollRef;
+
+  // Restore a previously saved reading position after mount (once content is laid out).
+  useEffect(() => {
+    if (!(initialScrollOffset > 0)) return;
+    const t = setTimeout(() => {
+      scrollViewRef.current?.scrollTo?.({ y: initialScrollOffset, animated: false });
+    }, 60);
+    return () => clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [initialScrollOffset]);
 
   useEffect(() => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
@@ -58,11 +79,14 @@ export function HandscrollContainer({ children, style, refreshControl }) {
       <Animated.View style={[styles.panel, { backgroundColor: colors.surface }, styles.leftPanel, { transform: [{ translateX: left.interpolate({ inputRange: [0, 0.5], outputRange: [-80, 0] }) }], opacity: left.interpolate({ inputRange: [0, 0.5], outputRange: [0, 1] }) }]} />
       <Animated.View style={[styles.panel, { backgroundColor: colors.surface }, styles.rightPanel, { transform: [{ translateX: right.interpolate({ inputRange: [0, 0.5], outputRange: [80, 0] }) }], opacity: right.interpolate({ inputRange: [0, 0.5], outputRange: [0, 1] }) }]} />
       <Animated.ScrollView
+        ref={scrollViewRef}
         style={styles.content}
         contentContainerStyle={styles.contentInner}
         showsVerticalScrollIndicator={false}
         bounces
         refreshControl={refreshControl}
+        onScroll={onScroll}
+        scrollEventThrottle={scrollEventThrottle}
       >
         <Animated.View style={{ opacity: fade }}>{children}</Animated.View>
       </Animated.ScrollView>

@@ -38,9 +38,9 @@ const FestivalItem = memo(function FestivalItem({ item, onPress }) {
           <Sparkles size={14} color={colors.primary} strokeWidth={2} />
         </View>
         <View style={styles.festivalNameWrap}>
-          <Text style={styles.festivalNameCn}>{item.festival.nameCn}</Text>
-          <Text style={[styles.festivalNameEn, { color: colors.mutedText }]}>
-            {item.festival.nameEn}
+          <Text style={styles.festivalNameEn}>{item.festival.nameEn}</Text>
+          <Text style={[styles.festivalNameCn, { color: colors.primary }]}>
+            {item.festival.nameCn}
           </Text>
         </View>
         <ChevronRight size={16} color={colors.mutedText} strokeWidth={2} />
@@ -162,15 +162,16 @@ const styles = StyleSheet.create({
   festivalNameWrap: {
     flex: 1,
   },
-  festivalNameCn: {
+  festivalNameEn: {
     fontSize: 16,
     fontWeight: '700',
     color: theme.colors.text,
   },
-  festivalNameEn: {
+  festivalNameCn: {
     fontSize: 11,
     fontWeight: '600',
     marginTop: 1,
+    color: theme.colors.primary,
   },
   festivalSummary: {
     fontSize: 12,

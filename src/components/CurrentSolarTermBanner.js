@@ -74,8 +74,8 @@ export const CurrentSolarTermBanner = memo(function CurrentSolarTermBanner({ onP
         </View>
 
         <View style={styles.termInfo}>
-          <Text style={styles.termNameCn}>{solarTerm.nameCn}</Text>
           <Text style={styles.termNameEn}>{solarTerm.nameEn}</Text>
+          <Text style={styles.termNameCn}>{solarTerm.nameCn}</Text>
         </View>
 
         <Text style={styles.termSummary} numberOfLines={2}>
@@ -155,15 +155,17 @@ const styles = StyleSheet.create({
   termInfo: {
     marginBottom: 8,
   },
-  termNameCn: {
-    fontSize: 32,
-    fontWeight: '600',
+  termNameEn: {
+    fontSize: 28,
+    fontWeight: '700',
+    letterSpacing: 0.3,
     color: theme.colors.text,
   },
-  termNameEn: {
-    fontSize: 14,
+  termNameCn: {
+    fontSize: 13,
     fontWeight: '600',
-    color: theme.colors.mutedText,
+    letterSpacing: 3,
+    color: theme.colors.primary,
     marginTop: 2,
   },
   termSummary: {
