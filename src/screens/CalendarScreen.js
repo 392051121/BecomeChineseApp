@@ -91,6 +91,9 @@ export function CalendarScreen() {
   const [xpGained, setXpGained] = useState(0);
   const [reviewSummary, setReviewSummary] = useState(null);
   const [showQuiz, setShowQuiz] = useState(false);
+  // Toggle the "All 24 Solar Terms" grid between the current season's terms
+  // and the full 24-term Chinese calendar.
+  const [showAllTerms, setShowAllTerms] = useState(false);
 
   // Get enriched solar term data
   const solarTermBasic = useMemo(() => getSolarTermForDate(now), [now]);
@@ -298,10 +301,34 @@ export function CalendarScreen() {
                 <Pressable
                   key={index}
                   style={[styles.relatedItem, { backgroundColor: colors.surface, borderColor: colors.border }]}
-                  onPress={() => navigation.getParent()?.navigate('Explore', {
-                    screen: getTypeScreen(item.type),
-                    params: { id: item.id }
-                  })}
+                  onPress={() => {
+                    const screen = getTypeScreen(item.type);
+                    // Deep-link into a dedicated detail route when one exists,
+                    // otherwise land on the tab (matches ExploreNextSection).
+                    if (item.type === 'dynasty' && screen === 'History') {
+                      navigation.getParent()?.navigate('History', {
+                        screen: 'DynastyDetail',
+                        params: { dynastyId: item.id },
+                      });
+                      return;
+                    }
+                    if (item.type === 'person' && screen === 'History') {
+                      navigation.getParent()?.navigate('History', {
+                        screen: 'PersonDetail',
+                        params: { personId: item.id },
+                      });
+                      return;
+                    }
+                    if (item.type === 'recipe' && screen === 'Food') {
+                      navigation.getParent()?.navigate('Food', { recipeId: item.id });
+                      return;
+                    }
+                    if (item.type === 'city' && screen === 'Places') {
+                      navigation.getParent()?.navigate('Places', { cityId: item.id });
+                      return;
+                    }
+                    navigation.getParent()?.navigate(screen);
+                  }}
                   accessibilityRole="button"
                   accessibilityLabel={item.reason}
                 >
@@ -325,7 +352,7 @@ export function CalendarScreen() {
             Explore the full Chinese calendar through seasonal changes
           </Text>
           <View style={styles.termsGrid}>
-            {solarTerms.filter(t => t.season === solarTerm.season).map((term) => (
+            {(showAllTerms ? solarTerms : solarTerms.filter(t => t.season === solarTerm.season)).map((term) => (
               <Pressable
                 key={term.id}
                 style={({ pressed }) => [
@@ -345,12 +372,15 @@ export function CalendarScreen() {
           </View>
           <Pressable
             style={({ pressed }) => [styles.browseAllBtn, { backgroundColor: `${seasonColor}15` }, pressed && styles.browseAllBtnPressed]}
-            onPress={() => navigation.getParent()?.navigate('Explore', { screen: 'Seasons' })}
+            onPress={() => setShowAllTerms((prev) => !prev)}
             accessibilityRole="button"
-            accessibilityLabel="Browse all 24 solar terms"
+            accessibilityLabel={showAllTerms ? 'Show only terms for the current season' : 'Browse all 24 solar terms'}
+            accessibilityState={{ expanded: showAllTerms }}
           >
             <CalendarDays size={14} color={seasonColor} strokeWidth={2} />
-            <Text style={[styles.browseAllText, { color: seasonColor }]}>View all 24 terms</Text>
+            <Text style={[styles.browseAllText, { color: seasonColor }]}>
+              {showAllTerms ? 'Show current season' : 'View all 24 terms'}
+            </Text>
             <ArrowRight size={12} color={seasonColor} strokeWidth={2} />
           </Pressable>
         </SectionCard>

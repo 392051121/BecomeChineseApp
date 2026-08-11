@@ -1,4 +1,4 @@
-import React, { useMemo, useEffect } from 'react';
+import React, { useMemo, useEffect, useState, useCallback } from 'react';
 import {
   Pressable,
   SafeAreaView,
@@ -8,12 +8,16 @@ import {
 } from 'react-native';
 import * as Speech from 'expo-speech';
 import * as Haptics from 'expo-haptics';
-import { Sparkles, Leaf, UtensilsCrossed, CalendarDays, ArrowRight, Sunrise } from 'lucide-react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { Sparkles, Leaf, UtensilsCrossed, CalendarDays, ArrowRight, Sunrise, Check } from 'lucide-react-native';
 import { useNavigation } from '@react-navigation/native';
 
-import { solarTerms } from '../data/solarTerms';
+import { solarTerms, getTermRecipeIds, getTermFestivalName } from '../data/solarTerms';
 import { recipes } from '../data/recipes';
+import { useReadingPosition } from '../hooks/useReadingPosition';
+import { STORAGE_KEYS } from '../config/storageKeys';
 import { HandscrollContainer } from '../components/HandscrollContainer';
+import { LinkedConceptText } from '../components/LinkedConceptText';
 import { ScreenHeader } from '../components/ScreenHeader';
 import { SectionCard } from '../components/SectionCard';
 import { DetailHeader } from '../components/DetailHeader';
@@ -47,14 +51,57 @@ export function SolarTermDetailScreen({ route }) {
     [termId]
   );
 
+  // Reading-position memory: restore / record this term's scroll offset.
+  const reading = useReadingPosition(term?.id ? `solarTerm:${term.id}` : '');
+
   const seasonColor = SEASON_COLORS[term?.season] || colors.primary;
   const seasonLabel = SEASON_LABELS[term?.season] || 'Season';
 
-  // Find related recipes
+  // Find related recipes — matched against each term's curated seasonal dishes
+  // (real recipe IDs), not a literal name comparison that would miss every time.
   const relatedRecipes = useMemo(() => {
-    if (!term?.food || term.food.length === 0) return [];
-    return recipes.filter(r => term.food.includes(r.id)).slice(0, 3);
+    if (!term) return [];
+    const ids = getTermRecipeIds(term.key, term.season);
+    return recipes.filter((r) => ids.includes(r.id)).slice(0, 3);
   }, [term]);
+
+  // Folk festival tied to this term (e.g. Qingming Festival for Qingming).
+  const termFestival = useMemo(() => (term ? getTermFestivalName(term.key) : ''), [term]);
+
+  // "Today's Gentle Action" completion state, persisted per-term.
+  const [actionDone, setActionDone] = useState(false);
+
+  useEffect(() => {
+    if (!term?.id) return;
+    let cancelled = false;
+    (async () => {
+      try {
+        const raw = await AsyncStorage.getItem(STORAGE_KEYS.TERM_ACTIONS_DONE);
+        const map = raw ? JSON.parse(raw) : {};
+        if (!cancelled) setActionDone(!!map[term.id]);
+      } catch (e) {
+        // Ignore: a corrupted flag should never break the screen.
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [term?.id]);
+
+  const toggleActionDone = useCallback(async () => {
+    if (!term?.id) return;
+    Haptics.notificationAsync(
+      Haptics.NotificationFeedbackType[actionDone ? 'Warning' : 'Success']
+    ).catch(() => {});
+    const next = !actionDone;
+    setActionDone(next);
+    try {
+      const raw = await AsyncStorage.getItem(STORAGE_KEYS.TERM_ACTIONS_DONE);
+      const map = raw ? JSON.parse(raw) : {};
+      map[term.id] = next;
+      await AsyncStorage.setItem(STORAGE_KEYS.TERM_ACTIONS_DONE, JSON.stringify(map));
+    } catch (e) {
+      // Ignore: persistence failure should not roll back the visible toggle.
+    }
+  }, [term?.id, actionDone]);
 
   const speakTerm = (text) => {
     if (!text) return;
@@ -109,7 +156,11 @@ export function SolarTermDetailScreen({ route }) {
         onBack={() => navigation.goBack()}
         title={term.englishName}
       />
-      <HandscrollContainer style={styles.scrollContainer}>
+      <HandscrollContainer
+        style={styles.scrollContainer}
+        onScroll={reading.onScroll}
+        initialScrollOffset={reading.savedOffset}
+      >
         {/* Hero Section */}
         <SectionCard style={styles.heroCard} tone="soft">
           <ScreenHeader
@@ -132,7 +183,7 @@ export function SolarTermDetailScreen({ route }) {
             <Sparkles size={16} color={colors.primary} strokeWidth={2} />
             <Text style={[styles.sectionTitle, { color: colors.primary }]}>What It Means</Text>
           </View>
-          <Text style={[styles.meaningText, { color: colors.text }]}>{term.meaning}</Text>
+          <LinkedConceptText text={term.meaning} style={[styles.meaningText, { color: colors.text }]} />
         </SectionCard>
 
         {/* Why It Matters - Beginner Note */}
@@ -141,7 +192,7 @@ export function SolarTermDetailScreen({ route }) {
             <Leaf size={16} color={seasonColor} strokeWidth={2} />
             <Text style={[styles.sectionTitle, { color: seasonColor }]}>Why It Matters</Text>
           </View>
-          <Text style={[styles.beginnerText, { color: colors.text }]}>{term.beginnerNote}</Text>
+          <LinkedConceptText text={term.beginnerNote} style={[styles.beginnerText, { color: colors.text }]} />
         </SectionCard>
 
         {/* Daily Action - Prominent */}
@@ -152,15 +203,24 @@ export function SolarTermDetailScreen({ route }) {
             </View>
             <Text style={[styles.actionTitle, { color: seasonColor }]}>Today's Gentle Action</Text>
           </View>
-          <Text style={[styles.actionText, { color: colors.text }]}>{term.dailyAction}</Text>
+          <LinkedConceptText text={term.dailyAction} style={[styles.actionText, { color: colors.text }]} />
           <Pressable
-            style={({ pressed }) => [styles.actionButton, pressed && styles.actionButtonPressed]}
-            onPress={() => {
-              Haptics.selectionAsync().catch(() => {});
-              // Mark as completed - could save to AsyncStorage
-            }}
+            style={({ pressed }) => [
+              styles.actionButton,
+              actionDone && styles.actionButtonDone,
+              pressed && styles.actionButtonPressed,
+            ]}
+            onPress={toggleActionDone}
+            accessibilityRole="button"
+            accessibilityLabel={actionDone ? 'Action completed - tap to undo' : 'Mark action as done'}
+            accessibilityState={{ checked: actionDone }}
           >
-            <Text style={styles.actionButtonText}>Mark as Done</Text>
+            {actionDone ? (
+              <Check size={14} color="#FFF" strokeWidth={3} />
+            ) : null}
+            <Text style={[styles.actionButtonText, actionDone && styles.actionButtonTextDone]}>
+              {actionDone ? 'Done' : 'Mark as Done'}
+            </Text>
           </Pressable>
         </SectionCard>
 
@@ -170,7 +230,7 @@ export function SolarTermDetailScreen({ route }) {
             <Leaf size={16} color={colors.primary} strokeWidth={2} />
             <Text style={[styles.sectionTitle, { color: colors.primary }]}>Nature's Change</Text>
           </View>
-          <Text style={[styles.natureText, { color: colors.text }]}>{term.natureChange}</Text>
+          <LinkedConceptText text={term.natureChange} style={[styles.natureText, { color: colors.text }]} />
         </SectionCard>
 
         {/* Traditional Custom */}
@@ -179,8 +239,21 @@ export function SolarTermDetailScreen({ route }) {
             <CalendarDays size={16} color={colors.primary} strokeWidth={2} />
             <Text style={[styles.sectionTitle, { color: colors.primary }]}>Traditional Custom</Text>
           </View>
-          <Text style={[styles.customText, { color: colors.text }]}>{term.custom}</Text>
+          <LinkedConceptText text={term.custom} style={[styles.customText, { color: colors.text }]} />
         </SectionCard>
+
+        {/* Related Festival */}
+        {termFestival ? (
+          <SectionCard style={styles.festivalCard} tone="soft">
+            <View style={styles.sectionHeader}>
+              <CalendarDays size={16} color={seasonColor} strokeWidth={2} />
+              <Text style={[styles.sectionTitle, { color: seasonColor }]}>Tied to a Festival</Text>
+            </View>
+            <Text style={[styles.festivalText, { color: colors.text }]}>
+              This solar term rolls into {termFestival} — a natural entry point to explore
+              the holiday's food, customs and meaning.
+            </Text>          </SectionCard>
+        ) : null}
 
         {/* Seasonal Food */}
         {relatedRecipes.length > 0 && (
@@ -329,6 +402,10 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
     flexDirection: 'row',
     alignItems: 'center',
+    gap: 6,
+  },
+  actionButtonDone: {
+    backgroundColor: '#4E7A5A',
   },
   actionButtonPressed: {
     transform: [{ scale: 0.97 }],
@@ -338,6 +415,9 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: '700',
     color: '#243B53',
+  },
+  actionButtonTextDone: {
+    color: '#FFFFFF',
   },
   natureCard: {
     padding: 16,
@@ -356,6 +436,16 @@ const styles = StyleSheet.create({
   customText: {
     fontSize: 14,
     lineHeight: 21,
+  },
+  festivalCard: {
+    padding: 16,
+    borderRadius: 20,
+    marginBottom: 12,
+  },
+  festivalText: {
+    fontSize: 14,
+    lineHeight: 21,
+    marginTop: 4,
   },
   foodCard: {
     padding: 16,
