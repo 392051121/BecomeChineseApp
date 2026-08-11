@@ -237,7 +237,7 @@ export function HistoryScreen() {
                       label="Place"
                       title={`${relatedCity.nameEn} / ${relatedCity.nameCn}`}
                       hint="Continue"
-                      onPress={() => navigation.getParent()?.navigate('Places')}
+                      onPress={() => navigation.getParent()?.navigate('Places', { cityId: relatedCity.id })}
                     />
                   ) : null}
                   {relatedFood ? (
@@ -245,7 +245,7 @@ export function HistoryScreen() {
                       label="Food"
                       title={`${relatedFood.nameEn} / ${relatedFood.nameCn}`}
                       hint="Continue"
-                      onPress={() => navigation.getParent()?.navigate('Food')}
+                      onPress={() => navigation.getParent()?.navigate('Food', { recipeId: relatedFood.id })}
                     />
                   ) : null}
                   {!relatedCity && !relatedFood ? <Text style={[styles.relatedText, { color: colors.mutedText }]}>No related paths yet.</Text> : null}

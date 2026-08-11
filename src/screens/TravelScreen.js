@@ -171,7 +171,7 @@ const CityCard = memo(function CityCard({ item, isActive, isBookmarked, onActiva
                   label="Food"
                   title={`${relatedFood.nameEn} / ${relatedFood.nameCn}`}
                   hint="Explore"
-                  onPress={() => navigation.getParent()?.navigate('Food')}
+                  onPress={() => navigation.getParent()?.navigate('Food', { recipeId: relatedFood.id })}
                 />
               ) : null}
               {relatedDynasty ? (
@@ -179,7 +179,10 @@ const CityCard = memo(function CityCard({ item, isActive, isBookmarked, onActiva
                   label="History"
                   title={`${relatedDynasty.nameEn} / ${relatedDynasty.nameCn}`}
                   hint="Explore"
-                  onPress={() => navigation.getParent()?.navigate('History')}
+                  onPress={() => navigation.getParent()?.navigate('History', {
+                    screen: 'DynastyDetail',
+                    params: { dynastyId: relatedDynasty.id },
+                  })}
                 />
               ) : null}
               {!relatedFood && !relatedDynasty ? <Text style={styles.relatedText}>No related paths yet.</Text> : null}
@@ -261,17 +264,14 @@ export function TravelScreen({ route }) {
   // Deep-link support: when navigating here with a `cityId` param (e.g. from a
   // collection entry, learning path step, or related-city card), activate that
   // city directly so its detail highlights on arrival.
+  // Consume the param immediately so the same cityId can reopen on a later visit.
   const pendingCityId = route?.params?.cityId;
-  const lastHandledCityIdRef = useRef(null);
 
   useEffect(() => {
     if (!pendingCityId) return;
-    if (lastHandledCityIdRef.current === pendingCityId) return;
     const city = cities.find((c) => c.id === pendingCityId);
-    // Consume the param so re-navigating to the same city later still works.
     navigation.setParams({ cityId: undefined });
     if (!city) return;
-    lastHandledCityIdRef.current = pendingCityId;
     setActiveCityId(city.id);
   }, [pendingCityId, navigation]);
 

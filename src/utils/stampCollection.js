@@ -19,6 +19,21 @@ import { getFestivalBonus } from './solarTermContent';
 let stampCache = null;
 let cacheTimestamp = 0;
 const CACHE_TTL = 5000; // 5 seconds
+// Serialize earn/save so concurrent deep-explore earnStamp calls cannot
+// read-modify-write the same empty collection and drop each other's stamp.
+let stampWriteQueue = Promise.resolve();
+
+function emptyStampCollection() {
+  return {
+    stamps: {},
+    stats: {
+      totalStamps: 0,
+      byType: { city: 0, food: 0, dynasty: 0, person: 0, festival: 0 },
+      byRarity: { common: 0, rare: 0, epic: 0, legendary: 0 },
+      totalXP: 0,
+    },
+  };
+}
 
 /**
  * Get stamp collection from storage
@@ -37,27 +52,15 @@ export async function getStampCollection() {
       return stampCache;
     }
 
-    // Return default structure
-    return {
-      stamps: {},
-      stats: {
-        totalStamps: 0,
-        byType: { city: 0, food: 0, dynasty: 0, person: 0, festival: 0 },
-        byRarity: { common: 0, rare: 0, epic: 0, legendary: 0 },
-        totalXP: 0,
-      },
-    };
+    // Seed cache with empty structure so the next concurrent earnStamp does
+    // not re-read storage and start from another independent empty object.
+    const empty = emptyStampCollection();
+    stampCache = empty;
+    cacheTimestamp = Date.now();
+    return empty;
   } catch (e) {
     console.error('Failed to get stamp collection:', e);
-    return {
-      stamps: {},
-      stats: {
-        totalStamps: 0,
-        byType: { city: 0, food: 0, dynasty: 0, person: 0, festival: 0 },
-        byRarity: { common: 0, rare: 0, epic: 0, legendary: 0 },
-        totalXP: 0,
-      },
-    };
+    return emptyStampCollection();
   }
 }
 
@@ -122,54 +125,63 @@ export function qualifiesForStamp(engagementScore) {
 export async function earnStamp(type, content, engagementParams = {}) {
   if (!content || !content.id) return null;
 
-  const collection = await getStampCollection();
+  const run = async () => {
+    const collection = await getStampCollection();
 
-  // Check if already earned this stamp for this content
-  const existingStampId = Object.keys(collection.stamps).find(
-    (id) => id.startsWith(`${type}-${content.id}-`)
-  );
+    // Check if already earned this stamp for this content
+    const existingStampId = Object.keys(collection.stamps).find(
+      (id) => id.startsWith(`${type}-${content.id}-`)
+    );
 
-  if (existingStampId) {
-    // Update engagement score if higher
-    const existing = collection.stamps[existingStampId];
-    const newScore = calculateEngagementScore(engagementParams);
-    if (newScore > existing.engagementScore) {
-      existing.engagementScore = newScore;
-      await saveStampCollection(collection);
+    if (existingStampId) {
+      // Update engagement score if higher
+      const existing = collection.stamps[existingStampId];
+      const newScore = calculateEngagementScore(engagementParams);
+      if (newScore > existing.engagementScore) {
+        existing.engagementScore = newScore;
+        await saveStampCollection(collection);
+      }
+      return null; // No new stamp
     }
-    return null; // No new stamp
-  }
 
-  // Calculate engagement score
-  const engagementScore = calculateEngagementScore(engagementParams);
+    // Calculate engagement score
+    const engagementScore = calculateEngagementScore(engagementParams);
 
-  // Check if qualifies for stamp
-  if (!qualifiesForStamp(engagementScore)) {
-    return null;
-  }
+    // Check if qualifies for stamp
+    if (!qualifiesForStamp(engagementScore)) {
+      return null;
+    }
 
-  // Get festival bonus
-  const festivalBonus = getFestivalBonus();
-  const rarityBoost = festivalBonus.rarityBoost;
+    // Get festival bonus
+    const festivalBonus = getFestivalBonus();
+    const rarityBoost = festivalBonus.rarityBoost;
 
-  // Determine rarity
-  const rarity = determineStampRarity(engagementScore, rarityBoost);
+    // Determine rarity
+    const rarity = determineStampRarity(engagementScore, rarityBoost);
 
-  // Create stamp
-  const stamp = createStamp(type, content, rarity, engagementScore);
+    // Create stamp
+    const stamp = createStamp(type, content, rarity, engagementScore);
 
-  // Add to collection
-  collection.stamps[stamp.id] = stamp;
+    // Add to collection
+    collection.stamps[stamp.id] = stamp;
 
-  // Update stats
-  collection.stats.totalStamps += 1;
-  collection.stats.byType[type] = (collection.stats.byType[type] || 0) + 1;
-  collection.stats.byRarity[rarity] = (collection.stats.byRarity[rarity] || 0) + 1;
-  collection.stats.totalXP += stamp.xp;
+    // Update stats
+    collection.stats.totalStamps += 1;
+    collection.stats.byType[type] = (collection.stats.byType[type] || 0) + 1;
+    collection.stats.byRarity[rarity] = (collection.stats.byRarity[rarity] || 0) + 1;
+    collection.stats.totalXP += stamp.xp;
 
-  await saveStampCollection(collection);
+    await saveStampCollection(collection);
 
-  return stamp;
+    return stamp;
+  };
+
+  const job = stampWriteQueue.then(run, run);
+  stampWriteQueue = job.then(
+    () => undefined,
+    () => undefined
+  );
+  return job;
 }
 
 /**

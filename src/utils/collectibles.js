@@ -30,7 +30,7 @@ const SPECIAL_RARITY_MAP = {
   },
   // Legendary people (most famous historical figures)
   people: {
-    legendary: ['libai', 'confucius', 'qinshihuang', 'laozi'],
+    legendary: ['libai', 'kongzi', 'qinshihuang', 'laozi'],
     epic: ['dufu', 'sunwu', 'zhugeliang', 'caocao', 'liubang', 'wuzetian'],
     rare: ['simaqian', 'banchao', 'yuefei', 'sushi', 'wangxizhi'],
   },

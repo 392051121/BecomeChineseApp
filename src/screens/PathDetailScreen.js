@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useMemo } from 'react';
 import { Pressable, SafeAreaView, StyleSheet, Text, View, ScrollView } from 'react-native';
 import { ArrowRight, ArrowLeft, MapPin, Clock, UtensilsCrossed, Scroll, User, Sparkles, Check, Lock, ChevronRight } from 'lucide-react-native';
-import { useNavigation, useRoute } from '@react-navigation/native';
+import { useNavigation, useRoute, useFocusEffect } from '@react-navigation/native';
 import * as Haptics from 'expo-haptics';
 
 import { getCulturalAssets } from '../utils/culturalAssets';
@@ -17,6 +17,14 @@ import { availablePaths, pathConfigs } from '../components/PathsSection';
 import { cities } from '../data/cities';
 import { recipes } from '../data/recipes';
 import { dynasties } from '../data/dynasties';
+import { people } from '../data/people';
+
+/** Path step id aliases → canonical data ids (e.g. confucius → kongzi). */
+const PERSON_ID_ALIASES = {
+  confucius: 'kongzi',
+  'kong-zi': 'kongzi',
+  confucious: 'kongzi',
+};
 
 /**
  * Find the actual data item for a path step
@@ -24,11 +32,12 @@ import { dynasties } from '../data/dynasties';
 function findStepDataItem(step) {
   const searchId = step.id?.toLowerCase();
   const searchLabel = step.label?.toLowerCase();
+  const canonicalPersonId = PERSON_ID_ALIASES[searchId] || searchId;
 
   if (step.type === 'city') {
     return cities.find(c =>
       c.id?.toLowerCase() === searchId ||
-      c.nameEn?.toLowerCase().includes(searchLabel) ||
+      c.nameEn?.toLowerCase() === searchLabel ||
       c.nameCn === step.labelCn
     );
   }
@@ -36,7 +45,7 @@ function findStepDataItem(step) {
   if (step.type === 'recipe') {
     return recipes.find(r =>
       r.id?.toLowerCase() === searchId ||
-      r.nameEn?.toLowerCase().includes(searchLabel) ||
+      r.nameEn?.toLowerCase() === searchLabel ||
       r.nameCn === step.labelCn
     );
   }
@@ -44,8 +53,17 @@ function findStepDataItem(step) {
   if (step.type === 'dynasty') {
     return dynasties.find(d =>
       d.id?.toLowerCase() === searchId ||
-      d.nameEn?.toLowerCase().includes(searchLabel) ||
+      d.nameEn?.toLowerCase() === searchLabel ||
       d.nameCn === step.labelCn
+    );
+  }
+
+  if (step.type === 'person') {
+    return people.find(p =>
+      p.id?.toLowerCase() === canonicalPersonId ||
+      p.id?.toLowerCase() === searchId ||
+      p.nameEn?.toLowerCase() === searchLabel ||
+      p.nameCn === step.labelCn
     );
   }
 
@@ -122,7 +140,7 @@ export function PathDetailScreen() {
     return pathConfigs[pathId] || availablePaths.find(p => p.id === pathId);
   }, [pathId]);
 
-  useEffect(() => {
+  const loadAssets = React.useCallback(() => {
     let cancelled = false;
     (async () => {
       const data = await getCulturalAssets().catch(() => null);
@@ -131,22 +149,36 @@ export function PathDetailScreen() {
     return () => { cancelled = true; };
   }, []);
 
+  useEffect(() => loadAssets(), [loadAssets]);
+
+  // Refresh progress when returning from a detail/collection screen
+  useFocusEffect(
+    React.useCallback(() => {
+      loadAssets();
+    }, [loadAssets])
+  );
+
   // Check which steps are completed based on user's collections
   const stepProgress = useMemo(() => {
     if (!path || !assets) return [];
 
-    const cities = assets?.favorites?.cities || [];
-    const recipes = assets?.favorites?.recipes || [];
-    const dynasties = assets?.favorites?.dynasties || [];
+    const favCities = assets?.favorites?.cities || [];
+    const favRecipes = assets?.favorites?.recipes || [];
+    const favDynasties = assets?.favorites?.dynasties || [];
+    const favPeople = assets?.favorites?.people || [];
 
     return path.steps.map((step) => {
+      const dataItem = findStepDataItem(step);
+      const canonicalId = dataItem?.id || step.id;
       let completed = false;
       if (step.type === 'city') {
-        completed = cities.some(c => c.id === step.id || c.nameEn?.toLowerCase().includes(step.id));
+        completed = favCities.some((c) => c.id === canonicalId || c.id === step.id);
       } else if (step.type === 'recipe') {
-        completed = recipes.some(r => r.id === step.id || r.nameEn?.toLowerCase().includes(step.id));
+        completed = favRecipes.some((r) => r.id === canonicalId || r.id === step.id);
       } else if (step.type === 'dynasty') {
-        completed = dynasties.some(d => d.id === step.id || d.nameEn?.toLowerCase().includes(step.id));
+        completed = favDynasties.some((d) => d.id === canonicalId || d.id === step.id);
+      } else if (step.type === 'person') {
+        completed = favPeople.some((p) => p.id === canonicalId || p.id === step.id);
       }
       return { ...step, completed };
     });

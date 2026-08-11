@@ -65,6 +65,52 @@ export function getExploreNextItems(sourceType, sourceId) {
       break;
     }
     case 'recipe': {
+      // Reverse-lookup cities/dynasties that list this dish, plus a same-province peer
+      // so Explore Next is never a no-op on recipe detail screens.
+      const recipe = byId(recipes, sourceId);
+      const provinceId = recipe?.province_id || recipe?.provinceId || null;
+
+      for (const city of cities) {
+        const ids = getCityRecipes(city.id, city.province_id || city.provinceId);
+        if (ids.includes(sourceId)) {
+          result.push({
+            type: 'city',
+            id: city.id,
+            title: city.nameEn,
+            reason: `Where ${recipe?.nameEn || 'this dish'} is at home`,
+          });
+          if (result.length >= 2) break;
+        }
+      }
+
+      for (const dynasty of dynasties) {
+        const ids = getDynastyRecipes(dynasty.id);
+        if (ids.includes(sourceId)) {
+          result.push({
+            type: 'dynasty',
+            id: dynasty.id,
+            title: dynasty.nameEn,
+            reason: `A dynasty tied to this cuisine`,
+          });
+          break;
+        }
+      }
+
+      if (provinceId) {
+        const peer = recipes.find(
+          (r) =>
+            r.id !== sourceId &&
+            (r.province_id === provinceId || r.provinceId === provinceId)
+        );
+        if (peer) {
+          result.push({
+            type: 'recipe',
+            id: peer.id,
+            title: peer.nameEn,
+            reason: `Another dish from the same region`,
+          });
+        }
+      }
       break;
     }
     default:
@@ -74,13 +120,28 @@ export function getExploreNextItems(sourceType, sourceId) {
   if (result.length >= 1) return result.slice(0, 3);
 
   // Fallback highlights so the section is never empty.
-  const fallbackCity = cities.find((x) => x.isFeatured) || cities[0];
-  const fallbackRecipe = recipes.find((x) => x.isFeatured) || recipes[0];
-  if (fallbackCity) {
+  // Prefer something other than the current source (avoid self-link).
+  const fallbackCity =
+    cities.find((x) => x.isFeatured && x.id !== sourceId) ||
+    cities.find((x) => x.id !== sourceId) ||
+    cities[0];
+  const fallbackRecipe =
+    recipes.find((x) => x.isFeatured && x.id !== sourceId) ||
+    recipes.find((x) => x.id !== sourceId) ||
+    recipes[0];
+  const fallbackDynasty =
+    dynasties.find((x) => x.isFeatured && x.id !== sourceId) ||
+    dynasties.find((x) => x.id !== sourceId) ||
+    dynasties[0];
+
+  if (fallbackCity && !result.some((x) => x.type === 'city' && x.id === fallbackCity.id)) {
     result.push({ type: 'city', id: fallbackCity.id, title: fallbackCity.nameEn, reason: `Journey onward to ${fallbackCity.nameEn}` });
   }
-  if (fallbackRecipe) {
+  if (fallbackRecipe && !result.some((x) => x.type === 'recipe' && x.id === fallbackRecipe.id)) {
     result.push({ type: 'recipe', id: fallbackRecipe.id, title: fallbackRecipe.nameEn, reason: `Keep discovering with ${fallbackRecipe.nameEn}` });
+  }
+  if (result.length < 2 && fallbackDynasty) {
+    result.push({ type: 'dynasty', id: fallbackDynasty.id, title: fallbackDynasty.nameEn, reason: `Step into the ${fallbackDynasty.nameEn} era` });
   }
   return result.slice(0, 3);
 }

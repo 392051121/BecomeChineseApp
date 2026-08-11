@@ -140,9 +140,9 @@ const pathConfigs = {
     color: '#5D4E37',
     steps: [
       { type: 'dynasty', id: 'zhou', label: 'Zhou Dynasty', labelCn: '周朝' },
-      { type: 'person', id: 'confucius', label: 'Confucius', labelCn: '孔子' },
+      { type: 'person', id: 'kongzi', label: 'Confucius', labelCn: '孔子' },
       { type: 'person', id: 'laozi', label: 'Laozi', labelCn: '老子' },
-      { type: 'city', id: 'chengdu', label: 'Qufu (Confucius Home)', labelCn: '曲阜' },
+      { type: 'city', id: 'qufu', label: 'Qufu (Confucius Home)', labelCn: '曲阜' },
     ],
   },
   silkRoadEast: {

@@ -258,37 +258,30 @@ export function CollectionScreen() {
   }
 
   function handleItemPress(item, type) {
-    // Navigate to detail screen based on type
-    const screenMap = {
-      cities: 'Places',
-      recipes: 'Food',
-      dynasties: 'History',
-      people: 'History',
-    };
-    const detailScreenMap = {
-      dynasties: 'DynastyDetail',
-      people: 'PersonDetail',
-    };
-
-    const targetTab = screenMap[type] || 'Home';
-    const detailScreen = detailScreenMap[type];
-
-    if (detailScreen) {
-      // Navigate to the tab and then to the detail screen
-      navigation.getParent()?.navigate(targetTab, {
-        screen: detailScreen,
-        params: { personId: item.id, person: item }
+    // Typed deep-links so each collection entry opens the right detail surface.
+    if (type === 'dynasties') {
+      navigation.getParent()?.navigate('History', {
+        screen: 'DynastyDetail',
+        params: { dynastyId: item.id },
       });
-    } else if (type === 'recipes') {
-      // Food shows its detail as a bottom sheet keyed by recipeId.
-      navigation.getParent()?.navigate('Food', { recipeId: item.id });
-    } else if (type === 'cities') {
-      // Places highlights the activated city from cityId.
-      navigation.getParent()?.navigate('Places', { cityId: item.id });
-    } else {
-      // Just navigate to the tab (Places and Food screens handle their own detail views)
-      navigation.getParent()?.navigate(targetTab);
+      return;
     }
+    if (type === 'people') {
+      navigation.getParent()?.navigate('History', {
+        screen: 'PersonDetail',
+        params: { personId: item.id },
+      });
+      return;
+    }
+    if (type === 'recipes') {
+      navigation.getParent()?.navigate('Food', { recipeId: item.id });
+      return;
+    }
+    if (type === 'cities') {
+      navigation.getParent()?.navigate('Places', { cityId: item.id });
+      return;
+    }
+    navigation.getParent()?.navigate('Home');
   }
 
   function toggleViewMode() {

@@ -69,6 +69,12 @@ export function InfiniteQuizScreen() {
 
   // Track used questions to avoid repeats in a single game
   const usedQuestionsRef = useRef(new Set());
+  // score/combo/index refs — setTimeout(endGame) must read latest values, not stale closure
+  const scoreRef = useRef(0);
+  const comboRef = useRef(0);
+  const questionIndexRef = useRef(0);
+  const highScoreRef = useRef(0);
+  const isNewHighScoreRef = useRef(false);
 
   // Load high score on mount
   useEffect(() => {
@@ -77,7 +83,9 @@ export function InfiniteQuizScreen() {
         const saved = await AsyncStorage.getItem(STORAGE_KEYS.QUIZ_HIGH_SCORE);
         if (saved) {
           const data = JSON.parse(saved);
-          setHighScore(data.highScore || 0);
+          const hs = data.highScore || 0;
+          setHighScore(hs);
+          highScoreRef.current = hs;
           setTotalQuestions(data.totalQuestions || 0);
         }
       } catch (e) {
@@ -107,6 +115,9 @@ export function InfiniteQuizScreen() {
     setScore(0);
     setCombo(0);
     setQuestionIndex(0);
+    scoreRef.current = 0;
+    comboRef.current = 0;
+    questionIndexRef.current = 0;
     setGameOver(false);
     usedQuestionsRef.current.clear();
     setCurrentQuestion(getRandomQuestion());
@@ -126,10 +137,16 @@ export function InfiniteQuizScreen() {
 
     if (correct) {
       // Correct answer
-      const newCombo = combo + 1;
+      const newCombo = comboRef.current + 1;
+      comboRef.current = newCombo;
       setCombo(newCombo);
-      setScore(prev => prev + 5 + Math.floor(newCombo / 5));
-      setQuestionIndex(prev => prev + 1);
+      const points = 5 + Math.floor(newCombo / 5);
+      const nextScore = scoreRef.current + points;
+      scoreRef.current = nextScore;
+      setScore(nextScore);
+      const nextQ = questionIndexRef.current + 1;
+      questionIndexRef.current = nextQ;
+      setQuestionIndex(nextQ);
 
       // Animate combo
       Animated.sequence([
@@ -173,7 +190,9 @@ export function InfiniteQuizScreen() {
         ]).start(() => setComboMilestone(null));
 
         // Add bonus XP
-        setScore(prev => prev + milestone.xpBonus);
+        const withBonus = scoreRef.current + milestone.xpBonus;
+        scoreRef.current = withBonus;
+        setScore(withBonus);
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
       }
 
@@ -224,18 +243,23 @@ export function InfiniteQuizScreen() {
     }
   };
 
-  // End game
+  // End game — always read score/highScore from refs (timeout closes over them)
   const endGame = async () => {
+    const finalScore = scoreRef.current;
+    const finalQuestions = questionIndexRef.current;
+    const beatHigh = finalScore > highScoreRef.current;
+    isNewHighScoreRef.current = beatHigh;
     setGameOver(true);
     setIsPlaying(false);
 
-    // Save high score
-    if (score > highScore) {
-      setHighScore(score);
+    // Save high score only when strictly greater than previous best
+    if (beatHigh) {
+      setHighScore(finalScore);
+      highScoreRef.current = finalScore;
       try {
         await AsyncStorage.setItem(
           STORAGE_KEYS.QUIZ_HIGH_SCORE,
-          JSON.stringify({ highScore: score, totalQuestions: questionIndex })
+          JSON.stringify({ highScore: finalScore, totalQuestions: finalQuestions })
         );
       } catch (e) {
         logger.error('InfiniteQuiz', 'Failed to save high score', e);
@@ -293,7 +317,7 @@ export function InfiniteQuizScreen() {
 
   // Render game over screen
   if (gameOver) {
-    const isNewHighScore = score >= highScore && score > 0;
+    const isNewHighScore = isNewHighScoreRef.current;
 
     return (
       <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.background }]}>

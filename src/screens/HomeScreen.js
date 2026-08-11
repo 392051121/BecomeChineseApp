@@ -3,7 +3,7 @@ import { Platform, Pressable, RefreshControl, SafeAreaView, StatusBar, StyleShee
 import { CalendarDays, Clock, Map, UtensilsCrossed, ArrowRight, Flame, Target, Bookmark, Trophy, Star, Zap, Scroll, User, BookOpen, ChevronRight, Leaf } from 'lucide-react-native';
 import { useNavigation } from '@react-navigation/native';
 
-import { getCulturalAssets, getProvinceConnectionMap, getRecentlyViewed } from '../utils/culturalAssets';
+import { getCulturalAssets, getProvinceConnectionMap, getRecentlyViewed, todayKey } from '../utils/culturalAssets';
 import { getWrongAnswers } from '../utils/wrongAnswers';
 import { logger } from '../utils/errorHandling';
 import { getSignInStatus } from '../utils/dailySignIn';
@@ -85,7 +85,7 @@ export function HomeScreen() {
 
   const streak = assets?.quiz?.streak ?? 0;
   const solved = assets?.quiz?.totalSolved ?? 0;
-  const solvedToday = Boolean(assets?.quiz?.solvedByDate?.[new Date().toISOString().slice(0, 10)]);
+  const solvedToday = Boolean(assets?.quiz?.solvedByDate?.[todayKey()]);
   const connectionMap = useMemo(
     () => getProvinceConnectionMap({ favorites: assets?.favorites, cities, recipes, dynasties }),
     [assets]
@@ -153,11 +153,30 @@ export function HomeScreen() {
       >
         <View style={styles.container}>
           {/* ============ HERO 主视觉区 ============ */}
-          <View
+          <Pressable
             style={[
               styles.heroCard,
               isDark ? styles.heroCardDark : styles.heroCardLight,
             ]}
+            onPress={() => {
+              // Prefer canonical Seasons detail key (detailId); fall back to pinyin id
+              // which SolarTermDetailScreen now resolves via normalizeSolarTermId.
+              const termId = seasonMeta?.term?.detailId || seasonMeta?.term?.id;
+              if (termId) {
+                navigation.getParent()?.navigate('Seasons', {
+                  screen: 'SolarTermDetail',
+                  params: { termId },
+                });
+              } else {
+                navigation.getParent()?.navigate('Seasons');
+              }
+            }}
+            accessibilityRole="button"
+            accessibilityLabel={
+              heroTermEn
+                ? `Current solar term ${heroTermEn}${heroTermCn ? `, ${heroTermCn}` : ''}`
+                : 'Open solar terms'
+            }
           >
             <View style={styles.heroGlow} />
             <PaperTexture style={styles.heroTexture} intensity="strong" idPrefix="home_hero" />
@@ -201,7 +220,7 @@ export function HomeScreen() {
             <View style={styles.heroSeal}>
               <Text style={styles.heroSealText}>{xpLevel.titleCn || '行者'}</Text>
             </View>
-          </View>
+          </Pressable>
 
           {/* ============ 今日任务卡 ============ */}
           <Pressable
@@ -260,7 +279,7 @@ export function HomeScreen() {
                     isHighlight && styles.exploreCardHighlight,
                     { borderColor: colors.border },
                   ]}
-                  onPress={() => navigation.navigate(action.target)}
+                  onPress={() => navigation.getParent()?.navigate(action.target)}
                   accessibilityRole="button"
                   accessibilityLabel={`${action.label} - ${action.labelCn}`}
                 >
@@ -348,15 +367,42 @@ export function HomeScreen() {
               </View>
               <View style={styles.recentList}>
                 {recentlyViewed.slice(0, 4).map((item) => {
+                  // Every Continue card must deep-link into the right detail surface
+                  // (Food/Places are modal-by-id tabs; History has nested stacks).
                   const typeConfig = {
-                    city: { icon: Map, color: '#6B8A94', tab: 'Places' },
-                    recipe: { icon: UtensilsCrossed, color: '#C88A2D', tab: 'Food' },
-                    dynasty: { icon: Scroll, color: '#B33B24', tab: 'History' },
-                    person: { icon: User, color: '#8B7355', tab: 'History' },
+                    city: {
+                      icon: Map,
+                      color: '#6B8A94',
+                      goTo: (nav, id) => nav?.navigate('Places', { cityId: id }),
+                    },
+                    recipe: {
+                      icon: UtensilsCrossed,
+                      color: '#C88A2D',
+                      goTo: (nav, id) => nav?.navigate('Food', { recipeId: id }),
+                    },
+                    dynasty: {
+                      icon: Scroll,
+                      color: '#B33B24',
+                      goTo: (nav, id) => nav?.navigate('History', {
+                        screen: 'DynastyDetail',
+                        params: { dynastyId: id },
+                      }),
+                    },
+                    person: {
+                      icon: User,
+                      color: '#8B7355',
+                      goTo: (nav, id) => nav?.navigate('History', {
+                        screen: 'PersonDetail',
+                        params: { personId: id },
+                      }),
+                    },
                     season: {
                       icon: Leaf,
                       color: '#C49A4A',
-                      goTo: (nav, id) => nav?.navigate('Seasons', { screen: 'SolarTermDetail', params: { termId: id } }),
+                      goTo: (nav, id) => nav?.navigate('Seasons', {
+                        screen: 'SolarTermDetail',
+                        params: { termId: id },
+                      }),
                     },
                   };
                   const config = typeConfig[item.type] || typeConfig.city;
@@ -365,9 +411,7 @@ export function HomeScreen() {
                     <Pressable
                       key={`${item.type}-${item.id}`}
                       style={({ pressed }) => [styles.recentCard, pressed && styles.recentCardPressed, { backgroundColor: colors.card, borderColor: colors.border }]}
-                      onPress={() => (config.goTo
-                        ? config.goTo(navigation.getParent(), item.id)
-                        : navigation.getParent()?.navigate(config.tab))}
+                      onPress={() => config.goTo?.(navigation.getParent(), item.id)}
                       accessibilityRole="button"
                       accessibilityLabel={`${item.nameEn} - ${item.nameCn}`}
                     >

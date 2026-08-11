@@ -10,6 +10,7 @@ import { STORAGE_KEYS } from '../config/storageKeys';
 import { QUIZ_CONFIG } from '../config/constants';
 import { showError, ERROR_MESSAGES, logger } from './errorHandling';
 import { notifyBadgeRefresh } from '../components/CustomTabBar';
+import { todayKey } from './culturalAssets';
 
 /**
  * Save a wrong answer for later review
@@ -24,16 +25,21 @@ export async function saveWrongAnswer(question) {
       (a) => a.question === question.question
     );
 
+    // Preserve review/mastery progress when the same question is missed again.
+    // Overwriting correctReviewCount / mastered would undo partial mastery work.
+    const prev = existingIndex >= 0 ? wrongAnswers[existingIndex] : null;
     const wrongEntry = {
-      id: question.id || `wrong-${Date.now()}`,
+      id: question.id || prev?.id || `wrong-${Date.now()}`,
       question: question.question,
       options: question.options,
       correctIndex: question.correctIndex,
       explanation: question.explanation,
       region: question.region,
-      addedAt: new Date().toISOString(),
-      reviewCount: existingIndex >= 0 ? wrongAnswers[existingIndex].reviewCount : 0,
-      lastReviewedAt: existingIndex >= 0 ? wrongAnswers[existingIndex].lastReviewedAt : null,
+      addedAt: prev?.addedAt || new Date().toISOString(),
+      reviewCount: prev?.reviewCount || 0,
+      correctReviewCount: prev?.correctReviewCount || 0,
+      lastReviewedAt: prev?.lastReviewedAt || null,
+      // Re-miss after mastery: put it back into the review queue
       mastered: false,
     };
 
@@ -83,11 +89,19 @@ export async function markAsReviewed(questionId, correct) {
 
     const index = wrongAnswers.findIndex((a) => a.id === questionId);
     if (index >= 0) {
+      // reviewCount = total review attempts (UI/stats)
       wrongAnswers[index].reviewCount += 1;
       wrongAnswers[index].lastReviewedAt = new Date().toISOString();
 
-      // If answered correctly N times, mark as mastered
-      if (correct && wrongAnswers[index].reviewCount >= QUIZ_CONFIG.MASTERY_THRESHOLD) {
+      // correctReviewCount only advances on correct answers — mastery is correct-only
+      const prevCorrect = wrongAnswers[index].correctReviewCount || 0;
+      if (correct) {
+        wrongAnswers[index].correctReviewCount = prevCorrect + 1;
+      }
+      if (
+        correct &&
+        (wrongAnswers[index].correctReviewCount || 0) >= QUIZ_CONFIG.MASTERY_THRESHOLD
+      ) {
         wrongAnswers[index].mastered = true;
       }
 
@@ -157,8 +171,10 @@ export async function getReviewStats() {
 async function updateReviewStats(correct) {
   try {
     const stats = await getReviewStats();
-    const today = new Date().toISOString().slice(0, 10);
-    const yesterday = new Date(Date.now() - 86400000).toISOString().slice(0, 10);
+    const today = todayKey();
+    const yesterdayDate = new Date();
+    yesterdayDate.setDate(yesterdayDate.getDate() - 1);
+    const yesterday = todayKey(yesterdayDate);
 
     let newStreak = stats.streak;
     if (stats.lastReviewDate === today) {

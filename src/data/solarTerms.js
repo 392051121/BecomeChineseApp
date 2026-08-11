@@ -599,6 +599,61 @@ export const solarTerms = [
 ];
 
 /**
+ * Pinyin festival-style IDs (used by festivals.js / quiz.js / solarTermContent.js)
+ * mapped to the canonical English keys used by this module and Seasons navigation.
+ * The two ID systems have zero natural overlap — resolve both for deep links.
+ */
+export const SOLAR_TERM_PINYIN_TO_KEY = {
+  xiaohan: 'minor-cold',
+  daohan: 'major-cold',
+  lichun: 'start-of-spring',
+  yushui: 'rain-water',
+  jingzhe: 'insects-awaken',
+  chunfen: 'spring-equinox',
+  qingming: 'pure-brightness',
+  guyu: 'grain-rain',
+  lixia: 'start-of-summer',
+  xiaoman: 'grain-buds',
+  mangzhong: 'grain-in-ear',
+  xiazhi: 'summer-solstice',
+  xiaoshu: 'minor-heat',
+  dashu: 'major-heat',
+  liqiu: 'start-of-autumn',
+  chushu: 'limit-of-heat',
+  bailu: 'white-dew',
+  qiufen: 'autumn-equinox',
+  hanlu: 'cold-dew',
+  shuangjiang: 'frost-descent',
+  lidong: 'start-of-winter',
+  xiaoxue: 'minor-snow',
+  daxue: 'major-snow',
+  dongzhi: 'winter-solstice',
+};
+
+export const SOLAR_TERM_KEY_TO_PINYIN = Object.fromEntries(
+  Object.entries(SOLAR_TERM_PINYIN_TO_KEY).map(([pinyin, key]) => [key, pinyin])
+);
+
+/**
+ * Normalize any known solar-term identifier (English key, id, or pinyin) to the
+ * canonical English key used by solarTerms[].id / solarTerms[].key.
+ * @param {string} idOrKey
+ * @returns {string|null}
+ */
+export function normalizeSolarTermId(idOrKey) {
+  if (!idOrKey || typeof idOrKey !== 'string') return null;
+  const raw = idOrKey.trim();
+  if (!raw) return null;
+  if (SOLAR_TERM_PINYIN_TO_KEY[raw]) return SOLAR_TERM_PINYIN_TO_KEY[raw];
+  if (SOLAR_TERM_KEY_TO_PINYIN[raw]) return raw;
+  // Case-insensitive fallback for both systems.
+  const lower = raw.toLowerCase();
+  if (SOLAR_TERM_PINYIN_TO_KEY[lower]) return SOLAR_TERM_PINYIN_TO_KEY[lower];
+  if (SOLAR_TERM_KEY_TO_PINYIN[lower]) return lower;
+  return raw;
+}
+
+/**
  * Get the current solar term object (rich detail form) for a given date.
  * Falls back to the plain calendar entry if no rich term is matched.
  *
@@ -611,12 +666,15 @@ export function getCurrentSolarTerm(date = new Date()) {
 }
 
 /**
- * Get a solar term detail object by its id/key.
- * @param {string} id - term id (e.g. "minor-cold")
+ * Get a solar term detail object by its id/key or pinyin alias.
+ * Accepts "start-of-autumn", "liqiu", and case variants.
+ * @param {string} id - term id (e.g. "minor-cold" or "xiaohan")
  * @returns {object|undefined}
  */
 export function getSolarTermById(id) {
-  return solarTerms.find((t) => t.id === id || t.key === id);
+  const normalized = normalizeSolarTermId(id);
+  if (!normalized) return undefined;
+  return solarTerms.find((t) => t.id === normalized || t.key === normalized);
 }
 
 // Lightweight duplicate of date→term resolution to avoid a circular import

@@ -1,5 +1,6 @@
 import { useEffect, useRef, useCallback } from 'react';
-import { earnStamp, calculateEngagementScore, STAMP_THRESHOLDS } from '../data/stamps';
+import { STAMP_THRESHOLDS } from '../data/stamps';
+import { earnStamp, calculateEngagementScore } from '../utils/stampCollection';
 
 /**
  * Hook to track user engagement on content and earn stamps

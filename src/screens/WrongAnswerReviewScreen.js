@@ -149,8 +149,12 @@ export function WrongAnswerReviewScreen() {
   async function handleCorrect(questionId) {
     await markAsReviewed(questionId, true);
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
-    // Remove from list after correct answer
-    setWrongAnswers((prev) => prev.filter((a) => a.id !== questionId));
+    // Only drop from list once truly mastered (correctReviewCount >= threshold).
+    // Partial progress stays so the user can finish MASTERY_THRESHOLD correct reviews.
+    const answers = await getWrongAnswers();
+    setWrongAnswers(answers.filter((a) => !a.mastered));
+    const summaryData = await getReviewSummary();
+    setSummary(summaryData);
   }
 
   async function handleWrong(questionId) {

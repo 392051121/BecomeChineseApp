@@ -6,43 +6,71 @@
 
 import React, { useCallback, useEffect, useState } from 'react';
 import { SafeAreaView, StyleSheet, View } from 'react-native';
-import { useNavigation, useFocusEffect } from '@react-navigation/native';
+import { useNavigation, useRoute } from '@react-navigation/native';
 
 import { theme } from '../theme/theme';
 import { useTheme } from '../theme/ThemeContext';
 import { ScreenHeader } from '../components/ScreenHeader';
 import { StampAlbum } from '../components/StampAlbum';
 import { StampUnlockAnimation } from '../components/StampUnlockAnimation';
-import { getAllStamps, getStampStats } from '../utils/stampCollection';
 
 export function StampCollectionScreen() {
   const { colors } = useTheme();
   const navigation = useNavigation();
+  const route = useRoute();
   const [newStamp, setNewStamp] = useState(null);
   const [showAnimation, setShowAnimation] = useState(false);
 
-  // Check for newly earned stamp from navigation params
+  // Read newly earned stamp from THIS screen's route params and consume it
   useEffect(() => {
-    const stamp = navigation.getState()?.routes?.find?.(r => r.params?.newStamp)?.params?.newStamp;
+    const stamp = route.params?.newStamp;
     if (stamp) {
       setNewStamp(stamp);
       setShowAnimation(true);
+      navigation.setParams({ newStamp: undefined });
     }
-  }, [navigation]);
+  }, [route.params?.newStamp, navigation]);
 
-  const handleStampPress = (stamp) => {
-    // Navigate to stamp detail or related content
-    const targetScreen = {
-      city: 'Travel',
+  const handleStampPress = useCallback((stamp) => {
+    // Deep-link into the matching tab/detail so the stamp opens real content.
+    // Tab name for cities is Places (TravelScreen), not the legacy "Travel".
+    const contentId = stamp?.contentId || stamp?.content?.id;
+    const type = stamp?.type;
+
+    if (type === 'city' && contentId) {
+      navigation.getParent()?.navigate('Places', { cityId: contentId });
+      return;
+    }
+    if (type === 'food' && contentId) {
+      navigation.getParent()?.navigate('Food', { recipeId: contentId });
+      return;
+    }
+    if (type === 'dynasty' && contentId) {
+      navigation.getParent()?.navigate('History', {
+        screen: 'DynastyDetail',
+        params: { dynastyId: contentId },
+      });
+      return;
+    }
+    if (type === 'person' && contentId) {
+      navigation.getParent()?.navigate('History', {
+        screen: 'PersonDetail',
+        params: { personId: contentId },
+      });
+      return;
+    }
+
+    // Fallback: switch tab only when id is missing
+    const tabOnly = {
+      city: 'Places',
       food: 'Food',
       dynasty: 'History',
       person: 'History',
-    }[stamp.type];
-
-    if (targetScreen) {
-      navigation.getParent()?.navigate(targetScreen);
+    }[type];
+    if (tabOnly) {
+      navigation.getParent()?.navigate(tabOnly);
     }
-  };
+  }, [navigation]);
 
   const handleAnimationComplete = () => {
     setShowAnimation(false);
@@ -79,7 +107,6 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   header: {
-    marginBottom: 8,
-    paddingHorizontal: 20,
+    paddingHorizontal: theme.spacing.md,
   },
 });

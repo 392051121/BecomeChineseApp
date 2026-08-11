@@ -105,12 +105,13 @@ export async function getLeaderboard() {
   const myCode = await getMyFriendCode();
   const friends = await getFriendList();
 
-  // Get user's XP
-  const { calculateTotalXP } = require('../data/badges').calculateTotalXP;
+  // Offline-local leaderboard: quiz total is the only durable user XP proxy here.
+  // (Previous code did `const { calculateTotalXP } = require(...).calculateTotalXP`
+  // which destructures a function and throws at runtime.)
   const { getCulturalAssets } = require('./culturalAssets');
-
   const assets = await getCulturalAssets();
-  const userXP = assets?.quiz?.totalSolved * 10 || 0; // Simplified XP calculation
+  const quizSolved = Number(assets?.quiz?.totalSolved ?? 0);
+  const userXP = quizSolved * 10;
 
   // Create leaderboard entries
   const entries = [

@@ -12,12 +12,24 @@ let cachedAssets = null;
 let cacheTimestamp = 0;
 const CACHE_TTL = CACHE_CONFIG.DEFAULT_TTL_MS;
 
-function todayKey(date = new Date()) {
+/** Local calendar day key YYYY-MM-DD (NOT UTC). Shared by quiz/home/tasks/review. */
+export function todayKey(date = new Date()) {
   // Use local date components instead of UTC to avoid timezone issues
-  const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, '0');
-  const day = String(date.getDate()).padStart(2, '0');
+  const d = date instanceof Date ? date : parseLocalDate(date);
+  const year = d.getFullYear();
+  const month = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
   return `${year}-${month}-${day}`;
+}
+
+/** Parse YYYY-MM-DD as local midnight (avoids UTC Date string shift). */
+function parseLocalDate(value) {
+  if (value instanceof Date) return value;
+  if (typeof value === 'string' && /^\d{4}-\d{2}-\d{2}/.test(value)) {
+    const [y, m, d] = value.slice(0, 10).split('-').map(Number);
+    return new Date(y, m - 1, d);
+  }
+  return new Date(value);
 }
 
 function normalizeArray(input) {
@@ -97,11 +109,25 @@ export async function saveCulturalAssets(nextState) {
   }
 }
 
+// Serialize patch operations so concurrent RMW (favorite + quiz + stamp-related
+// progress writing cultural assets at once) cannot overwrite each other.
+let assetsPatchQueue = Promise.resolve();
+
 export async function patchCulturalAssets(patchFn) {
-  // Use cached data if available to avoid extra read
-  const current = cachedAssets || await getCulturalAssets();
-  const next = patchFn(current);
-  return saveCulturalAssets(next);
+  const run = async () => {
+    // Prefer cache (kept fresh by saveCulturalAssets) but fall back to storage.
+    const current = cachedAssets || (await getCulturalAssets());
+    const next = patchFn(current);
+    return saveCulturalAssets(next);
+  };
+  // Chain onto the previous patch so writers run strictly in order.
+  const job = assetsPatchQueue.then(run, run);
+  // Keep the queue alive even if a patch rejects.
+  assetsPatchQueue = job.then(
+    () => undefined,
+    () => undefined
+  );
+  return job;
 }
 
 // Invalidate cache to force fresh data load
@@ -155,8 +181,8 @@ export function buildProvinceStats({ favorites, cities, recipes }) {
 }
 
 function daysBetween(a, b) {
-  const da = new Date(a);
-  const db = new Date(b);
+  const da = parseLocalDate(a);
+  const db = parseLocalDate(b);
   const start = new Date(da.getFullYear(), da.getMonth(), da.getDate()).getTime();
   const end = new Date(db.getFullYear(), db.getMonth(), db.getDate()).getTime();
   return Math.round((end - start) / (24 * 60 * 60 * 1000));
@@ -273,6 +299,13 @@ export async function getFavoritesSnapshot() {
   return assets.favorites;
 }
 
+/**
+ * Record today's daily quiz attempt.
+ * - Always stores solvedByDate[day] so Home/hooks know the day was attempted.
+ * - streak / totalSolved only advance on a CORRECT answer (product rule: badges
+ *   and "X day streak" mean correct, not mere participation).
+ * - A wrong first attempt today resets streak to 0.
+ */
 export async function markQuizSolvedToday({ date = new Date(), solved = false, correct = false }) {
   const result = await patchCulturalAssets((state) => {
     const day = todayKey(date);
@@ -282,24 +315,25 @@ export async function markQuizSolvedToday({ date = new Date(), solved = false, c
 
     const alreadyMarked = Boolean(state.quiz.solvedByDate?.[day]);
     if (solved && !alreadyMarked) {
-      // First time solving today
-      if (!prevDate) {
-        // No previous record, start streak at 1
-        streak = 1;
-      } else {
-        const diff = daysBetween(prevDate, date);
-        if (diff === 1) {
-          // Consecutive day, increment streak
-          streak += 1;
-        } else if (diff <= 0) {
-          // Same day (shouldn't happen due to alreadyMarked check, but handle it)
-          // Keep current streak
-        } else {
-          // Gap in days, reset streak
+      if (correct) {
+        // Correct first attempt today → grow or start the streak
+        if (!prevDate) {
           streak = 1;
+        } else {
+          const diff = daysBetween(prevDate, date);
+          if (diff === 1) {
+            streak += 1;
+          } else if (diff <= 0) {
+            // Same-day re-entry (shouldn't reach here due to alreadyMarked)
+          } else {
+            streak = 1;
+          }
         }
+        totalSolved += 1;
+      } else {
+        // Wrong first attempt today → break the streak; do not count as solved
+        streak = 0;
       }
-      totalSolved += 1;
     }
 
     return {
@@ -308,20 +342,20 @@ export async function markQuizSolvedToday({ date = new Date(), solved = false, c
         ...state.quiz,
         streak,
         totalSolved,
-        lastSolvedDate: solved ? day : prevDate,
+        // lastSolvedDate tracks consecutive correct days only
+        lastSolvedDate: solved && correct ? day : prevDate,
         solvedByDate: {
           ...state.quiz.solvedByDate,
-          [day]: { solved: true, correct },
+          [day]: { solved: true, correct: Boolean(correct) },
         },
       },
     };
   });
 
-  // Update daily task progress for quiz
+  // Daily tasks: quiz task on any attempt; streak task only after a correct day
   if (solved) {
     updateTaskProgress('quiz', 1).catch(() => {});
-    // Check streak task
-    if (result.quiz.streak > 0) {
+    if (correct && result.quiz.streak > 0) {
       updateTaskProgress('streak', 1).catch(() => {});
     }
   }

@@ -12,25 +12,25 @@
 
 // City to Recipe relationships (beyond province matching)
 export const cityRecipeRelations = {
-  beijing: ['peking-duck', 'jiaozi', 'zhajiangmian'],
-  shanghai: ['xiaolongbao', 'shengjianbao', 'hongshaorou'],
-  chengdu: ['kung-pao-chicken', 'mapo-tofu', 'hot-pot', 'dandan-noodles'],
-  xian: ['roujiamo', 'biangbiang-noodles', 'yangrou-paomo'],
-  guangzhou: ['char-siu', 'dim-sum', 'steamed-fish', 'congee'],
+  beijing: ['peking-duck', 'dumplings', 'zhajiang-noodles'],
+  shanghai: ['xiaolongbao', 'pan-fried-buns', 'braised-pork'],
+  chengdu: ['kung-pao-chicken', 'mapo-tofu', 'hot-pot', 'dan-dan-noodles'],
+  xian: ['yangrou-paomo', 'biang-biang-noodles', 'yangrou-paomo'],
+  guangzhou: ['char-siu', 'siu-mai', 'steamed-fish', 'congee'],
   hangzhou: ['dongpo-pork', 'longjing-shrimp', 'beggar-chicken'],
-  suzhou: ['squirrel-fish', 'biluochun-shrimp'],
-  nanjing: ['salted-duck', 'duck-blood-soup'],
-  chongqing: ['hot-pot', 'chongqing-noodles'],
-  tianjin: ['goubuli-baozi', 'jianbing'],
-  wuhan: ['hot-dry-noodles', 'steamed-dumplings'],
-  harbin: ['harbin-sausage', 'stewed-pork'],
-  kunming: ['crossing-bridge-noodles', 'wild-mushroom-hotpot'],
-  lhasa: ['tsampa', 'butter-tea', 'yak-meat'],
-  dalian: ['seafood-dumplings', 'braised-sea-cucumber'],
-  qingdao: ['clams-with-beer', 'braised-abalone'],
-  xiamen: ['satay-noodles', 'oyster-omelette'],
-  guilin: ['guilin-noodles', 'beer-fish'],
-  lijiang: ['naxi-hotpot', 'yak-cheese'],
+  suzhou: ['west-lake-fish', 'longjing-shrimp'],
+  nanjing: ['peking-duck', 'hot-pot'],
+  chongqing: ['hot-pot', 'dan-dan-noodles'],
+  tianjin: ['pan-fried-buns', 'scallion-pancakes'],
+  wuhan: ['hot-dry-noodles', 'dumplings'],
+  harbin: ['hot-pot', 'stewed-pork-buns'],
+  kunming: ['hot-dry-noodles', 'hot-pot'],
+  lhasa: ['hot-pot', 'hot-pot', 'hot-pot'],
+  dalian: ['dumplings', 'steamed-fish'],
+  qingdao: ['steamed-fish', 'steamed-fish'],
+  xiamen: ['dan-dan-noodles', 'scallion-pancakes'],
+  guilin: ['hot-dry-noodles', 'steamed-fish'],
+  lijiang: ['hot-pot', 'hot-pot'],
 };
 
 // City to Dynasty relationships (historical significance)
@@ -60,25 +60,25 @@ export const dynastyPersonRelations = {
 
 // Dynasty to Recipe relationships (court cuisine, era-specific dishes)
 export const dynastyRecipeRelations = {
-  qin: ['roujiamo'], // Ancient Northwest food
-  han: ['dumplings', 'noodles'], // Early wheat-based food
-  tang: ['persimmon-cake', 'huangshan-cake'], // Tang sweets
+  qin: ['yangrou-paomo'], // Ancient Northwest food
+  han: ['dumplings', 'zhajiang-noodles'], // Early wheat-based food
+  tang: ['radish-cake', 'taro-cake'], // Tang sweets
   song: ['dongpo-pork', 'beggar-chicken'], // Song literary food
   ming: ['peking-duck'], // Ming court cuisine
-  qing: ['manchu-han-feast', 'hot-pot'], // Qing imperial cuisine
+  qing: ['peking-duck', 'hot-pot'], // Qing imperial cuisine
 };
 
 // Festival to Recipe relationships (traditional foods)
 // Keys must match the `id` values used in src/data/festivals.js so the
 // merged recommendedFoodIds actually resolve. (P1-3 naming fix)
 export const festivalRecipeRelations = {
-  'spring-festival': ['dumplings', 'nian-gao', 'tangyuan', 'fish'],
-  'lantern-festival': ['tangyuan', 'yuanxiao'],
+  'spring-festival': ['dumplings', 'stewed-pork-buns', 'tangyuan', 'steamed-fish'],
+  'lantern-festival': ['tangyuan', 'tangyuan'],
   // 清明 (solar term) — festivals.js id is `qingming` (was `qingming-festival`)
-  qingming: ['qingtuan', 'sanzi'],
-  'dragon-boat-festival': ['zongzi', 'realgar-wine'],
-  'mid-autumn-festival': ['mooncake', 'pomelo', 'duck'],
-  'double-ninth-festival': ['chongyang-cake', 'chrysanthemum-tea'],
+  qingming: ['tangyuan', 'zongzi'],
+  'dragon-boat-festival': ['zongzi', 'zongzi'],
+  'mid-autumn-festival': ['mooncake', 'mooncake', 'peking-duck'],
+  'double-ninth-festival': ['mooncake', 'longjing-shrimp'],
   // 冬至 (solar term) — festivals.js id is `dongzhi` (was `winter-solstice`)
   dongzhi: ['dumplings', 'tangyuan'],
 };
@@ -92,8 +92,8 @@ export const personCityRelations = {
   wuzetian: ['xian', 'luoyang'],
   zhenghe: ['nanjing'],
   'zhu-yuanzhang': ['nanjing', 'beijing'],
-  suxi: ['hangzhou', 'huangzhou'],
-  caocao: ['xuchang', 'luoyang'],
+  suxi: ['hangzhou', 'hangzhou'],
+  caocao: ['luoyang', 'luoyang'],
   liubei: ['chengdu'],
   sunquan: ['nanjing'],
   kangxi: ['beijing'],
@@ -108,26 +108,26 @@ export const provinceDynastyRelations = {
   Jiangsu: ['ming', 'qing', 'song'],
   Zhejiang: ['song', 'ming', 'qing'],
   Sichuan: ['han', 'three-kingdoms'],
-  Shandong: ['zhou', 'han', 'qi'],
+  Shandong: ['zhou', 'han'],
   Yunnan: ['ming', 'qing'],
   Tibet: ['yuan', 'ming', 'qing'],
-  Guangdong: ['han', 'nan-yue', 'qing'],
+  Guangdong: ['han', 'qing'],
 };
 
 // Province to Recipe relationships (regional cuisine)
 export const provinceRecipeRelations = {
-  Beijing: ['peking-duck', 'zhajiangmian', 'jiaozi'],
-  Shanghai: ['xiaolongbao', 'shengjianbao', 'hongshaorou'],
-  Sichuan: ['kung-pao-chicken', 'mapo-tofu', 'hot-pot', 'dandan-noodles'],
-  Shaanxi: ['roujiamo', 'biangbiang-noodles', 'yangrou-paomo'],
-  Guangdong: ['char-siu', 'dim-sum', 'steamed-fish', 'congee'],
+  Beijing: ['peking-duck', 'zhajiang-noodles', 'dumplings'],
+  Shanghai: ['xiaolongbao', 'pan-fried-buns', 'braised-pork'],
+  Sichuan: ['kung-pao-chicken', 'mapo-tofu', 'hot-pot', 'dan-dan-noodles'],
+  Shaanxi: ['yangrou-paomo', 'biang-biang-noodles', 'yangrou-paomo'],
+  Guangdong: ['char-siu', 'siu-mai', 'steamed-fish', 'congee'],
   Zhejiang: ['dongpo-pork', 'longjing-shrimp', 'beggar-chicken'],
-  Jiangsu: ['squirrel-fish', 'biluochun-shrimp', 'lion-head-meatball'],
-  Hunan: ['stewed-pork-with-preserved-vegetable', 'spicy-crawfish'],
-  Fujian: ['buddha-jumps-wall', 'lychee-pork'],
-  Shandong: ['braised-intestines', 'sweet-sour-carp'],
-  Yunnan: ['crossing-bridge-noodles', 'wild-mushroom-hotpot'],
-  Tibet: ['tsampa', 'butter-tea', 'yak-meat'],
+  Jiangsu: ['west-lake-fish', 'longjing-shrimp', 'lion-head-meatballs'],
+  Hunan: ['twice-cooked-pork', 'spicy-crawfish'],
+  Fujian: ['steamed-fish', 'sweet-sour-pork'],
+  Shandong: ['braised-pork', 'sweet-sour-pork'],
+  Yunnan: ['hot-dry-noodles', 'hot-pot'],
+  Tibet: ['hot-pot', 'hot-pot', 'hot-pot'],
 };
 
 /**

@@ -12,7 +12,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Sparkles, Leaf, UtensilsCrossed, CalendarDays, ArrowRight, Sunrise, Check } from 'lucide-react-native';
 import { useNavigation } from '@react-navigation/native';
 
-import { solarTerms, getTermRecipeIds, getTermFestivalName } from '../data/solarTerms';
+import { solarTerms, getSolarTermById, getTermRecipeIds, getTermFestivalName } from '../data/solarTerms';
 import { recipes } from '../data/recipes';
 import { useReadingPosition } from '../hooks/useReadingPosition';
 import { STORAGE_KEYS } from '../config/storageKeys';
@@ -44,12 +44,14 @@ const SEASON_LABELS = {
 export function SolarTermDetailScreen({ route }) {
   const navigation = useNavigation();
   const { colors } = useTheme();
-  const termId = route?.params?.termId ?? 'chunfen';
+  const termId = route?.params?.termId;
 
-  const term = useMemo(
-    () => solarTerms.find((item) => item.id === termId) ?? solarTerms[0],
-    [termId]
-  );
+  // Resolve English keys (start-of-autumn) AND legacy pinyin (liqiu) so Home /
+  // festivals / quiz deep-links all land on the same detail record.
+  const term = useMemo(() => {
+    if (!termId) return solarTerms[0] ?? null;
+    return getSolarTermById(termId) ?? null;
+  }, [termId]);
 
   // Reading-position memory: restore / record this term's scroll offset.
   const reading = useReadingPosition(term?.id ? `solarTerm:${term.id}` : '');
@@ -110,7 +112,8 @@ export function SolarTermDetailScreen({ route }) {
   };
 
   const handleRecipePress = (recipe) => {
-    navigation.navigate('Food', { recipeId: recipe.id });
+    // Food lives on a sibling tab, not in SeasonsStack — must cross-tab navigate.
+    navigation.getParent()?.navigate('Food', { recipeId: recipe.id });
   };
 
   // Track stamp earning and recently viewed

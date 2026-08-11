@@ -52,7 +52,11 @@ export function useDailyQuiz(currentDate) {
   const loadDailyState = useCallback(async () => {
     try {
       const assets = await getCulturalAssets();
-      const today = currentDate.toISOString().slice(0, 10);
+      // Local day key — must match culturalAssets.markQuizSolvedToday (not UTC ISO)
+      const y = currentDate.getFullYear();
+      const m = String(currentDate.getMonth() + 1).padStart(2, '0');
+      const d = String(currentDate.getDate()).padStart(2, '0');
+      const today = `${y}-${m}-${d}`;
       const todayRecord = assets?.quiz?.solvedByDate?.[today];
       const attempted = Boolean(todayRecord);
       const correct = todayRecord?.correct === true;

@@ -5,13 +5,55 @@
  * dynamic content highlighting on home screen.
  */
 
-import { getCurrentSolarTerm, getUpcomingFestivals, festivals } from '../data/festivals';
+import { getCurrentSolarTerm as getFestivalSolarTerm, getUpcomingFestivals, festivals } from '../data/festivals';
+import {
+  getCurrentSolarTerm as getDetailSolarTerm,
+  normalizeSolarTermId,
+  SOLAR_TERM_KEY_TO_PINYIN,
+} from '../data/solarTerms';
 import { cities } from '../data/cities';
 import { recipes } from '../data/recipes';
 import { dynasties } from '../data/dynasties';
 
-// Re-export for callers that import from this module (HomeScreen, CurrentSolarTermBanner)
-export { getCurrentSolarTerm };
+/**
+ * Unified "current solar term" for home banner / seasonal theming.
+ * Shape stays festival-compatible (nameEn/nameCn/summaryEn/id) so HomeScreen
+ * and CurrentSolarTermBanner keep working, while `detailId` carries the
+ * canonical Seasons detail key (start-of-autumn) for deep-links.
+ */
+export function getCurrentSolarTerm(date = new Date()) {
+  const detail = getDetailSolarTerm(date);
+  const festival = getFestivalSolarTerm(date);
+
+  if (detail) {
+    const pinyinId = SOLAR_TERM_KEY_TO_PINYIN[detail.id] || festival?.id || detail.id;
+    return {
+      // Prefer pinyin id when available for legacy season maps / festival bonus
+      id: pinyinId,
+      detailId: detail.id,
+      nameEn: detail.englishName,
+      nameCn: detail.chineseName,
+      summaryEn: detail.meaning || detail.natureChange || festival?.summaryEn || '',
+      summaryCn: festival?.summaryCn || detail.meaning || '',
+      dateInfo: detail.dateRange || festival?.dateInfo || '',
+      dateRange: detail.dateRange,
+      season: detail.season,
+      recommendedFoodIds: festival?.recommendedFoodIds || [],
+      tags: festival?.tags || [detail.season, 'solar-term'],
+      // Full rich record for callers that need it
+      detail,
+    };
+  }
+
+  // Fallback: festival record only (should be rare — date tables stay in sync)
+  if (festival) {
+    return {
+      ...festival,
+      detailId: normalizeSolarTermId(festival.id) || festival.id,
+    };
+  }
+  return null;
+}
 
 // Season content associations
 const SEASON_ASSOCIATIONS = {
@@ -41,7 +83,7 @@ const SEASON_ASSOCIATIONS = {
   },
 };
 
-// Solar term to season mapping
+// Solar term to season mapping — both pinyin (festivals) and English (solarTerms) keys
 const SOLAR_TERM_SEASONS = {
   lichun: 'spring', yushui: 'spring', jingzhe: 'spring', chunfen: 'spring',
   qingming: 'spring', guyu: 'spring',
@@ -51,6 +93,16 @@ const SOLAR_TERM_SEASONS = {
   hanlu: 'autumn', shuangjiang: 'autumn',
   lidong: 'winter', xiaoxue: 'winter', daxue: 'winter', dongzhi: 'winter',
   xiaohan: 'winter', daohan: 'winter',
+  // Canonical English keys from solarTerms.js
+  'minor-cold': 'winter', 'major-cold': 'winter',
+  'start-of-spring': 'spring', 'rain-water': 'spring', 'insects-awaken': 'spring',
+  'spring-equinox': 'spring', 'pure-brightness': 'spring', 'grain-rain': 'spring',
+  'start-of-summer': 'summer', 'grain-buds': 'summer', 'grain-in-ear': 'summer',
+  'summer-solstice': 'summer', 'minor-heat': 'summer', 'major-heat': 'summer',
+  'start-of-autumn': 'autumn', 'limit-of-heat': 'autumn', 'white-dew': 'autumn',
+  'autumn-equinox': 'autumn', 'cold-dew': 'autumn', 'frost-descent': 'autumn',
+  'start-of-winter': 'winter', 'minor-snow': 'winter', 'major-snow': 'winter',
+  'winter-solstice': 'winter',
 };
 
 /**
@@ -58,7 +110,12 @@ const SOLAR_TERM_SEASONS = {
  */
 export function getCurrentSeason(date = new Date()) {
   const solarTerm = getCurrentSolarTerm(date);
-  return SOLAR_TERM_SEASONS[solarTerm?.id] || 'spring';
+  if (solarTerm?.season) return solarTerm.season;
+  return (
+    SOLAR_TERM_SEASONS[solarTerm?.id] ||
+    SOLAR_TERM_SEASONS[solarTerm?.detailId] ||
+    'spring'
+  );
 }
 
 /**
@@ -71,10 +128,11 @@ export function getSolarTermContent(date = new Date(), options = {}) {
   const season = getCurrentSeason(date);
   const associations = SEASON_ASSOCIATIONS[season] || SEASON_ASSOCIATIONS.spring;
 
-  // Find cities matching season provinces
-  const seasonCities = cities.filter((city) =>
-    associations.provinces.some((p) => city.province_id?.includes(p))
-  ).slice(0, maxCities);
+  // Find cities matching season provinces (case-insensitive — province_id is Title Case)
+  const seasonCities = cities.filter((city) => {
+    const province = String(city.province_id || city.provinceId || '').toLowerCase();
+    return associations.provinces.some((p) => province.includes(String(p).toLowerCase()));
+  }).slice(0, maxCities);
 
   // Find recipes matching recommended foods for this solar term
   const solarTermFoods = solarTerm?.recommendedFoodIds || [];

@@ -31,11 +31,11 @@ import { useReadingPosition } from '../hooks/useReadingPosition';
 
 export function DynastyDetailScreen({ route, navigation }) {
   const { colors } = useTheme();
-  const dynastyId = route?.params?.dynastyId ?? 'tang';
-  const dynasty = useMemo(
-    () => dynasties.find((item) => item.id === dynastyId) ?? dynasties[0],
-    [dynastyId]
-  );
+  const dynastyId = route?.params?.dynastyId;
+  const dynasty = useMemo(() => {
+    if (!dynastyId) return dynasties[0] ?? null;
+    return dynasties.find((item) => item.id === dynastyId) ?? null;
+  }, [dynastyId]);
 
   const scrollRef = useRef(null);
   const { savedOffset, onScroll, restore } = useReadingPosition(
@@ -109,6 +109,17 @@ export function DynastyDetailScreen({ route, navigation }) {
 
     return () => clearTimeout(timeoutId);
   }, [dynasty?.id]);
+
+  if (!dynasty) {
+    return (
+      <SafeAreaView style={styles.safeArea}>
+        <DetailHeader onBack={() => navigation.goBack()} />
+        <View style={styles.emptyContainer}>
+          <Text style={styles.emptyText}>Dynasty not found</Text>
+        </View>
+      </SafeAreaView>
+    );
+  }
 
   return (
     <SafeAreaView style={styles.safeArea}>
@@ -268,7 +279,7 @@ export function DynastyDetailScreen({ route, navigation }) {
                     <Pressable
                       key={city.id}
                       style={styles.relatedItem}
-                      onPress={() => navigation.getParent()?.navigate('Places')}
+                      onPress={() => navigation.getParent()?.navigate('Places', { cityId: city.id })}
                       accessibilityRole="button"
                       accessibilityLabel={`${city.nameEn} - ${city.nameCn}`}
                       accessibilityHint="Double tap to explore cities"
@@ -296,7 +307,7 @@ export function DynastyDetailScreen({ route, navigation }) {
                     <Pressable
                       key={food.id}
                       style={styles.relatedItem}
-                      onPress={() => navigation.getParent()?.navigate('Food')}
+                      onPress={() => navigation.getParent()?.navigate('Food', { recipeId: food.id })}
                       accessibilityRole="button"
                       accessibilityLabel={`${food.nameEn} - ${food.nameCn}`}
                       accessibilityHint="Double tap to explore recipes"
@@ -346,6 +357,8 @@ export function DynastyDetailScreen({ route, navigation }) {
 
 const styles = StyleSheet.create({
   safeArea: { flex: 1, backgroundColor: theme.colors.background },
+  emptyContainer: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 24 },
+  emptyText: { color: theme.colors.mutedText, fontSize: 16 },
   content: { paddingHorizontal: 24, paddingBottom: 28, gap: 14 },
   header: { marginBottom: 4 },
   hero: { overflow: 'hidden' },

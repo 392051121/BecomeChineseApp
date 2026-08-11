@@ -32,11 +32,11 @@ import { useReadingPosition } from '../hooks/useReadingPosition';
 export function PersonDetailScreen({ route, navigation }) {
   const { colors } = useTheme();
   const toast = useToast();
-  const personId = route?.params?.personId ?? 'zhenghe';
-  const person = useMemo(
-    () => people.find((item) => item.id === personId) ?? people[0],
-    [personId]
-  );
+  const personId = route?.params?.personId;
+  const person = useMemo(() => {
+    if (!personId) return people[0] ?? null;
+    return people.find((item) => item.id === personId) ?? null;
+  }, [personId]);
 
   const scrollRef = useRef(null);
   const { savedOffset, onScroll, restore } = useReadingPosition(
@@ -223,7 +223,7 @@ export function PersonDetailScreen({ route, navigation }) {
             </View>
             <Pressable
               style={[styles.relatedItem, { backgroundColor: colors.surface, borderColor: colors.border }]}
-              onPress={() => navigation.getParent()?.navigate('History')}
+              onPress={() => navigation.navigate('DynastyDetail', { dynastyId: relatedDynasty.id })}
               accessibilityRole="button"
               accessibilityLabel={`${relatedDynasty.nameEn} Dynasty`}
             >
@@ -244,7 +244,7 @@ export function PersonDetailScreen({ route, navigation }) {
               <Pressable
                 key={city.id}
                 style={[styles.relatedItem, { backgroundColor: colors.surface, borderColor: colors.border }]}
-                onPress={() => navigation.getParent()?.navigate('Places')}
+                onPress={() => navigation.getParent()?.navigate('Places', { cityId: city.id })}
                 accessibilityRole="button"
                 accessibilityLabel={`${city.nameEn} - ${city.nameCn}`}
               >

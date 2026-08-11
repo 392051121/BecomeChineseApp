@@ -84,17 +84,14 @@ export function FoodScreen({ route }) {
 
   // Deep-link support: when navigating here with a `recipeId` param (e.g. from a
   // solar-term detail page), open that recipe's detail sheet directly.
+  // Consume the param immediately so the same recipeId can reopen on a later visit.
   const pendingRecipeId = route?.params?.recipeId;
-  const lastHandledRecipeIdRef = useRef(null);
 
   useEffect(() => {
     if (!pendingRecipeId) return;
-    if (lastHandledRecipeIdRef.current === pendingRecipeId) return;
     const recipe = recipes.find((r) => r.id === pendingRecipeId) || null;
-    // Consume the param so re-navigating to the same recipe later still works.
     navigation.setParams({ recipeId: undefined });
     if (!recipe) return;
-    lastHandledRecipeIdRef.current = pendingRecipeId;
     setSelectedRecipe(recipe);
   }, [pendingRecipeId, navigation]);
   const [bookmarked, setBookmarked] = useState({});
@@ -368,7 +365,7 @@ export function FoodScreen({ route }) {
                         hint="Explore"
                         onPress={() => {
                           setSelectedRecipe(null);
-                          navigation.getParent()?.navigate('Places');
+                          navigation.getParent()?.navigate('Places', { cityId: relatedCity.id });
                         }}
                       />
                     ) : null}
@@ -379,7 +376,10 @@ export function FoodScreen({ route }) {
                         hint="Explore"
                         onPress={() => {
                           setSelectedRecipe(null);
-                          navigation.getParent()?.navigate('History');
+                          navigation.getParent()?.navigate('History', {
+                            screen: 'DynastyDetail',
+                            params: { dynastyId: relatedDynasty.id },
+                          });
                         }}
                       />
                     ) : null}
