@@ -1098,34 +1098,74 @@ export const allQuizQuestions = [
   ...cultureQuestions.map(q => ({ ...q, category: 'culture' })),
 ];
 
-// Generate quiz questions with IDs
-export const quizQuestions = allQuizQuestions.map((item, index) => ({
-  id: `quiz-${String(index + 1).padStart(3, '0')}`,
-  type: 'quiz',
-  nameCn: item.question,
-  nameEn: item.question,
-  subtitleCn: item.region,
-  subtitleEn: item.region,
-  summaryCn: item.explanation,
-  summaryEn: item.explanation,
-  questionCn: item.question,
-  questionEn: item.question,
-  optionsCn: item.options,
-  optionsEn: item.options,
-  correctIndex: item.correctIndex,
-  explanationCn: item.explanation,
-  explanationEn: item.explanation,
-  topic: item.region,
-  difficulty: 'easy',
-  relatedItemIds: [],
-  tags: [item.region.toLowerCase(), 'daily', 'quiz', item.category],
-  isDaily: true,
-  region: item.region,
-  category: item.category,
-  question: item.question,
-  options: item.options,
-  explanation: item.explanation,
-}));
+/**
+ * Stable content-hash id for a quiz item.
+ * Index-based ids break when questions are inserted/reordered; hashing the
+ * question stem keeps wrong-answer / relatedQuizIds stable across content edits.
+ */
+function stableQuizId(questionText, category = 'general') {
+  const raw = String(questionText || '').trim().toLowerCase();
+  let hash = 2166136261; // FNV-1a 32-bit
+  for (let i = 0; i < raw.length; i += 1) {
+    hash ^= raw.charCodeAt(i);
+    hash = Math.imul(hash, 16777619);
+  }
+  // keep signed 32-bit → unsigned hex
+  const hex = (hash >>> 0).toString(16).padStart(8, '0');
+  const cat = String(category || 'general').toLowerCase().replace(/[^a-z0-9]+/g, '');
+  return `quiz-${cat || 'general'}-${hex}`;
+}
+
+// Generate quiz questions with IDs (stable content hash + index fallback uniqueness)
+const usedQuizIds = new Set();
+export const quizQuestions = allQuizQuestions.map((item, index) => {
+  let id = stableQuizId(item.question, item.category);
+  // Extremely rare hash collision: append index for uniqueness
+  if (usedQuizIds.has(id)) {
+    id = `${id}-${index + 1}`;
+  }
+  usedQuizIds.add(id);
+
+  // Legacy index id kept as alias so people.relatedQuizIds like quiz-001 still resolve
+  const legacyId = `quiz-${String(index + 1).padStart(3, '0')}`;
+
+  return {
+    id,
+    legacyId,
+    type: 'quiz',
+    nameCn: item.question,
+    nameEn: item.question,
+    subtitleCn: item.region,
+    subtitleEn: item.region,
+    summaryCn: item.explanation,
+    summaryEn: item.explanation,
+    questionCn: item.question,
+    questionEn: item.question,
+    optionsCn: item.options,
+    optionsEn: item.options,
+    correctIndex: item.correctIndex,
+    explanationCn: item.explanation,
+    explanationEn: item.explanation,
+    topic: item.region,
+    difficulty: 'easy',
+    relatedItemIds: [],
+    tags: [item.region.toLowerCase(), 'daily', 'quiz', item.category],
+    isDaily: true,
+    region: item.region,
+    category: item.category,
+    question: item.question,
+    options: item.options,
+    explanation: item.explanation,
+  };
+});
+
+/** Lookup by stable id OR legacy quiz-00N index id */
+export function getQuizQuestionById(id) {
+  if (!id) return null;
+  return (
+    quizQuestions.find((q) => q.id === id || q.legacyId === id) || null
+  );
+}
 
 /**
  * Get daily quiz question based on date

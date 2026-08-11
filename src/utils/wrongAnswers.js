@@ -20,21 +20,29 @@ export async function saveWrongAnswer(question) {
     const stored = await AsyncStorage.getItem(STORAGE_KEYS.WRONG_ANSWERS);
     const wrongAnswers = stored ? JSON.parse(stored) : [];
 
-    // Check if already exists (by question text)
-    const existingIndex = wrongAnswers.findIndex(
-      (a) => a.question === question.question
-    );
+    // Prefer stable question.id; fall back to legacyId then question text so
+    // reworded stems don't silently fork the same item, and pre-id entries still match.
+    const qId = question?.id || question?.legacyId || null;
+    const existingIndex = wrongAnswers.findIndex((a) => {
+      if (qId && (a.id === qId || a.legacyId === qId)) return true;
+      if (question?.legacyId && (a.id === question.legacyId || a.legacyId === question.legacyId)) {
+        return true;
+      }
+      return a.question === question.question;
+    });
 
     // Preserve review/mastery progress when the same question is missed again.
     // Overwriting correctReviewCount / mastered would undo partial mastery work.
     const prev = existingIndex >= 0 ? wrongAnswers[existingIndex] : null;
     const wrongEntry = {
-      id: question.id || prev?.id || `wrong-${Date.now()}`,
+      id: qId || prev?.id || `wrong-${Date.now()}`,
+      legacyId: question?.legacyId || prev?.legacyId || null,
       question: question.question,
       options: question.options,
       correctIndex: question.correctIndex,
       explanation: question.explanation,
       region: question.region,
+      category: question.category || prev?.category || null,
       addedAt: prev?.addedAt || new Date().toISOString(),
       reviewCount: prev?.reviewCount || 0,
       correctReviewCount: prev?.correctReviewCount || 0,
@@ -87,7 +95,9 @@ export async function markAsReviewed(questionId, correct) {
     const stored = await AsyncStorage.getItem(STORAGE_KEYS.WRONG_ANSWERS);
     const wrongAnswers = stored ? JSON.parse(stored) : [];
 
-    const index = wrongAnswers.findIndex((a) => a.id === questionId);
+    const index = wrongAnswers.findIndex(
+      (a) => a.id === questionId || a.legacyId === questionId
+    );
     if (index >= 0) {
       // reviewCount = total review attempts (UI/stats)
       wrongAnswers[index].reviewCount += 1;
@@ -129,7 +139,9 @@ export async function removeWrongAnswer(questionId) {
     const stored = await AsyncStorage.getItem(STORAGE_KEYS.WRONG_ANSWERS);
     const wrongAnswers = stored ? JSON.parse(stored) : [];
 
-    const filtered = wrongAnswers.filter((a) => a.id !== questionId);
+    const filtered = wrongAnswers.filter(
+      (a) => a.id !== questionId && a.legacyId !== questionId
+    );
     await AsyncStorage.setItem(STORAGE_KEYS.WRONG_ANSWERS, JSON.stringify(filtered));
 
     // Notify TabBar to refresh badge

@@ -8,29 +8,54 @@
  * - Dynasties <-> People (by era)
  * - Dynasties <-> Recipes (by court cuisine and era)
  * - Festivals <-> Recipes (by seasonal/traditional food)
+ *
+ * Rules:
+ * - Every recipe id must exist in recipes.json
+ * - Prefer real regional dishes over nearest-neighbor placeholders
+ * - Lists are deduped at the getter layer; avoid intentional duplicates
  */
 
 // City to Recipe relationships (beyond province matching)
 export const cityRecipeRelations = {
-  beijing: ['peking-duck', 'dumplings', 'zhajiang-noodles'],
-  shanghai: ['xiaolongbao', 'pan-fried-buns', 'braised-pork'],
-  chengdu: ['kung-pao-chicken', 'mapo-tofu', 'hot-pot', 'dan-dan-noodles'],
-  xian: ['yangrou-paomo', 'biang-biang-noodles', 'yangrou-paomo'],
-  guangzhou: ['char-siu', 'siu-mai', 'steamed-fish', 'congee'],
-  hangzhou: ['dongpo-pork', 'longjing-shrimp', 'beggar-chicken'],
-  suzhou: ['west-lake-fish', 'longjing-shrimp'],
-  nanjing: ['peking-duck', 'hot-pot'],
-  chongqing: ['hot-pot', 'dan-dan-noodles'],
-  tianjin: ['pan-fried-buns', 'scallion-pancakes'],
-  wuhan: ['hot-dry-noodles', 'dumplings'],
-  harbin: ['hot-pot', 'stewed-pork-buns'],
-  kunming: ['hot-dry-noodles', 'hot-pot'],
-  lhasa: ['hot-pot', 'hot-pot', 'hot-pot'],
-  dalian: ['dumplings', 'steamed-fish'],
-  qingdao: ['steamed-fish', 'steamed-fish'],
-  xiamen: ['dan-dan-noodles', 'scallion-pancakes'],
-  guilin: ['hot-dry-noodles', 'steamed-fish'],
-  lijiang: ['hot-pot', 'hot-pot'],
+  beijing: ['peking-duck', 'zhajiang-noodles', 'dumplings', 'sugar-coated-hawthorn'],
+  shanghai: ['xiaolongbao', 'pan-fried-buns', 'braised-pork', 'pork-floss-buns'],
+  chengdu: ['kung-pao-chicken', 'mapo-tofu', 'hot-pot', 'dan-dan-noodles', 'twice-cooked-pork'],
+  xian: ['yangrou-paomo', 'biang-biang-noodles', 'stewed-pork-buns', 'dumplings'],
+  guangzhou: ['char-siu', 'siu-mai', 'shrimp-dumplings', 'congee', 'steamed-fish', 'claypot-rice'],
+  hangzhou: ['dongpo-pork', 'longjing-shrimp', 'west-lake-fish'],
+  suzhou: ['eight-treasure-rice', 'sweet-ribs', 'lion-head-meatballs'],
+  // Nanjing: Huaiyang / Jiangnan — not Sichuan hot pot
+  nanjing: ['lion-head-meatballs', 'fried-rice', 'sweet-ribs'],
+  chongqing: ['hot-pot', 'dan-dan-noodles', 'mapo-tofu', 'spicy-crawfish'],
+  tianjin: ['pan-fried-buns', 'scallion-pancakes', 'dumplings'],
+  wuhan: ['hot-dry-noodles', 'dumplings', 'spicy-crawfish'],
+  // Northeast: dumplings / buns / hearty wheat foods — not Sichuan hot pot
+  harbin: ['dumplings', 'stewed-pork-buns', 'scallion-pancakes'],
+  // Yunnan / Southwest plateau: avoid inventing ghost dishes; use milder common staples
+  // available in catalog (crossing-bridge style isn't in catalog → steamed chicken / congee)
+  kunming: ['steamed-chicken', 'steamed-fish', 'congee'],
+  // Lhasa: catalog has no tsampa/yak butter tea dishes — use warm national staples, not hot-pot spam
+  lhasa: ['congee', 'steamed-chicken', 'black-sesame-soup'],
+  dalian: ['steamed-fish', 'dumplings', 'scallion-pancakes'],
+  qingdao: ['steamed-fish', 'dumplings', 'scallion-pancakes'],
+  // Xiamen / Minnan: dim sum & sweet soups rather than dan-dan
+  xiamen: ['shrimp-dumplings', 'siu-mai', 'mango-pudding', 'pineapple-buns'],
+  guilin: ['steamed-fish', 'fried-rice', 'congee'],
+  // Lijiang / Dian: same real catalog constraints as Kunming
+  lijiang: ['steamed-chicken', 'steamed-fish', 'black-sesame-soup'],
+  shenzhen: ['char-siu', 'claypot-rice', 'egg-tarts', 'mango-pudding'],
+  // Ancient / secondary cities used in paths
+  qufu: ['dumplings', 'scallion-pancakes'],
+  luoyang: ['dumplings', 'yangrou-paomo'],
+  kaifeng: ['dumplings', 'pan-fried-buns'],
+  yangzhou: ['fried-rice', 'lion-head-meatballs'],
+  changsha: ['stinky-tofu', 'spicy-crawfish', 'twice-cooked-pork'],
+  jinan: ['scallion-pancakes', 'dumplings', 'sweet-sour-pork'],
+  lanzhou: ['braised-noodles', 'yangrou-paomo'],
+  dali: ['steamed-fish', 'steamed-chicken'],
+  'shangri-la': ['congee', 'steamed-chicken'],
+  hongkong: ['egg-tarts', 'pineapple-buns', 'mango-pudding', 'char-siu'],
+  macau: ['egg-tarts', 'pineapple-buns', 'almond-tofu'],
 };
 
 // City to Dynasty relationships (historical significance)
@@ -44,6 +69,7 @@ export const cityDynastyRelations = {
   chengdu: ['han', 'three-kingdoms'],
   anyang: ['shang'],
   datong: ['han', 'tang'],
+  qufu: ['zhou'],
 };
 
 // Dynasty to People relationships
@@ -60,26 +86,27 @@ export const dynastyPersonRelations = {
 
 // Dynasty to Recipe relationships (court cuisine, era-specific dishes)
 export const dynastyRecipeRelations = {
-  qin: ['yangrou-paomo'], // Ancient Northwest food
-  han: ['dumplings', 'zhajiang-noodles'], // Early wheat-based food
-  tang: ['radish-cake', 'taro-cake'], // Tang sweets
-  song: ['dongpo-pork', 'beggar-chicken'], // Song literary food
-  ming: ['peking-duck'], // Ming court cuisine
-  qing: ['peking-duck', 'hot-pot'], // Qing imperial cuisine
+  qin: ['yangrou-paomo', 'dumplings'],
+  han: ['dumplings', 'zhajiang-noodles'],
+  tang: ['radish-cake', 'taro-cake', 'longjing-shrimp'],
+  song: ['dongpo-pork', 'beggar-chicken', 'west-lake-fish'],
+  ming: ['peking-duck', 'zhajiang-noodles'],
+  qing: ['peking-duck', 'hot-pot', 'almond-tofu'],
 };
 
 // Festival to Recipe relationships (traditional foods)
 // Keys must match the `id` values used in src/data/festivals.js so the
-// merged recommendedFoodIds actually resolve. (P1-3 naming fix)
+// merged recommendedFoodIds actually resolve.
 export const festivalRecipeRelations = {
-  'spring-festival': ['dumplings', 'stewed-pork-buns', 'tangyuan', 'steamed-fish'],
-  'lantern-festival': ['tangyuan', 'tangyuan'],
-  // 清明 (solar term) — festivals.js id is `qingming` (was `qingming-festival`)
-  qingming: ['tangyuan', 'zongzi'],
-  'dragon-boat-festival': ['zongzi', 'zongzi'],
-  'mid-autumn-festival': ['mooncake', 'mooncake', 'peking-duck'],
-  'double-ninth-festival': ['mooncake', 'longjing-shrimp'],
-  // 冬至 (solar term) — festivals.js id is `dongzhi` (was `winter-solstice`)
+  'spring-festival': ['dumplings', 'stewed-pork-buns', 'tangyuan', 'steamed-fish', 'braised-pork'],
+  'lantern-festival': ['tangyuan', 'sweet-ribs'],
+  // 清明 — cold foods / spring sweets available in catalog
+  qingming: ['tangyuan', 'eight-treasure-rice', 'black-sesame-soup'],
+  'dragon-boat-festival': ['zongzi'],
+  'mid-autumn-festival': ['mooncake', 'eight-treasure-rice'],
+  // 重阳 — cakes / chrysanthemum wine not in catalog → autumn cakes + shrimp
+  'double-ninth-festival': ['mooncake', 'longjing-shrimp', 'taro-cake'],
+  // 冬至 — northern dumplings, southern tangyuan
   dongzhi: ['dumplings', 'tangyuan'],
 };
 
@@ -92,8 +119,8 @@ export const personCityRelations = {
   wuzetian: ['xian', 'luoyang'],
   zhenghe: ['nanjing'],
   'zhu-yuanzhang': ['nanjing', 'beijing'],
-  suxi: ['hangzhou', 'hangzhou'],
-  caocao: ['luoyang', 'luoyang'],
+  suxi: ['hangzhou'],
+  caocao: ['luoyang'],
   liubei: ['chengdu'],
   sunquan: ['nanjing'],
   kangxi: ['beijing'],
@@ -112,23 +139,44 @@ export const provinceDynastyRelations = {
   Yunnan: ['ming', 'qing'],
   Tibet: ['yuan', 'ming', 'qing'],
   Guangdong: ['han', 'qing'],
+  Hubei: ['three-kingdoms', 'han'],
+  Chongqing: ['three-kingdoms'],
 };
 
-// Province to Recipe relationships (regional cuisine)
+// Province to Recipe relationships (regional cuisine) — Title Case keys match provinceMap
 export const provinceRecipeRelations = {
-  Beijing: ['peking-duck', 'zhajiang-noodles', 'dumplings'],
-  Shanghai: ['xiaolongbao', 'pan-fried-buns', 'braised-pork'],
-  Sichuan: ['kung-pao-chicken', 'mapo-tofu', 'hot-pot', 'dan-dan-noodles'],
-  Shaanxi: ['yangrou-paomo', 'biang-biang-noodles', 'yangrou-paomo'],
-  Guangdong: ['char-siu', 'siu-mai', 'steamed-fish', 'congee'],
-  Zhejiang: ['dongpo-pork', 'longjing-shrimp', 'beggar-chicken'],
-  Jiangsu: ['west-lake-fish', 'longjing-shrimp', 'lion-head-meatballs'],
-  Hunan: ['twice-cooked-pork', 'spicy-crawfish'],
-  Fujian: ['steamed-fish', 'sweet-sour-pork'],
-  Shandong: ['braised-pork', 'sweet-sour-pork'],
-  Yunnan: ['hot-dry-noodles', 'hot-pot'],
-  Tibet: ['hot-pot', 'hot-pot', 'hot-pot'],
+  Beijing: ['peking-duck', 'zhajiang-noodles', 'dumplings', 'sugar-coated-hawthorn'],
+  Shanghai: ['xiaolongbao', 'pan-fried-buns', 'braised-pork', 'pork-floss-buns'],
+  Sichuan: ['kung-pao-chicken', 'mapo-tofu', 'hot-pot', 'dan-dan-noodles', 'twice-cooked-pork', 'fish-flavored-pork'],
+  Chongqing: ['hot-pot', 'dan-dan-noodles', 'spicy-crawfish'],
+  Shaanxi: ['yangrou-paomo', 'biang-biang-noodles', 'stewed-pork-buns', 'dumplings'],
+  Guangdong: ['char-siu', 'siu-mai', 'shrimp-dumplings', 'steamed-fish', 'congee', 'claypot-rice', 'egg-tarts'],
+  Zhejiang: ['dongpo-pork', 'longjing-shrimp', 'beggar-chicken', 'west-lake-fish'],
+  Jiangsu: ['lion-head-meatballs', 'sweet-ribs', 'fried-rice', 'eight-treasure-rice'],
+  Hunan: ['stinky-tofu', 'spicy-crawfish', 'twice-cooked-pork'],
+  Fujian: ['steamed-fish', 'shrimp-dumplings', 'mango-pudding'],
+  Shandong: ['scallion-pancakes', 'dumplings', 'sweet-sour-pork'],
+  Hubei: ['hot-dry-noodles', 'dumplings', 'spicy-crawfish'],
+  Heilongjiang: ['dumplings', 'stewed-pork-buns', 'scallion-pancakes'],
+  Liaoning: ['dumplings', 'steamed-fish', 'scallion-pancakes'],
+  // Yunnan / Tibet: no ghost dishes — pick closest real catalog items with
+  // warmer / milder character rather than defaulting everything to hot-pot
+  Yunnan: ['steamed-chicken', 'steamed-fish', 'congee', 'black-sesame-soup'],
+  Tibet: ['congee', 'steamed-chicken', 'black-sesame-soup', 'red-bean-soup'],
+  Gansu: ['braised-noodles', 'yangrou-paomo'],
+  Shanxi: ['sour-spicy-pot', 'dumplings', 'scallion-pancakes'],
+  Tianjin: ['pan-fried-buns', 'scallion-pancakes', 'dumplings'],
+  Guangxi: ['steamed-fish', 'fried-rice', 'congee'],
+  Hainan: ['steamed-chicken', 'steamed-fish', 'mango-pudding'],
+  General: ['scrambled-eggs-tomatoes', 'steamed-egg-custard', 'tomato-egg-drop-soup', 'cucumber-garlic'],
 };
+
+/**
+ * Dedup while preserving first-seen order
+ */
+function uniqueIds(ids) {
+  return [...new Set((ids || []).filter(Boolean))];
+}
 
 /**
  * Get related recipes for a city
@@ -136,7 +184,7 @@ export const provinceRecipeRelations = {
 export function getCityRecipes(cityId, provinceId) {
   const directRecipes = cityRecipeRelations[cityId] ?? [];
   const provinceRecipes = provinceRecipeRelations[provinceId] ?? [];
-  return [...new Set([...directRecipes, ...provinceRecipes])];
+  return uniqueIds([...directRecipes, ...provinceRecipes]);
 }
 
 /**
@@ -145,35 +193,35 @@ export function getCityRecipes(cityId, provinceId) {
 export function getCityDynasties(cityId, provinceId) {
   const directDynasties = cityDynastyRelations[cityId] ?? [];
   const provinceDynasties = provinceDynastyRelations[provinceId] ?? [];
-  return [...new Set([...directDynasties, ...provinceDynasties])];
+  return uniqueIds([...directDynasties, ...provinceDynasties]);
 }
 
 /**
  * Get related people for a dynasty
  */
 export function getDynastyPeople(dynastyId) {
-  return dynastyPersonRelations[dynastyId] ?? [];
+  return uniqueIds(dynastyPersonRelations[dynastyId] ?? []);
 }
 
 /**
  * Get related recipes for a dynasty
  */
 export function getDynastyRecipes(dynastyId) {
-  return dynastyRecipeRelations[dynastyId] ?? [];
+  return uniqueIds(dynastyRecipeRelations[dynastyId] ?? []);
 }
 
 /**
  * Get related recipes for a festival
  */
 export function getFestivalRecipes(festivalId) {
-  return festivalRecipeRelations[festivalId] ?? [];
+  return uniqueIds(festivalRecipeRelations[festivalId] ?? []);
 }
 
 /**
  * Get related cities for a person
  */
 export function getPersonCities(personId) {
-  return personCityRelations[personId] ?? [];
+  return uniqueIds(personCityRelations[personId] ?? []);
 }
 
 /**
@@ -186,5 +234,5 @@ export function getCityPeople(cityId) {
       people.push(personId);
     }
   }
-  return people;
+  return uniqueIds(people);
 }
