@@ -34,6 +34,7 @@ import {
   getPersonalization,
   setActiveFrame,
   setActiveTitle,
+  checkUnlocks,
   AVATAR_FRAMES,
   TITLES,
   getFrameById,
@@ -45,7 +46,7 @@ const { width: SCREEN_WIDTH } = Dimensions.get('window');
 /**
  * Personalization Modal
  */
-export function PersonalizationModal({ visible, onClose, stats }) {
+export function PersonalizationModal({ visible, onClose, onChanged, stats }) {
   const { colors } = useTheme();
   const [data, setData] = useState(null);
   const [activeTab, setActiveTab] = useState('frames');
@@ -77,8 +78,22 @@ export function PersonalizationModal({ visible, onClose, stats }) {
   }, [visible]);
 
   const loadData = async () => {
+    // Run unlock checks against provided stats so freshly-earned items
+    // become available immediately.
+    if (stats) {
+      try {
+        await checkUnlocks(stats);
+      } catch (e) {
+        // ignore unlock refresh errors
+      }
+    }
     const personalization = await getPersonalization();
     setData(personalization);
+    return personalization;
+  };
+
+  const notifyChanged = (nextData) => {
+    onChanged?.(nextData);
   };
 
   const handleSelectFrame = async (frameId) => {
@@ -89,7 +104,8 @@ export function PersonalizationModal({ visible, onClose, stats }) {
 
     const result = await setActiveFrame(frameId);
     if (result.success) {
-      await loadData();
+      const next = await loadData();
+      notifyChanged(next);
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
     }
 
@@ -104,7 +120,8 @@ export function PersonalizationModal({ visible, onClose, stats }) {
 
     const result = await setActiveTitle(titleId);
     if (result.success) {
-      await loadData();
+      const next = await loadData();
+      notifyChanged(next);
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
     }
 

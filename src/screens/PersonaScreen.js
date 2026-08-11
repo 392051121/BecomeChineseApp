@@ -11,7 +11,7 @@ import {
   TextInput,
   View,
 } from 'react-native';
-import { Heart, MapPin, Medal, Share2, Sparkles, Trophy, Volume2, Copy, Check, Bookmark, ArrowRight, Moon, Sun } from 'lucide-react-native';
+import { Heart, MapPin, Medal, Share2, Sparkles, Trophy, Volume2, Copy, Check, Bookmark, ArrowRight, Moon, Sun, Palette as PaletteIcon, ShieldCheck } from 'lucide-react-native';
 import { useNavigation } from '@react-navigation/native';
 import * as Haptics from 'expo-haptics';
 import * as Speech from 'expo-speech';
@@ -24,11 +24,24 @@ import { HandscrollContainer } from '../components/HandscrollContainer';
 import { StampFeedback } from '../components/StampFeedback';
 import { ScreenHeader } from '../components/ScreenHeader';
 import { SectionCard } from '../components/SectionCard';
+import { CollapsibleSection } from '../components/CollapsibleSection';
 import { BadgesSection, BadgeDetailCard, BadgeSummaryCard, checkBadgeUnlocked } from '../components/BadgesSection';
 import { NameShareCard, CollectionShareCard } from '../components/ShareCards';
 import { ShareCardPreviewModal } from '../components/ShareCardPreviewModal';
 import { SkeletonListItem } from '../components/Skeleton';
-import { calculateTotalXP, getXPLevel } from '../data/badges';
+import {
+  PersonalizationModal,
+  AvatarFrame,
+  UserTitleBadge,
+  PersonalizeButton,
+} from '../components/PersonalizationModal';
+import {
+  getPersonalization,
+  getFrameById,
+  getTitleById,
+  checkUnlocks,
+} from '../utils/personalization';
+import { calculateTotalXP, getXPLevel, getUnlockedBadges } from '../data/badges';
 import { cities } from '../data/cities';
 import { recipes } from '../data/recipes';
 import { dynasties } from '../data/dynasties';
@@ -102,6 +115,8 @@ export function PersonaScreen() {
   const [selectedBadge, setSelectedBadge] = useState(null);
   const [showShareCard, setShowShareCard] = useState(false);
   const [showShareModal, setShowShareModal] = useState(false);
+  const [showPersonalize, setShowPersonalize] = useState(false);
+  const [personalization, setPersonalization] = useState(null);
   const shareCardRef = useRef(null);
 
   const traitOptions = useMemo(() => getTraitOptions(), []);
@@ -131,12 +146,22 @@ export function PersonaScreen() {
         setQuizStreak(0);
         setQuizTotalSolved(0);
         setNamesGenerated(0);
-      } finally {
-        if (mountedRef.current) setLoadingFavorites(false);
-      }
-    })();
+    } finally {
+      if (mountedRef.current) setLoadingFavorites(false);
+    }
+  })();
 
-    return () => {
+  // Load personalization (avatar frame + title)
+  (async () => {
+    try {
+      const p = await getPersonalization();
+      if (mountedRef.current) setPersonalization(p);
+    } catch {
+      if (mountedRef.current) setPersonalization(null);
+    }
+  })();
+
+  return () => {
       mountedRef.current = false;
       Speech.stop();
     };
@@ -243,6 +268,44 @@ export function PersonaScreen() {
   const totalXP = useMemo(() => calculateTotalXP(badgeStats), [badgeStats]);
   const xpLevel = useMemo(() => getXPLevel(totalXP), [totalXP]);
 
+  // Stats shaped for the personalization unlock checker
+  const personalizationStats = useMemo(() => {
+    const unlocked = getUnlockedBadges(badgeStats);
+    return {
+      level: xpLevel?.level ?? 0,
+      totalCollected: collectedCities.length + collectedRecipes.length + collectedDynasties.length,
+      citiesCollected: collectedCities.length,
+      recipesCollected: collectedRecipes.length,
+      dynastiesCollected: collectedDynasties.length,
+      quizTotal: quizTotalSolved,
+      quizStreak,
+      achievements: unlocked.map((b) => b.id),
+    };
+  }, [xpLevel, collectedCities.length, collectedRecipes.length, collectedDynasties.length, quizTotalSolved, quizStreak, badgeStats]);
+
+  // Current frame/title objects
+  const currentFrame = useMemo(
+    () => (personalization ? getFrameById(personalization.frameId) : getFrameById('default')),
+    [personalization]
+  );
+  const currentTitle = useMemo(
+    () => (personalization ? getTitleById(personalization.titleId) : getTitleById('traveler')),
+    [personalization]
+  );
+
+  async function handleOpenPersonalize() {
+    // Refresh unlocks before showing
+    try {
+      await checkUnlocks(personalizationStats);
+    } catch {
+      // ignore
+    }
+    const fresh = await getPersonalization();
+    setPersonalization(fresh);
+    setShowPersonalize(true);
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
+  }
+
   const milestoneItems = [
     { label: 'Quiz', active: quizTotalSolved >= 1, hint: 'Solve 1 daily question' },
     { label: 'Places', active: collectedCities.length >= 1, hint: 'Save 1 city' },
@@ -343,6 +406,29 @@ export function PersonaScreen() {
                       <Text style={[styles.identitySummaryText, { color: colors.mutedText }]}>{provinceStats.connected} regions</Text>
                     </View>
                   </View>
+
+                  {/* Personalization: frame + title + customize entry */}
+                  <View style={styles.personaStyleRow}>
+                    <View style={styles.personaFrameWrap}>
+                      <AvatarFrame frame={currentFrame} size={42} />
+                      <View style={styles.personaTitleWrap}>
+                        <UserTitleBadge title={currentTitle} />
+                        <Text style={[styles.personaPreviewMeta, { color: colors.mutedText }]}>
+                          {currentFrame.name} · {currentTitle.name}
+                        </Text>
+                      </View>
+                    </View>
+                    <Pressable
+                      style={[styles.personaCustomizeBtn, { borderColor: colors.primary }]}
+                      onPress={handleOpenPersonalize}
+                      accessibilityRole="button"
+                      accessibilityLabel="Customize avatar frame and title"
+                      accessibilityHint="Double tap to choose a frame or title"
+                    >
+                      <PaletteIcon size={14} color={colors.primary} strokeWidth={2} />
+                      <Text style={[styles.personaCustomizeText, { color: colors.primary }]}>Customize</Text>
+                    </Pressable>
+                  </View>
                   <View style={styles.scrollActions}>
                     <Pressable style={[styles.primaryAction, { backgroundColor: colors.primary }]} onPress={speakChineseName} accessibilityRole="button" accessibilityLabel="Read name aloud" accessibilityHint="Double tap to hear pronunciation">
                       <Volume2 size={14} color="#FFFFFF" strokeWidth={2} />
@@ -415,29 +501,31 @@ export function PersonaScreen() {
             </SectionCard>
 
             {/* Atlas progress */}
-            <SectionCard style={styles.connectionCard} tone="soft">
-              <View style={styles.sectionHeaderInline}>
-                <View style={styles.connectionLabelWrap}>
-                  <MapPin size={14} color={theme.colors.primary} strokeWidth={2} />
-                  <Text style={styles.connectionLabel}>Atlas Progress</Text>
+            <CollapsibleSection
+              icon={MapPin}
+              title="Atlas Progress"
+              titleCn="探索地图"
+              defaultOpen
+              count={connectionMap.collectedCount}
+              tone="soft"
+            >
+              <View style={styles.connectionCardInner}>
+                <Text style={styles.connectionStory}>Your connected provinces and saved names accumulate here.</Text>
+                <View style={styles.progressLine}>
+                  <View style={[styles.progressFill, { width: `${Math.max(8, (connectionMap.collectedCount / Math.max(1, connectionMap.totalCount)) * 100)}%` }]} />
                 </View>
-                <Text style={styles.connectionCount}>{connectionMap.collectedCount}</Text>
-              </View>
-              <Text style={styles.connectionStory}>Your connected provinces and saved names accumulate here.</Text>
-              <View style={styles.progressLine}>
-                <View style={[styles.progressFill, { width: `${Math.max(8, (connectionMap.collectedCount / Math.max(1, connectionMap.totalCount)) * 100)}%` }]} />
-              </View>
-              <View style={styles.mapWrap}>
-                <ChinaConnectionMap connectedProvinces={connectedProvinces} />
-                <View style={styles.provincePills}>
-                  {Array.from(connectedProvinces).slice(0, 8).map((provinceId) => (
-                    <View key={provinceId} style={styles.provincePill}>
-                      <Text style={styles.provincePillText}>{provinceId}</Text>
-                    </View>
-                  ))}
+                <View style={styles.mapWrap}>
+                  <ChinaConnectionMap connectedProvinces={connectedProvinces} />
+                  <View style={styles.provincePills}>
+                    {Array.from(connectedProvinces).slice(0, 8).map((provinceId) => (
+                      <View key={provinceId} style={styles.provincePill}>
+                        <Text style={styles.provincePillText}>{provinceId}</Text>
+                      </View>
+                    ))}
+                  </View>
                 </View>
               </View>
-            </SectionCard>
+            </CollapsibleSection>
 
             {/* Stats row */}
             <View style={styles.badgeRow}>
@@ -457,6 +545,20 @@ export function PersonaScreen() {
                 <Text style={styles.badgeStatValue}>{provinceStats.connected}</Text>
               </Pressable>
             </View>
+
+            {/* Insight - follows the stats row for context */}
+            <SectionCard style={styles.insightCard} tone="soft">
+              <Text style={styles.sectionLabel}>Insight</Text>
+              <Text style={styles.insightText}>
+                {activeInsight === 'level'
+                  ? `XP Level reflects your overall activity. Earn XP by solving quizzes, collecting items, and unlocking badges. Current: ${totalXP} XP.`
+                  : activeInsight === 'rank'
+                  ? `Culture Rank reflects your exploration breadth. Connect more provinces by saving cities, dishes, and dynasties from different regions.`
+                  : activeInsight === 'regions'
+                  ? `You have connected ${provinceStats.connected} regions. Save items from new provinces to expand your cultural map.`
+                  : `You have saved ${favorites.length} names. Your archive is becoming more personal.`}
+              </Text>
+            </SectionCard>
 
             {/* Collection Link */}
             <Pressable
@@ -479,35 +581,28 @@ export function PersonaScreen() {
               <ArrowRight size={16} color={theme.colors.primary} strokeWidth={2} />
             </Pressable>
 
-            {/* Insight */}
-            <SectionCard style={styles.insightCard} tone="soft">
-              <Text style={styles.sectionLabel}>Insight</Text>
-              <Text style={styles.insightText}>
-                {activeInsight === 'level'
-                  ? `XP Level reflects your overall activity. Earn XP by solving quizzes, collecting items, and unlocking badges. Current: ${totalXP} XP.`
-                  : activeInsight === 'rank'
-                  ? `Culture Rank reflects your exploration breadth. Connect more provinces by saving cities, dishes, and dynasties from different regions.`
-                  : activeInsight === 'regions'
-                  ? `You have connected ${provinceStats.connected} regions. Save items from new provinces to expand your cultural map.`
-                  : `You have saved ${favorites.length} names. Your archive is becoming more personal.`}
-              </Text>
-            </SectionCard>
-
             {/* Achievements / Badges */}
-            <BadgesSection
-              stats={badgeStats}
-              onBadgePress={(badge) => setSelectedBadge(badge)}
-            />
+            <CollapsibleSection
+              icon={Medal}
+              title="Achievements"
+              titleCn="成就徽章"
+              count={totalXP}
+              tone="soft"
+            >
+              <BadgesSection
+                stats={badgeStats}
+                onBadgePress={(badge) => setSelectedBadge(badge)}
+              />
+            </CollapsibleSection>
 
             {/* Milestones - reward wall */}
-            <View style={styles.sealWallCard}>
-              <View style={styles.sealHeaderRow}>
-                <View style={styles.sealHeaderLabelWrap}>
-                  <Trophy size={14} color={theme.colors.primary} strokeWidth={2} />
-                  <Text style={styles.sealWallLabel}>Milestones</Text>
-                </View>
-                <Text style={styles.sealWallBadge}>{milestoneItems.filter((m) => m.active).length}/{milestoneItems.length}</Text>
-              </View>
+            <CollapsibleSection
+              icon={Trophy}
+              title="Milestones"
+              titleCn="成长里程碑"
+              count={`${milestoneItems.filter((m) => m.active).length}/${milestoneItems.length}`}
+              tone="soft"
+            >
               <Text style={styles.sealWallTitle}>What your actions have unlocked.</Text>
               <View style={styles.sealGrid}>
                 {milestoneItems.map((item) => (
@@ -519,16 +614,16 @@ export function PersonaScreen() {
                   </View>
                 ))}
               </View>
-            </View>
+            </CollapsibleSection>
 
             {/* Saved names */}
-            <SectionCard style={styles.favoritesCard} tone="panel">
-              <View style={styles.favoritesHeaderRow}>
-                <Text style={styles.favoritesTitle}>Saved Names</Text>
-                <View style={styles.favoritesCountPill}>
-                  <Text style={styles.favoritesCount}>{favorites.length}</Text>
-                </View>
-              </View>
+            <CollapsibleSection
+              icon={Bookmark}
+              title="Saved Names"
+              titleCn="收藏的名字"
+              count={favorites.length}
+              tone="soft"
+            >
               {loadingFavorites ? (
                 <View style={styles.favoritesLoading}>
                   <SkeletonListItem style={{ marginBottom: 8 }} />
@@ -542,7 +637,10 @@ export function PersonaScreen() {
               ) : (
                 <View style={styles.favoritesList}>
                   {favorites.map((item, idx) => (
-                    <View key={item?.id ?? `${item?.full?.hanzi ?? 'fav'}-${idx}`} style={styles.favoriteRow}>
+                    // Index-backed key: the same name can be favorited more
+                    // than once, so a stable unique key must NOT rely on
+                    // item content (hanzi/pinyin/id can collide on duplicates).
+                    <View key={`saved-name-${idx}`} style={styles.favoriteRow}>
                       <View style={styles.favoriteLeft}>
                         <Text style={[styles.favoriteHanzi, { fontFamily: serifFont }]}>{item?.full?.hanzi}</Text>
                         <Text style={styles.favoritePinyin}>{item?.full?.pinyin}</Text>
@@ -552,7 +650,7 @@ export function PersonaScreen() {
                   ))}
                 </View>
               )}
-            </SectionCard>
+            </CollapsibleSection>
 
             {/* Share button */}
             <Pressable style={[styles.shareBtn, !generated && styles.shareBtnDisabled]} onPress={handleShare} disabled={!generated} accessibilityRole="button" accessibilityLabel="Share name card" accessibilityHint={!generated ? "Generate a name first" : "Double tap to share your name card"}>
@@ -569,6 +667,25 @@ export function PersonaScreen() {
               )}
             </Pressable>
             {generated ? <StampFeedback label="Atlas Updated" active={true} style={styles.stampFeedback} /> : null}
+
+            {/* Privacy Policy link - kept at the very bottom as a quiet footer */}
+            <Pressable
+              style={[styles.collectionLinkCard, styles.privacyFooter]}
+              onPress={() => navigation.navigate('PrivacyPolicy')}
+              accessibilityRole="button"
+              accessibilityLabel="Privacy Policy"
+              accessibilityHint="Double tap to read the privacy policy"
+            >
+              <View style={styles.privacyLinkIcon}>
+                <ShieldCheck size={20} color={theme.colors.primary} strokeWidth={2} />
+              </View>
+              <View style={styles.collectionLinkContent}>
+                <Text style={styles.collectionLinkTitle}>Privacy Policy</Text>
+                <Text style={styles.collectionLinkTitleCn}>隐私政策</Text>
+                <Text style={styles.collectionLinkSubtitle}>No data is collected — read how</Text>
+              </View>
+              <ArrowRight size={16} color={theme.colors.primary} strokeWidth={2} />
+            </Pressable>
           </View>
         </HandscrollContainer>
       </KeyboardAvoidingView>
@@ -604,6 +721,14 @@ export function PersonaScreen() {
             />
           )
         }
+      />
+
+      {/* Personalization Modal */}
+      <PersonalizationModal
+        visible={showPersonalize}
+        onClose={() => setShowPersonalize(false)}
+        onChanged={(next) => setPersonalization(next)}
+        stats={personalizationStats}
       />
       </SafeAreaView>
     </Animated.View>
@@ -658,6 +783,15 @@ const styles = StyleSheet.create({
   identitySummaryRow: { flexDirection: 'row', justifyContent: 'center', flexWrap: 'wrap', gap: 10, marginTop: 16 },
   identitySummaryPill: { flexDirection: 'row', alignItems: 'center', gap: 6, borderRadius: 999, borderWidth: 0.5, borderColor: theme.colors.border, backgroundColor: theme.colors.surface, paddingHorizontal: 12, paddingVertical: 6 },
   identitySummaryText: { color: theme.colors.mutedText, fontSize: 11, letterSpacing: 0.6, fontWeight: '700', textTransform: 'uppercase' },
+
+  // Personalization row
+  personaStyleRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 10, marginTop: 16 },
+  personaFrameWrap: { flexDirection: 'row', alignItems: 'center', gap: 10 },
+  personaTitleWrap: { alignItems: 'flex-start', gap: 4 },
+  personaPreviewMeta: { fontSize: 10, letterSpacing: 0.4, fontWeight: '600', textTransform: 'uppercase', opacity: 0.75 },
+  personaCustomizeBtn: { flexDirection: 'row', alignItems: 'center', gap: 6, borderRadius: 999, borderWidth: 1, paddingHorizontal: 12, paddingVertical: 8, minHeight: 40 },
+  personaCustomizeText: { fontSize: 11, letterSpacing: 0.6, fontWeight: '800', textTransform: 'uppercase' },
+
   scrollActions: { flexDirection: 'row', gap: 10, marginTop: 18 },
   primaryAction: { flex: 1, minHeight: 46, borderRadius: 10, backgroundColor: theme.colors.primary, paddingHorizontal: 14, paddingVertical: 12, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8 },
   primaryActionText: { color: '#FFFFFF', fontSize: 13, letterSpacing: 0.6, fontWeight: '800', textTransform: 'uppercase' },
@@ -684,6 +818,7 @@ const styles = StyleSheet.create({
 
   // Connection card
   connectionCard: { marginTop: 14, borderRadius: theme.radii.lg, borderWidth: 0.5, borderColor: theme.colors.border, backgroundColor: theme.colors.surface, paddingHorizontal: 16, paddingVertical: 16, shadowColor: '#000', shadowOpacity: 0.02, shadowRadius: 10, shadowOffset: { width: 0, height: 5 }, elevation: 2 },
+  connectionCardInner: { paddingTop: 4 },
   sectionHeaderInline: { flexDirection: 'row', alignItems: 'baseline', justifyContent: 'space-between', gap: 12 },
   connectionLabelWrap: { flexDirection: 'row', alignItems: 'center', gap: 6 },
   connectionLabel: { color: theme.colors.primary, fontSize: 11, letterSpacing: 1.4, textTransform: 'uppercase', fontWeight: '800' },
@@ -722,6 +857,18 @@ const styles = StyleSheet.create({
     backgroundColor: theme.colors.cinnabarGlow,
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  privacyLinkIcon: {
+    width: 48,
+    height: 48,
+    borderRadius: 14,
+    backgroundColor: theme.colors.borderAccent,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  privacyFooter: {
+    marginTop: 26,
+    opacity: 0.85,
   },
   collectionLinkContent: {
     flex: 1,
