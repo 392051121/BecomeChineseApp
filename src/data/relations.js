@@ -69,15 +69,18 @@ export const dynastyRecipeRelations = {
 };
 
 // Festival to Recipe relationships (traditional foods)
+// Keys must match the `id` values used in src/data/festivals.js so the
+// merged recommendedFoodIds actually resolve. (P1-3 naming fix)
 export const festivalRecipeRelations = {
   'spring-festival': ['dumplings', 'nian-gao', 'tangyuan', 'fish'],
   'lantern-festival': ['tangyuan', 'yuanxiao'],
-  'qingming-festival': ['qingtuan', 'sanzi'],
+  // 清明 (solar term) — festivals.js id is `qingming` (was `qingming-festival`)
+  qingming: ['qingtuan', 'sanzi'],
   'dragon-boat-festival': ['zongzi', 'realgar-wine'],
   'mid-autumn-festival': ['mooncake', 'pomelo', 'duck'],
   'double-ninth-festival': ['chongyang-cake', 'chrysanthemum-tea'],
-  'winter-solstice': ['dumplings', 'tangyuan'],
-  'labour-festival': ['lab-porridge'],
+  // 冬至 (solar term) — festivals.js id is `dongzhi` (was `winter-solstice`)
+  dongzhi: ['dumplings', 'tangyuan'],
 };
 
 // Person to City relationships (birthplace, major activity)
