@@ -6,8 +6,18 @@ node_modules/
 # Expo
 .expo/
 dist/
+dist-test/
 web-build/
 expo-env.d.ts
+
+# Test / coverage artifacts
+coverage/
+*.lcov
+
+# Local scratch / temp scripts (never commit)
+scripts_tmp*
+*_tmp_*.js
+*_tmp_*.py
 
 # Native
 .kotlin/
