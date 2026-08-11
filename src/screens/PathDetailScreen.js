@@ -177,18 +177,28 @@ export function PathDetailScreen() {
   function handleStepPress(step, index) {
     // Find the actual data item
     const dataItem = findStepDataItem(step);
-    const screen = getTypeScreen(step.type);
+    if (!dataItem) return;
+    const { id, nameEn } = dataItem;
+    const type = step.type;
 
-    // Navigate with the item data
-    if (dataItem) {
-      // Pass the item ID so the screen can highlight it
-      navigation.navigate(screen, {
-        highlightId: dataItem.id,
-        itemName: dataItem.nameEn,
+    // Navigate to the right surface carrying the id so the detail opens directly.
+    if (type === 'recipe') {
+      navigation.getParent()?.navigate('Food', { recipeId: id });
+    } else if (type === 'city') {
+      navigation.getParent()?.navigate('Places', { cityId: id });
+    } else if (type === 'dynasty') {
+      navigation.getParent()?.navigate('History', {
+        screen: 'DynastyDetail',
+        params: { dynastyId: id },
+      });
+    } else if (type === 'person') {
+      navigation.getParent()?.navigate('History', {
+        screen: 'PersonDetail',
+        params: { personId: id },
       });
     } else {
-      // Fallback to just navigating to the screen
-      navigation.navigate(screen);
+      const screen = getTypeScreen(type);
+      navigation.getParent()?.navigate(screen);
     }
   }
 

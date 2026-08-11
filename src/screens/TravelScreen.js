@@ -193,7 +193,7 @@ const CityCard = memo(function CityCard({ item, isActive, isBookmarked, onActiva
   );
 });
 
-export function TravelScreen() {
+export function TravelScreen({ route }) {
   const navigation = useNavigation();
   const { colors } = useTheme();
   const toast = useToast();
@@ -257,6 +257,23 @@ export function TravelScreen() {
   }, []);
 
   const activateCity = useCallback((cityId) => setActiveCityId(cityId), []);
+
+  // Deep-link support: when navigating here with a `cityId` param (e.g. from a
+  // collection entry, learning path step, or related-city card), activate that
+  // city directly so its detail highlights on arrival.
+  const pendingCityId = route?.params?.cityId;
+  const lastHandledCityIdRef = useRef(null);
+
+  useEffect(() => {
+    if (!pendingCityId) return;
+    if (lastHandledCityIdRef.current === pendingCityId) return;
+    const city = cities.find((c) => c.id === pendingCityId);
+    // Consume the param so re-navigating to the same city later still works.
+    navigation.setParams({ cityId: undefined });
+    if (!city) return;
+    lastHandledCityIdRef.current = pendingCityId;
+    setActiveCityId(city.id);
+  }, [pendingCityId, navigation]);
 
   // Track stamp earning for active city
   useEffect(() => {
@@ -457,6 +474,7 @@ export function TravelScreen() {
         onShare={handleShareConfirm}
         item={shareItem}
         type="city"
+        cardRef={shareCardRef}
       />
     </SafeAreaView>
   );

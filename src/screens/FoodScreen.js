@@ -75,12 +75,28 @@ const RecipeCard = memo(function RecipeCard({ item, index, onPress }) {
   );
 });
 
-export function FoodScreen() {
+export function FoodScreen({ route }) {
   const navigation = useNavigation();
   const { colors } = useTheme();
   const toast = useToast();
   const [selectedRecipe, setSelectedRecipe] = useState(null);
   const data = useMemo(() => recipes, []);
+
+  // Deep-link support: when navigating here with a `recipeId` param (e.g. from a
+  // solar-term detail page), open that recipe's detail sheet directly.
+  const pendingRecipeId = route?.params?.recipeId;
+  const lastHandledRecipeIdRef = useRef(null);
+
+  useEffect(() => {
+    if (!pendingRecipeId) return;
+    if (lastHandledRecipeIdRef.current === pendingRecipeId) return;
+    const recipe = recipes.find((r) => r.id === pendingRecipeId) || null;
+    // Consume the param so re-navigating to the same recipe later still works.
+    navigation.setParams({ recipeId: undefined });
+    if (!recipe) return;
+    lastHandledRecipeIdRef.current = pendingRecipeId;
+    setSelectedRecipe(recipe);
+  }, [pendingRecipeId, navigation]);
   const [bookmarked, setBookmarked] = useState({});
   const [searchQuery, setSearchQuery] = useState('');
   const [refreshing, setRefreshing] = useState(false);
