@@ -2,12 +2,9 @@ import React, { useEffect, useRef } from 'react';
 import { Animated, StyleSheet, View } from 'react-native';
 
 import { theme } from '../theme/theme';
-import { useTheme } from '../theme/ThemeContext';
 
 // Paper texture pattern for skeleton (subtle fiber lines)
 function PaperTextureOverlay({ style }) {
-  const { isDark } = useTheme();
-
   return (
     <View style={[styles.paperTexture, style]}>
       {/* Simulated paper fiber lines */}
@@ -18,8 +15,8 @@ function PaperTextureOverlay({ style }) {
             styles.fiberLine,
             {
               top: 20 + i * 30,
-              opacity: isDark ? 0.03 : 0.02,
-              backgroundColor: isDark ? 'rgba(255, 255, 255, 0.5)' : 'rgba(51, 51, 51, 0.5)',
+              opacity: 0.02,
+              backgroundColor: 'rgba(51, 51, 51, 0.5)',
             },
           ]}
         />
@@ -29,7 +26,6 @@ function PaperTextureOverlay({ style }) {
 }
 
 export function Skeleton({ width, height, borderRadius = theme.radii.sm, style, hasTexture = false }) {
-  const { colors, isDark } = useTheme();
   const animatedValue = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
@@ -54,8 +50,8 @@ export function Skeleton({ width, height, borderRadius = theme.radii.sm, style, 
   const backgroundColor = animatedValue.interpolate({
     inputRange: [0, 1],
     outputRange: [
-      isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(51, 51, 51, 0.06)',
-      isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(51, 51, 51, 0.10)',
+      'rgba(51, 51, 51, 0.06)',
+      'rgba(51, 51, 51, 0.10)',
     ],
   });
 
@@ -94,15 +90,13 @@ export function SkeletonText({ width = '100%', lines = 1, lineHeight = 16, spaci
 }
 
 export function SkeletonCard({ style }) {
-  const { isDark } = useTheme();
-
   return (
     <View
       style={[
         styles.card,
         {
-          backgroundColor: isDark ? 'rgba(255, 255, 255, 0.04)' : 'rgba(51, 51, 51, 0.02)',
-          borderColor: isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(51, 51, 51, 0.06)',
+          backgroundColor: 'rgba(51, 51, 51, 0.02)',
+          borderColor: 'rgba(51, 51, 51, 0.06)',
         },
         style,
       ]}
@@ -116,15 +110,13 @@ export function SkeletonCard({ style }) {
 }
 
 export function SkeletonHeroCard({ style }) {
-  const { isDark } = useTheme();
-
   return (
     <View
       style={[
         styles.heroCard,
         {
-          backgroundColor: isDark ? 'rgba(255, 255, 255, 0.04)' : 'rgba(51, 51, 51, 0.02)',
-          borderColor: isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(51, 51, 51, 0.06)',
+          backgroundColor: 'rgba(51, 51, 51, 0.02)',
+          borderColor: 'rgba(51, 51, 51, 0.06)',
         },
         style,
       ]}
@@ -154,15 +146,13 @@ export function SkeletonHeroCard({ style }) {
 }
 
 export function SkeletonListItem({ style }) {
-  const { isDark } = useTheme();
-
   return (
     <View
       style={[
         styles.listItem,
         {
-          backgroundColor: isDark ? 'rgba(255, 255, 255, 0.04)' : theme.colors.card,
-          borderColor: isDark ? 'rgba(255, 255, 255, 0.08)' : theme.colors.border,
+          backgroundColor: theme.colors.card,
+          borderColor: theme.colors.border,
         },
         style,
       ]}
@@ -178,15 +168,13 @@ export function SkeletonListItem({ style }) {
 }
 
 export function SkeletonImageCard({ style }) {
-  const { isDark } = useTheme();
-
   return (
     <View
       style={[
         styles.imageCard,
         {
-          backgroundColor: isDark ? 'rgba(255, 255, 255, 0.04)' : 'rgba(51, 51, 51, 0.02)',
-          borderColor: isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(51, 51, 51, 0.06)',
+          backgroundColor: 'rgba(51, 51, 51, 0.02)',
+          borderColor: 'rgba(51, 51, 51, 0.06)',
         },
         style,
       ]}
@@ -282,14 +270,12 @@ export function SkeletonGrid({ count = 6, columns = 2, style }) {
 }
 
 export function SkeletonSection({ titleWidth = '30%', itemCount = 3, style }) {
-  const { isDark } = useTheme();
-
   return (
     <View
       style={[
         styles.section,
         {
-          backgroundColor: isDark ? 'rgba(255, 255, 255, 0.02)' : theme.colors.surface,
+          backgroundColor: theme.colors.surface,
           borderColor: theme.colors.border,
         },
         style,
@@ -305,8 +291,6 @@ export function SkeletonSection({ titleWidth = '30%', itemCount = 3, style }) {
 
 // Home screen skeleton
 export function SkeletonHomeScreen() {
-  const { isDark } = useTheme();
-
   return (
     <View style={{ flex: 1, paddingHorizontal: 20, paddingTop: 12 }}>
       {/* Level header */}
@@ -326,8 +310,8 @@ export function SkeletonHomeScreen() {
         style={[
           styles.card,
           {
-            backgroundColor: isDark ? 'rgba(255, 255, 255, 0.04)' : 'rgba(51, 51, 51, 0.02)',
-            borderColor: isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(51, 51, 51, 0.06)',
+            backgroundColor: 'rgba(51, 51, 51, 0.02)',
+            borderColor: 'rgba(51, 51, 51, 0.06)',
             marginTop: 14,
           },
         ]}

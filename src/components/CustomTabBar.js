@@ -9,9 +9,8 @@
 
 import React, { useEffect, useRef, useState, useCallback } from 'react';
 import { Animated, Pressable, StyleSheet, Text, View, Platform } from 'react-native';
-import { CalendarDays, Clock, House, Map, User, UtensilsCrossed, Scroll } from 'lucide-react-native';
+import { CalendarDays, House, Map, User, UtensilsCrossed, Scroll } from 'lucide-react-native';
 import * as Haptics from 'expo-haptics';
-import { useNavigation, useRoute } from '@react-navigation/native';
 
 import { theme } from '../theme/theme';
 import { useTheme } from '../theme/ThemeContext';
@@ -34,7 +33,16 @@ const tabs = [
   { name: 'Profile', label: 'Profile', labelCn: '我的', icon: User },
 ];
 
-function TabItem({ tab, isActive, onPress, colors, isDark, badgeCount }) {
+// Nested stack tabs: bottom-tab press should land on the list/root screen,
+// not a leftover detail from a previous visit.
+const TAB_ROOT_SCREENS = {
+  Home: 'HomeMain',
+  Seasons: 'SeasonsMain',
+  History: 'HistoryHome',
+  Profile: 'ProfileMain',
+};
+
+function TabItem({ tab, isActive, onPress, colors, badgeCount }) {
   const scaleAnim = useRef(new Animated.Value(1)).current;
   const sealAnim = useRef(new Animated.Value(0)).current;
   const Icon = tab.icon;
@@ -61,8 +69,8 @@ function TabItem({ tab, isActive, onPress, colors, isDark, badgeCount }) {
     onPress(tab.name);
   };
 
-  const inactiveIconColor = isDark ? 'rgba(255, 255, 255, 0.42)' : 'rgba(27, 23, 21, 0.42)';
-  const inactiveLabelColor = isDark ? 'rgba(255, 255, 255, 0.45)' : 'rgba(27, 23, 21, 0.45)';
+  const inactiveIconColor = 'rgba(27, 23, 21, 0.42)';
+  const inactiveLabelColor = 'rgba(27, 23, 21, 0.45)';
 
   const hasBadge = badgeCount > 0;
 
@@ -135,7 +143,7 @@ function TabItem({ tab, isActive, onPress, colors, isDark, badgeCount }) {
 }
 
 export function CustomTabBar({ state, navigation }) {
-  const { colors, isDark } = useTheme();
+  const { colors } = useTheme();
   const currentRoute = state.routes[state.index].name;
   const [wrongAnswersCount, setWrongAnswersCount] = useState(0);
 
@@ -169,9 +177,19 @@ export function CustomTabBar({ state, navigation }) {
       canPreventDefault: true,
     });
 
-    if (!event.defaultPrevented) {
-      navigation.navigate(tabName);
+    if (event.defaultPrevented) {
+      return;
     }
+
+    const rootScreen = TAB_ROOT_SCREENS[tabName];
+    if (rootScreen) {
+      // Always open nested stack at its root list (not a stale Dynasty/Person detail).
+      // Deep links from Home/Explore still work: they call navigate with an explicit screen.
+      navigation.navigate(tabName, { screen: rootScreen });
+      return;
+    }
+
+    navigation.navigate(tabName);
   };
 
   // Badge counts per tab
@@ -189,7 +207,7 @@ export function CustomTabBar({ state, navigation }) {
       style={[
         styles.container,
         {
-          backgroundColor: isDark ? 'rgba(30, 28, 26, 0.96)' : 'rgba(255, 251, 246, 0.96)',
+          backgroundColor: 'rgba(255, 251, 246, 0.96)',
           borderColor: colors.border,
         },
       ]}
@@ -201,7 +219,6 @@ export function CustomTabBar({ state, navigation }) {
           isActive={currentRoute === tab.name}
           onPress={handlePress}
           colors={colors}
-          isDark={isDark}
           badgeCount={badgeCounts[tab.name] || 0}
         />
       ))}

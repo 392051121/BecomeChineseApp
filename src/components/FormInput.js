@@ -24,7 +24,7 @@ export function FormInput({
   style,
   inputStyle,
 }) {
-  const { colors, isDark } = useTheme();
+  const { colors } = useTheme();
   const [isFocused, setIsFocused] = useState(false);
   const charCount = value?.length || 0;
   const hasError = Boolean(error);
@@ -82,7 +82,7 @@ export function FormInput({
         />
       </View>
 
-      {(error || helperText || (showCount && maxLength)) && (
+      {(error || helperText || (showCount && maxLength > 0)) && (
         <View style={styles.footerRow}>
           <Text
             style={[
@@ -90,9 +90,9 @@ export function FormInput({
               { color: hasError ? theme.colors.error : colors.mutedText },
             ]}
           >
-            {error || helperText}
+            {error || helperText || ' '}
           </Text>
-          {showCount && maxLength && (
+          {showCount && maxLength > 0 && (
             <Text style={[styles.countText, { color: colors.mutedText }]}>
               {charCount}/{maxLength}
             </Text>

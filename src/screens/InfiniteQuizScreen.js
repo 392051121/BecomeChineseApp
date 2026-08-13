@@ -44,7 +44,7 @@ const COMBO_MILESTONES = [
 
 export function InfiniteQuizScreen() {
   const navigation = useNavigation();
-  const { colors, isDark } = useTheme();
+  const { colors } = useTheme();
 
   // Game state
   const [isPlaying, setIsPlaying] = useState(false);

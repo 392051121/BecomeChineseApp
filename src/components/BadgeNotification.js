@@ -13,7 +13,7 @@ export function useBadgeNotification() {
 }
 
 export function BadgeNotificationProvider({ children }) {
-  const { colors, isDark } = useTheme();
+  const { colors } = useTheme();
   const [notification, setNotification] = useState(null);
   const slideAnim = useRef(new Animated.Value(-100)).current;
   const opacityAnim = useRef(new Animated.Value(0)).current;
@@ -147,7 +147,7 @@ export function BadgeNotificationProvider({ children }) {
           ]}
         >
           <Pressable
-            style={[styles.notificationCard, { borderColor: notification.color || colors.primary, backgroundColor: isDark ? colors.surface : '#FFF9F5' }]}
+            style={[styles.notificationCard, { borderColor: notification.color || colors.primary, backgroundColor: '#FFF9F5' }]}
             onPress={dismissNotification}
           >
             {/* Glow effect */}

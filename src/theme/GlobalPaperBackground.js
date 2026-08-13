@@ -5,25 +5,15 @@ import { PaperTexture } from '../components/PaperTexture';
 import { useTheme } from './ThemeContext';
 
 export function GlobalPaperBackground() {
-  const { isDark, colors } = useTheme();
+  const { colors } = useTheme();
 
   return (
     <View pointerEvents="none" style={styles.root}>
       <View style={[styles.base, { backgroundColor: colors.background }]} />
-      {!isDark && (
-        <>
-          <View style={styles.warmGlow} />
-          <PaperTexture style={styles.texture} />
-          <View style={styles.veil} />
-          <View style={styles.inkWash} />
-        </>
-      )}
-      {isDark && (
-        <>
-          <View style={styles.darkGlow} />
-          <View style={styles.darkInkWash} />
-        </>
-      )}
+      <View style={styles.warmGlow} />
+      <PaperTexture style={styles.texture} />
+      <View style={styles.veil} />
+      <View style={styles.inkWash} />
     </View>
   );
 }
@@ -62,26 +52,6 @@ const styles = StyleSheet.create({
     borderRadius: 999,
     backgroundColor: 'rgba(35, 31, 32, 0.014)',
     opacity: 0.52,
-  },
-  darkGlow: {
-    position: 'absolute',
-    left: -40,
-    top: -20,
-    width: 180,
-    height: 180,
-    borderRadius: 999,
-    backgroundColor: 'rgba(229, 74, 62, 0.08)',
-    opacity: 0.6,
-  },
-  darkInkWash: {
-    position: 'absolute',
-    right: -50,
-    bottom: -70,
-    width: 180,
-    height: 180,
-    borderRadius: 999,
-    backgroundColor: 'rgba(245, 240, 232, 0.02)',
-    opacity: 0.5,
   },
 });
 

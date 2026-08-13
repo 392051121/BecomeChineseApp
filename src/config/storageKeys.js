@@ -27,7 +27,6 @@ export const STORAGE_KEYS = {
   USER_PERSONALIZATION: `${PREFIX}userPersonalization`,
 
   // User preferences
-  THEME: `${PREFIX}theme`,
   ONBOARDING_COMPLETE: `${PREFIX}onboardingComplete`,
   USER_INTERESTS: `${PREFIX}userInterests`,
 

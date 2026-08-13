@@ -15,7 +15,7 @@ export function SmartImageBlock({
   placeholderType = 'default', // 'city', 'recipe', 'dynasty', 'default'
   placeholderName,
 }) {
-  const { colors, isDark } = useTheme();
+  const { colors } = useTheme();
   const [failed, setFailed] = useState(false);
   const [attemptUri, setAttemptUri] = useState(uri);
   const [triedPicsum, setTriedPicsum] = useState(false);
@@ -88,7 +88,7 @@ export function SmartImageBlock({
     const color = getPlaceholderColor();
 
     return (
-      <View style={[styles.fallback, { backgroundColor: isDark ? colors.surface : '#E8E8E8', borderColor: colors.border }, style]}>
+      <View style={[styles.fallback, { backgroundColor: '#E8E8E8', borderColor: colors.border }, style]}>
         <View style={styles.fallbackDecorative}>
           <View style={[styles.fallbackCircle1, { backgroundColor: `${color}15` }]} />
           <View style={[styles.fallbackCircle2, { backgroundColor: `${color}10` }]} />

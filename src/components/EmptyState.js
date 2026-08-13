@@ -159,7 +159,7 @@ export function EmptyState({
   showChinese = true,
   style,
 }) {
-  const { colors, isDark } = useTheme();
+  const { colors } = useTheme();
   const config = emptyStateVariants[variant] || emptyStateVariants.generic;
 
   const Illustration = config.illustration;

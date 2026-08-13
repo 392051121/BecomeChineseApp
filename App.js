@@ -9,7 +9,7 @@ import { GlobalPaperBackground } from './src/theme/GlobalPaperBackground';
 import { OnboardingScreen, isOnboardingComplete } from './src/screens/OnboardingScreen';
 import { BadgeNotificationProvider } from './src/components/BadgeNotification';
 import { ToastProvider } from './src/components/Toast';
-import { ThemeProvider, useTheme } from './src/theme/ThemeContext';
+import { ThemeProvider } from './src/theme/ThemeContext';
 import { ErrorBoundary } from './src/components/ErrorBoundary';
 import { OfflineBanner } from './src/components/OfflineBanner';
 
@@ -20,7 +20,6 @@ SplashScreen.preventAutoHideAsync().catch(() => {
 function AppContent() {
   const [isReady, setIsReady] = useState(false);
   const [showOnboarding, setShowOnboarding] = useState(false);
-  const { isDark } = useTheme();
 
   useEffect(() => {
     async function prepare() {
@@ -54,7 +53,7 @@ function AppContent() {
       <View style={{ flex: 1 }}>
         <GlobalPaperBackground />
         <OnboardingScreen onComplete={handleOnboardingComplete} />
-        <StatusBar style={isDark ? "light" : "dark"} translucent backgroundColor="transparent" />
+        <StatusBar style="dark" translucent backgroundColor="transparent" />
       </View>
     );
   }
@@ -68,7 +67,7 @@ function AppContent() {
           <RootTabs />
         </BadgeNotificationProvider>
       </ToastProvider>
-      <StatusBar style={isDark ? "light" : "dark"} translucent backgroundColor="transparent" />
+      <StatusBar style="dark" translucent backgroundColor="transparent" />
     </View>
   );
 }

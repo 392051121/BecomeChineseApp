@@ -41,7 +41,7 @@ const steps = [
 ];
 
 export function OnboardingScreen({ onComplete }) {
-  const { colors, isDark } = useTheme();
+  const { colors } = useTheme();
   const [currentStep, setCurrentStep] = useState(0);
   const [selectedInterests, setSelectedInterests] = useState(['comprehensive']);
   const [selectedGoal, setSelectedGoal] = useState('casual');

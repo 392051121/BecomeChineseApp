@@ -27,7 +27,7 @@ const toastColors = {
 };
 
 function ToastItem({ toast, onDismiss }) {
-  const { colors, isDark } = useTheme();
+  const { colors } = useTheme();
   const slideAnim = useRef(new Animated.Value(-100)).current;
   const opacityAnim = useRef(new Animated.Value(0)).current;
   const Icon = toastIcons[toast.type] || Info;
@@ -78,8 +78,8 @@ function ToastItem({ toast, onDismiss }) {
       style={[
         styles.toast,
         {
-          backgroundColor: isDark ? 'rgba(40, 40, 40, 0.95)' : 'rgba(255, 255, 255, 0.95)',
-          borderColor: isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(51, 51, 51, 0.08)',
+          backgroundColor: 'rgba(255, 255, 255, 0.95)',
+          borderColor: 'rgba(51, 51, 51, 0.08)',
           transform: [{ translateY: slideAnim }],
           opacity: opacityAnim,
         },
@@ -89,7 +89,7 @@ function ToastItem({ toast, onDismiss }) {
         <Icon size={18} color={color} strokeWidth={2} />
       </View>
       <View style={styles.content}>
-        {toast.title && (
+        {!!toast.title && (
           <Text style={[styles.title, { color: colors.text }]}>{toast.title}</Text>
         )}
         <Text style={[styles.message, { color: colors.mutedText }]}>{toast.message}</Text>

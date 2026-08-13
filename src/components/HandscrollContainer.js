@@ -14,7 +14,7 @@ export function HandscrollContainer({
   initialScrollOffset = 0,
   scrollRef,
 }) {
-  const { colors, isDark } = useTheme();
+  const { colors } = useTheme();
   const left = useRef(new Animated.Value(0.5)).current;
   const right = useRef(new Animated.Value(0.5)).current;
   const fade = useRef(new Animated.Value(0)).current;
@@ -75,7 +75,7 @@ export function HandscrollContainer({
           },
         ]}
       />
-      <Animated.View pointerEvents="none" style={[styles.veil, { backgroundColor: isDark ? 'rgba(30, 28, 26, 0.88)' : 'rgba(255, 252, 248, 0.88)' }, { opacity: veil.interpolate({ inputRange: [0, 1], outputRange: [0, 0.08] }) }]} />
+      <Animated.View pointerEvents="none" style={[styles.veil, { backgroundColor: 'rgba(255, 252, 248, 0.88)' }, { opacity: veil.interpolate({ inputRange: [0, 1], outputRange: [0, 0.08] }) }]} />
       <Animated.View style={[styles.panel, { backgroundColor: colors.surface }, styles.leftPanel, { transform: [{ translateX: left.interpolate({ inputRange: [0, 0.5], outputRange: [-80, 0] }) }], opacity: left.interpolate({ inputRange: [0, 0.5], outputRange: [0, 1] }) }]} />
       <Animated.View style={[styles.panel, { backgroundColor: colors.surface }, styles.rightPanel, { transform: [{ translateX: right.interpolate({ inputRange: [0, 0.5], outputRange: [80, 0] }) }], opacity: right.interpolate({ inputRange: [0, 0.5], outputRange: [0, 1] }) }]} />
       <Animated.ScrollView
