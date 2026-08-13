@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState, useCallback } from 'react';
 import { Platform, Pressable, RefreshControl, SafeAreaView, StatusBar, StyleSheet, Text, View } from 'react-native';
-import { CalendarDays, Clock, Map, UtensilsCrossed, ArrowRight, Flame, Target, Bookmark, Trophy, Star, Zap, Scroll, User, BookOpen, ChevronRight, Leaf } from 'lucide-react-native';
+import { CalendarDays, Clock, Map, UtensilsCrossed, ArrowRight, Flame, Bookmark, Star, Zap, Scroll, User, BookOpen, ChevronRight, Leaf } from 'lucide-react-native';
 import { useNavigation } from '@react-navigation/native';
 
 import { getCulturalAssets, getProvinceConnectionMap, getRecentlyViewed, todayKey } from '../utils/culturalAssets';
@@ -16,12 +16,13 @@ import { DailyTasksModal, DailyTasksButton } from '../components/DailyTasksModal
 import { getTasksSummary } from '../utils/dailyTasks';
 import { SkeletonHomeScreen } from '../components/Skeleton';
 import { calculateTotalXP, getXPLevel } from '../data/badges';
-import { getXPProgress } from '../config/gamification';
+import { getXPLevel } from '../config/gamification';
 import { getCurrentSolarTerm, getCurrentSeason, getSeasonalColors, getFestivalBonus } from '../utils/solarTermContent';
 import { PaperTexture } from '../components/PaperTexture';
 import { theme } from '../theme/theme';
 import { useTheme } from '../theme/ThemeContext';
 import { navigateApp } from '../utils/navigation';
+import { availablePaths } from '../components/PathsSection';
 
 const quickActions = [
   { id: 'history', label: 'History', labelCn: '历史', icon: Scroll, target: 'History', color: '#B33B24', seasonKey: 'autumn', prose: 'Rise and fall of dynasties' },
@@ -115,7 +116,6 @@ export function HomeScreen() {
 
   const totalXP = useMemo(() => calculateTotalXP(userStats), [userStats]);
   const xpLevel = useMemo(() => getXPLevel(totalXP), [totalXP]);
-  const xpProgress = useMemo(() => getXPProgress(totalXP), [totalXP]);
 
   // Hero seasonal styling
   const seasonText = seasonMeta?.seasonColors?.text || '·';
@@ -182,11 +182,10 @@ export function HomeScreen() {
             <View style={styles.heroGlow} />
             <PaperTexture style={styles.heroTexture} intensity="strong" idPrefix="home_hero" />
 
-            {/* 等级小徽章 */}
+            {/* 顶部：节日标记为主，等级弱化为角落小字 */}
             <View style={styles.heroTopRow}>
-              <View style={styles.heroLevelBadge}>
-                <Trophy size={11} color="#F5D78A" strokeWidth={2.5} />
-                <Text style={styles.heroLevelText}>Lv.{xpLevel.level}</Text>
+              <View style={styles.heroKickerBadge}>
+                <Text style={styles.heroKickerText}>TODAY'S SOLAR TERM · 今日节气</Text>
               </View>
               {isFestival && (
                 <View style={styles.heroFestivalBadge}>
@@ -209,12 +208,11 @@ export function HomeScreen() {
               {heroSummary || 'Learn Chinese culture, one story at a time.'}
             </Text>
 
-            {/* XP 进度 (并入 Hero 底部) */}
+            {/* XP 进度（弱化为一行轻量小字） */}
             <View style={styles.heroFooter}>
-              <View style={styles.heroXpTrack}>
-                <View style={[styles.heroXpFill, { width: `${xpProgress.percentage}%` }]} />
-              </View>
-              <Text style={styles.heroXpLabel}>{totalXP} XP · {xpProgress.percentage}%</Text>
+              <Text style={styles.heroXpLabel}>
+                {xpLevel.title || 'Explorer'} · {totalXP} XP
+              </Text>
             </View>
 
             {/* 角落印章 */}
@@ -223,40 +221,38 @@ export function HomeScreen() {
             </View>
           </Pressable>
 
-          {/* ============ 今日任务卡 ============ */}
+          {/* ============ 今日任务卡（轻量描边，弱化任务感） ============ */}
           <Pressable
-            style={({ pressed }) => [styles.taskCard, pressed && styles.taskCardPressed]}
+            style={({ pressed }) => [styles.taskCard, { borderColor: colors.borderAccent, backgroundColor: colors.surface }, pressed && styles.taskCardPressed]}
             onPress={() => navigateApp(navigation, 'Seasons')}
             accessibilityRole="button"
             accessibilityLabel={!solvedToday ? "Priority task: Complete daily quiz" : "Today's task completed"}
           >
             <View style={[styles.taskIconWrap, solvedToday && styles.taskIconDone]}>
               {solvedToday ? (
-                <Star size={18} color="#FFFFFF" strokeWidth={2.5} fill="#FFFFFF" />
+                <Star size={18} color={colors.primary} strokeWidth={2.5} fill={colors.primary} />
               ) : (
-                <Zap size={18} color="#FFFFFF" strokeWidth={2.5} fill="#FFFFFF" />
+                <Zap size={18} color={colors.primary} strokeWidth={2.5} fill={colors.primary} />
               )}
             </View>
             <View style={styles.taskInfo}>
-              <Text style={styles.taskTitle}>
+              <Text style={[styles.taskTitle, { color: colors.text }]}>
                 {solvedToday ? "Today's Quiz Done" : 'Daily Quiz'}
               </Text>
-              <Text style={styles.taskTitleCn}>
+              <Text style={[styles.taskTitleCn, { color: colors.primary }]}>
                 {solvedToday ? '今日已完成' : '每日一问'}
               </Text>
             </View>
             <View style={styles.taskStats}>
-              <View style={styles.taskStatItem}>
-                <Flame size={13} color="#F5D78A" strokeWidth={2} />
-                <Text style={styles.taskStatValue}>{streak}</Text>
-              </View>
-              <View style={styles.taskStatItem}>
-                <Target size={13} color="#F5D78A" strokeWidth={2} />
-                <Text style={styles.taskStatValue}>{solved}</Text>
-              </View>
+              {!solvedToday && (
+                <View style={styles.taskStatItem}>
+                  <Flame size={13} color={colors.primary} strokeWidth={2} />
+                  <Text style={[styles.taskStatValue, { color: colors.primary }]}>{streak}</Text>
+                </View>
+              )}
             </View>
             {!solvedToday && (
-              <ChevronRight size={18} color="rgba(255,255,255,0.85)" strokeWidth={2.5} />
+              <ChevronRight size={18} color={colors.mutedText} strokeWidth={2.5} />
             )}
           </Pressable>
 
@@ -297,6 +293,40 @@ export function HomeScreen() {
               );
             })}
           </View>
+
+          {/* ============ Featured Journey（首推旅程） ============ */}
+          {(() => {
+            const featured = availablePaths.find((p) => p.id === 'silk-road') || availablePaths[0];
+            if (!featured) return null;
+            const FeaturedIcon = featured.icon;
+            return (
+              <Pressable
+                style={({ pressed }) => [styles.featuredJourneyCard, { borderColor: colors.border }, pressed && styles.featuredJourneyPressed]}
+                onPress={() => navigation.navigate('PathDetail', { pathId: featured.id })}
+                accessibilityRole="button"
+                accessibilityLabel={`Featured journey: ${featured.title}`}
+              >
+                <View style={[styles.featuredJourneyIcon, { backgroundColor: `${featured.color}18` }]}>
+                  <FeaturedIcon size={22} color={featured.color} strokeWidth={2} />
+                </View>
+                <View style={styles.featuredJourneyContent}>
+                  <Text style={[styles.featuredJourneyKicker, { color: colors.primary }]}>FEATURED JOURNEY · 特色旅程</Text>
+                  <Text style={[styles.featuredJourneyTitle, { color: colors.text }]}>{featured.title}</Text>
+                  <Text style={[styles.featuredJourneyDesc, { color: colors.mutedText }]} numberOfLines={2}>
+                    {featured.description}
+                  </Text>
+                  <View style={styles.featuredJourneySteps}>
+                    {featured.steps.slice(0, 3).map((s, i) => (
+                      <Text key={`${s.type}-${s.id}`} style={styles.featuredJourneyStep}>
+                        {i > 0 ? '  →  ' : ''}{s.label}
+                      </Text>
+                    ))}
+                  </View>
+                </View>
+                <ArrowRight size={18} color={colors.mutedText} strokeWidth={2} />
+              </Pressable>
+            );
+          })()}
 
           {/* ============ 快捷入口行 ============ */}
           <View style={styles.quickRow}>
@@ -490,22 +520,15 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 18,
   },
-  heroLevelBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 5,
-    backgroundColor: 'rgba(245, 215, 138, 0.16)',
-    paddingHorizontal: 10,
-    paddingVertical: 5,
-    borderRadius: 999,
-    borderWidth: 0.5,
-    borderColor: 'rgba(245, 215, 138, 0.4)',
+  heroKickerBadge: {
+    paddingHorizontal: 0,
+    paddingVertical: 2,
   },
-  heroLevelText: {
-    color: '#F5D78A',
-    fontSize: 12,
-    fontWeight: '800',
-    letterSpacing: 0.3,
+  heroKickerText: {
+    color: 'rgba(245, 215, 138, 0.85)',
+    fontSize: 11,
+    fontWeight: '700',
+    letterSpacing: 1.6,
   },
   heroFestivalBadge: {
     flexDirection: 'row',
@@ -572,23 +595,12 @@ const styles = StyleSheet.create({
   },
   heroFooter: {
     marginTop: 'auto',
-  },
-  heroXpTrack: {
-    height: 4,
-    borderRadius: 2,
-    backgroundColor: 'rgba(255,255,255,0.16)',
-    overflow: 'hidden',
-  },
-  heroXpFill: {
-    height: 4,
-    borderRadius: 2,
-    backgroundColor: '#F5D78A',
+    paddingTop: 10,
   },
   heroXpLabel: {
-    color: 'rgba(255,255,255,0.72)',
-    fontSize: 10,
+    color: 'rgba(255,255,255,0.62)',
+    fontSize: 11,
     fontWeight: '600',
-    marginTop: 6,
     letterSpacing: 0.4,
   },
   heroSeal: {
@@ -617,12 +629,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 12,
     borderRadius: 18,
-    backgroundColor: '#C23A2E',
+    borderWidth: 1,
     padding: 14,
     marginBottom: 6,
     marginTop: 14,
-    ...theme.shadows.medium,
-    shadowColor: '#C23A2E',
+    ...theme.shadows.subtle,
   },
   taskCardPressed: {
     opacity: 0.95,
@@ -634,21 +645,19 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: 'rgba(255,255,255,0.18)',
+    backgroundColor: 'rgba(194, 58, 46, 0.10)',
   },
   taskIconDone: {
-    backgroundColor: 'rgba(212, 145, 74, 0.35)',
+    backgroundColor: 'rgba(184, 115, 51, 0.14)',
   },
   taskInfo: {
     flex: 1,
   },
   taskTitle: {
-    color: '#FFFFFF',
     fontSize: 15,
     fontWeight: '800',
   },
   taskTitleCn: {
-    color: 'rgba(255,255,255,0.75)',
     fontSize: 11,
     fontWeight: '600',
     marginTop: 2,
@@ -665,7 +674,6 @@ const styles = StyleSheet.create({
     gap: 3,
   },
   taskStatValue: {
-    color: '#F5D78A',
     fontSize: 13,
     fontWeight: '800',
   },
@@ -739,6 +747,58 @@ const styles = StyleSheet.create({
     fontSize: 11,
     fontWeight: '500',
     marginTop: 2,
+  },
+
+  // ===== Featured Journey =====
+  featuredJourneyCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    marginTop: 18,
+    borderRadius: 18,
+    borderWidth: 0.5,
+    backgroundColor: theme.colors.card,
+    padding: 14,
+    ...theme.shadows.subtle,
+  },
+  featuredJourneyPressed: {
+    opacity: 0.94,
+    transform: [{ scale: 0.99 }],
+  },
+  featuredJourneyIcon: {
+    width: 46,
+    height: 46,
+    borderRadius: 13,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  featuredJourneyContent: {
+    flex: 1,
+  },
+  featuredJourneyKicker: {
+    fontSize: 9,
+    fontWeight: '800',
+    letterSpacing: 1.2,
+    marginBottom: 3,
+  },
+  featuredJourneyTitle: {
+    fontSize: 16,
+    fontWeight: '800',
+  },
+  featuredJourneyDesc: {
+    fontSize: 11,
+    fontWeight: '500',
+    marginTop: 2,
+  },
+  featuredJourneySteps: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    marginTop: 6,
+  },
+  featuredJourneyStep: {
+    fontSize: 10,
+    fontWeight: '600',
+    color: theme.colors.mutedText,
   },
 
   // ===== 快捷入口 =====

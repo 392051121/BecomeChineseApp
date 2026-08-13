@@ -18,10 +18,10 @@ const pathConfigs = {
     icon: MapPin,
     color: '#C4A35A',
     steps: [
-      { type: 'city', id: 'xian', label: 'Xi\'an (Chang\'an)', labelCn: '西安（长安）' },
-      { type: 'dynasty', id: 'han', label: 'Han Dynasty', labelCn: '汉朝' },
-      { type: 'dynasty', id: 'tang', label: 'Tang Dynasty', labelCn: '唐朝' },
-      { type: 'recipe', id: 'yangrou-paomo', label: 'Yangrou Paomo', labelCn: '羊肉泡馍' },
+      { type: 'city', id: 'xian', label: 'Xi\'an (Chang\'an)', labelCn: '西安（长安）', reason: 'The Silk Road began at Chang\'an, the Han and Tang capital where merchants set out west.', reasonCn: '丝绸之路的起点，汉唐都城，商队由此西行。' },
+      { type: 'dynasty', id: 'han', label: 'Han Dynasty', labelCn: '汉朝', reason: 'The Han dynasty first opened the trade corridor that gave the Silk Road its name.', reasonCn: '汉朝最早打通了这条以丝绸命名的贸易通道。' },
+      { type: 'dynasty', id: 'tang', label: 'Tang Dynasty', labelCn: '唐朝', reason: 'Under the Tang, the route reached its peak with a cosmopolitan Chang\'an.', reasonCn: '唐代丝绸之路达到鼎盛，长安成为世界都会。' },
+      { type: 'recipe', id: 'yangrou-paomo', label: 'Yangrou Paomo', labelCn: '羊肉泡馍', reason: 'A Xi\'an staple that still echoes the roadside fare fed to travelling merchants.', reasonCn: '西安名吃，仍映射着当年商旅路上的风味。' },
     ],
   },
   tangPoetry: {
@@ -33,10 +33,10 @@ const pathConfigs = {
     icon: Scroll,
     color: '#E2B05E',
     steps: [
-      { type: 'dynasty', id: 'tang', label: 'Tang Dynasty', labelCn: '唐朝' },
-      { type: 'person', id: 'libai', label: 'Li Bai', labelCn: '李白' },
-      { type: 'person', id: 'dufu', label: 'Du Fu', labelCn: '杜甫' },
-      { type: 'city', id: 'xian', label: 'Xi\'an', labelCn: '西安' },
+      { type: 'dynasty', id: 'tang', label: 'Tang Dynasty', labelCn: '唐朝', reason: 'The Tang is often called China\'s golden age of poetry.', reasonCn: '唐朝被誉为中国诗歌的黄金时代。' },
+      { type: 'person', id: 'libai', label: 'Li Bai', labelCn: '李白', reason: 'Li Bai\'s uninhibited verse embodies the Tang\'s open, confident spirit.', reasonCn: '李白飘逸豪放的诗风，正是盛唐气象的写照。' },
+      { type: 'person', id: 'dufu', label: 'Du Fu', labelCn: '杜甫', reason: 'Du Fu\'s reflective poems trace the dynasty\'s turbulent later years.', reasonCn: '杜甫沉郁的诗句，记录着唐朝后期的动荡。' },
+      { type: 'city', id: 'xian', label: 'Xi\'an', labelCn: '西安', reason: 'Chang\'an, today\'s Xi\'an, was where these poets lived, met, and wrote.', reasonCn: '长安（今西安）正是诗人们生活、游历、创作之地。' },
     ],
   },
   imperialBeijing: {
@@ -48,10 +48,10 @@ const pathConfigs = {
     icon: Clock,
     color: '#9C3A2B',
     steps: [
-      { type: 'city', id: 'beijing', label: 'Beijing', labelCn: '北京' },
-      { type: 'dynasty', id: 'ming', label: 'Ming Dynasty', labelCn: '明朝' },
-      { type: 'dynasty', id: 'qing', label: 'Qing Dynasty', labelCn: '清朝' },
-      { type: 'recipe', id: 'peking-duck', label: 'Peking Duck', labelCn: '北京烤鸭' },
+      { type: 'city', id: 'beijing', label: 'Beijing', labelCn: '北京', reason: 'Beijing became the permanent capital under the Ming and Qing emperors.', reasonCn: '明清两代将北京定为都城。' },
+      { type: 'dynasty', id: 'ming', label: 'Ming Dynasty', labelCn: '明朝', reason: 'The Ming moved the capital north and built the Forbidden City.', reasonCn: '明朝迁都北京，营建紫禁城。' },
+      { type: 'dynasty', id: 'qing', label: 'Qing Dynasty', labelCn: '清朝', reason: 'The Qing inherited and expanded the imperial capital\'s grandeur.', reasonCn: '清朝继承并扩展了这座帝都的恢弘。' },
+      { type: 'recipe', id: 'peking-duck', label: 'Peking Duck', labelCn: '北京烤鸭', reason: 'A dish born of the capital\'s imperial kitchens and banquets.', reasonCn: '源自帝都御膳与宴席的名菜。' },
     ],
   },
   sichuanFlavors: {
@@ -109,10 +109,10 @@ const pathConfigs = {
     icon: Clock,
     color: '#4A4A4A',
     steps: [
-      { type: 'dynasty', id: 'qin', label: 'Qin Dynasty', labelCn: '秦朝' },
-      { type: 'city', id: 'xian', label: 'Xi\'an (Xianyang)', labelCn: '西安（咸阳）' },
-      { type: 'recipe', id: 'biang-biang-noodles', label: 'Biang Biang Noodles', labelCn: '油泼面' },
-      { type: 'dynasty', id: 'han', label: 'Han Dynasty Legacy', labelCn: '汉朝传承' },
+      { type: 'dynasty', id: 'qin', label: 'Qin Dynasty', labelCn: '秦朝', reason: 'The Qin first unified China\'s warring states under a single emperor.', reasonCn: '秦朝首次统一诸侯国，建立大一统帝制。' },
+      { type: 'city', id: 'xian', label: 'Xi\'an (Xianyang)', labelCn: '西安（咸阳）', reason: 'Xianyang, near Xi\'an, was the Qin capital and the seat of its court.', reasonCn: '咸阳（今西安附近）是秦都，王朝权力中心。' },
+      { type: 'recipe', id: 'biang-biang-noodles', label: 'Biang Biang Noodles', labelCn: '油泼面', reason: 'A hearty Shaanxi noodle rooted in the region\'s ancient wheat traditions.', reasonCn: '陕西豪迈面食，源于这片土地的古老麦作传统。' },
+      { type: 'dynasty', id: 'han', label: 'Han Dynasty Legacy', labelCn: '汉朝传承', reason: 'The Han built on Qin unification to shape what "Chinese" would come to mean.', reasonCn: '汉承秦制，奠定了后世对华夏的认知。' },
     ],
   },
   festivalFoods: {
@@ -124,10 +124,10 @@ const pathConfigs = {
     icon: UtensilsCrossed,
     color: '#C41E3A',
     steps: [
-      { type: 'recipe', id: 'dumplings', label: 'Dumplings (Spring Festival)', labelCn: '饺子（春节）' },
-      { type: 'recipe', id: 'zongzi', label: 'Zongzi (Dragon Boat)', labelCn: '粽子（端午）' },
-      { type: 'recipe', id: 'mooncake', label: 'Mooncake (Mid-Autumn)', labelCn: '月饼（中秋）' },
-      { type: 'recipe', id: 'tangyuan', label: 'Tangyuan (Lantern)', labelCn: '汤圆（元宵）' },
+      { type: 'recipe', id: 'dumplings', label: 'Dumplings (Spring Festival)', labelCn: '饺子（春节）', reason: 'Dumplings symbolise wealth and family reunion at the new year.', reasonCn: '饺子象征团圆与富足，是新春的必备。' },
+      { type: 'recipe', id: 'zongzi', label: 'Zongzi (Dragon Boat)', labelCn: '粽子（端午）', reason: 'Zongzi are wrapped for the Dragon Boat Festival, honouring poet Qu Yuan.', reasonCn: '端午包粽子，纪念诗人屈原。' },
+      { type: 'recipe', id: 'mooncake', label: 'Mooncake (Mid-Autumn)', labelCn: '月饼（中秋）', reason: 'Mooncakes are shared under the full moon to celebrate reunion.', reasonCn: '中秋月圆，月饼寄托团圆之意。' },
+      { type: 'recipe', id: 'tangyuan', label: 'Tangyuan (Lantern)', labelCn: '汤圆（元宵）', reason: 'Sweet tangyuan round out the Lantern Festival as a wish for wholeness.', reasonCn: '元宵吃汤圆，寓意圆满。' },
     ],
   },
   ancientPhilosophers: {

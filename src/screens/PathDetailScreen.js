@@ -119,6 +119,11 @@ function StepCard({ step, index, isCompleted, isCurrent, isLocked, onPress }) {
         <View style={styles.stepContent}>
           <Text style={[styles.stepName, isLocked && styles.stepNameLocked]}>{step.label}</Text>
           <Text style={[styles.stepNameCn, isLocked && styles.stepNameCnLocked]}>{step.labelCn}</Text>
+          {step.reason ? (
+            <Text style={[styles.stepReason, isLocked && styles.stepReasonLocked]} numberOfLines={2}>
+              {step.reason}
+            </Text>
+          ) : null}
         </View>
       </View>
       {isLocked ? (
@@ -516,6 +521,16 @@ const styles = StyleSheet.create({
   },
   stepNameCnLocked: {
     color: theme.colors.mutedText,
+  },
+  stepReason: {
+    color: theme.colors.mutedText,
+    fontSize: 11.5,
+    lineHeight: 17,
+    fontWeight: '400',
+    marginTop: 3,
+  },
+  stepReasonLocked: {
+    opacity: 0.6,
   },
 
   // Reward Card
