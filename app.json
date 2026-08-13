@@ -5,8 +5,12 @@
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
+    "scheme": "becomechinese",
     "userInterfaceStyle": "light",
     "newArchEnabled": false,
+    "description": "Discover the beauty of Chinese culture through daily solar terms, an interactive exploration map, authentic recipes, and a Chinese name generator. Learn, explore, and share — no account required, works fully offline.",
+    "primaryColor": "#B33B24",
+    "backgroundColor": "#FDFBF7",
     "splash": {
       "image": "./assets/splash-icon.png",
       "resizeMode": "contain",
@@ -19,7 +23,12 @@
     },
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.becomechinese.atlas"
+      "bundleIdentifier": "com.becomechinese.atlas",
+      "buildNumber": "1",
+      "infoPlist": {
+        "CFBundleDisplayName": "Become Chinese",
+        "ITSAppUsesNonExemptEncryption": false
+      }
     },
     "android": {
       "adaptiveIcon": {
@@ -27,13 +36,24 @@
         "backgroundColor": "#FDFBF7"
       },
       "edgeToEdgeEnabled": true,
-      "package": "com.becomechinese.atlas"
+      "package": "com.becomechinese.atlas",
+      "versionCode": 1,
+      "permissions": [
+        "android.permission.POST_NOTIFICATIONS"
+      ]
     },
     "web": {
       "favicon": "./assets/favicon.png"
     },
     "plugins": [
-      "expo-font"
+      "expo-font",
+      [
+        "expo-notifications",
+        {
+          "color": "#B33B24",
+          "defaultChannel": "daily-solar-term"
+        }
+      ]
     ],
     "extra": {
       "eas": {
