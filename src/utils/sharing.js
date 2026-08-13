@@ -1,26 +1,32 @@
+import { Platform, Share } from 'react-native';
 import * as Sharing from 'expo-sharing';
-import * as FileSystem from 'expo-file-system';
 import { captureRef } from 'react-native-view-shot';
 import { logger } from './errorHandling';
 
 /**
- * Share text content via native share dialog
+ * Share text content via the native share sheet.
+ *
+ * Expo SDK 54's expo-file-system no longer exposes writeAsStringAsync/cacheDirectory
+ * on the default export (they throw at runtime). Text sharing should use RN Share.
  */
 export async function shareText(content, title = 'BecomeChinese') {
   try {
-    // expo-sharing requires a file URI, so we need to create a temp file
-    const fileUri = `${FileSystem.cacheDirectory}share.txt`;
-    await FileSystem.writeAsStringAsync(fileUri, content);
+    const message = typeof content === 'string' ? content.trim() : '';
+    if (!message) return false;
 
-    if (await Sharing.isAvailableAsync()) {
-      await Sharing.shareAsync(fileUri, {
-        dialogTitle: title,
-        mimeType: 'text/plain',
-        UTI: 'public.plain-text',
-      });
-    }
+    const result = await Share.share(
+      Platform.OS === 'ios'
+        ? { message, title }
+        : { message, title, subject: title }
+    );
+
+    // User cancelled the sheet is not an error.
+    if (result?.action === Share.dismissedAction) return false;
     return true;
   } catch (error) {
+    // Some platforms reject the promise on cancel.
+    const msg = String(error?.message || error || '');
+    if (/cancel/i.test(msg)) return false;
     logger.error('Sharing', 'Share text error', error);
     return false;
   }
@@ -100,15 +106,16 @@ export function generateQuizShareText(data) {
  */
 export function generateCityShareText(data) {
   const { nameCn, nameEn, province, tagline, highlights } = data;
+  const highlightList = Array.isArray(highlights) ? highlights : [];
 
   const lines = [
     `🀄 BecomeChinese City`,
     ``,
     `${nameCn} · ${nameEn}`,
-    `📍 ${province}`,
-    `${tagline}`,
+    province ? `📍 ${province}` : '',
+    tagline || '',
     ``,
-    highlights.length > 0 ? `✨ Highlights: ${highlights.slice(0, 3).join(', ')}` : '',
+    highlightList.length > 0 ? `✨ Highlights: ${highlightList.slice(0, 3).join(', ')}` : '',
     ``,
     `Discover more cities and their stories.`,
   ];

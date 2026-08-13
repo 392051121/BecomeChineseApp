@@ -174,7 +174,7 @@ export const InkSplashOverlay = memo(function InkSplashOverlay({
           },
         ]}
       />
-      {message && (
+      {!!message && (
         <Animated.Text style={[styles.splashMessage, { opacity: opacityAnim }]}>
           {message}
         </Animated.Text>

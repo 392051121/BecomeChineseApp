@@ -63,7 +63,7 @@ export function InkWashShareCard({
       {/* Content */}
       <View style={inkStyles.content}>
         {/* Header with level badge */}
-        {level && (
+        {level != null && level !== '' && (
           <View style={[inkStyles.levelBadge, { backgroundColor: colors.cinnabarGlow, borderColor: colors.primary }]}>
             <Text style={[inkStyles.levelText, { color: colors.primary }]}>Lv.{level}</Text>
           </View>
@@ -270,12 +270,12 @@ export function SealStampShareCard({
 
         {/* Stats row */}
         <View style={sealStyles.statsRow}>
-          {xp && (
+          {xp != null && xp !== '' && (
             <View style={[sealStyles.statPill, { backgroundColor: colors.cinnabarGlow }]}>
               <Text style={[sealStyles.statPillText, { color: colors.primary }]}>+{xp} XP</Text>
             </View>
           )}
-          {rank && (
+          {rank != null && rank !== '' && (
             <View style={[sealStyles.statPill, { backgroundColor: colors.inkWash }]}>
               <Text style={[sealStyles.statPillText, { color: colors.mutedText }]}>Rank {rank}</Text>
             </View>
@@ -477,12 +477,12 @@ export function PaperCutShareCard({
 
         {/* Stats */}
         <View style={paperStyles.statsRow}>
-          {level && (
+          {level != null && level !== '' && (
             <View style={[paperStyles.statBox, { borderColor: colors.primary }]}>
               <Text style={[paperStyles.statValue, { color: colors.primary }]}>Lv.{level}</Text>
             </View>
           )}
-          {xp && (
+          {xp != null && xp !== '' && (
             <View style={[paperStyles.statBox, { backgroundColor: colors.cinnabarGlow, borderColor: colors.border }]}>
               <Text style={[paperStyles.statValue, { color: colors.primary }]}>+{xp} XP</Text>
             </View>

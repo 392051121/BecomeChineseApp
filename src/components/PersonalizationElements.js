@@ -134,7 +134,7 @@ export function AvatarFrame({
       </View>
 
       {/* Level badge */}
-      {showLevel && level && (
+      {showLevel && level != null && level !== '' && (
         <View style={[styles.levelBadge, { backgroundColor: frame.borderColor || colors.cinnabarGlow }]}>
           <Text style={styles.levelText}>{level}</Text>
         </View>

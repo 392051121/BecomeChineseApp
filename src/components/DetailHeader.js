@@ -45,7 +45,7 @@ export function DetailHeader({
         <Text style={[styles.backText, { color: colors.text }]}>Back</Text>
       </Pressable>
 
-      {title && (
+      {!!title && (
         <Text style={[styles.title, { color: colors.text }]} numberOfLines={1}>
           {title}
         </Text>

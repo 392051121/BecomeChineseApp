@@ -116,24 +116,26 @@ export async function shareContent(uri, options = {}) {
 }
 
 /**
- * Share text content
+ * Share text content via the native share sheet.
+ * Do not route text through expo-file-system — Expo 54 deprecated that API path.
  */
 export async function shareText(text, title = 'Share') {
   try {
-    // For text sharing, we'll use a different approach
-    // Since expo-sharing doesn't support text directly, we create a simple text file
-    const { FileSystem } = require('expo-file-system');
+    const { Platform, Share } = require('react-native');
+    const message = typeof text === 'string' ? text.trim() : '';
+    if (!message) return false;
 
-    const fileUri = `${FileSystem.cacheDirectory}share.txt`;
-    await FileSystem.writeAsStringAsync(fileUri, text);
+    const result = await Share.share(
+      Platform.OS === 'ios'
+        ? { message, title }
+        : { message, title, subject: title }
+    );
 
-    await shareContent(fileUri, {
-      dialogTitle: title,
-      mimeType: 'text/plain',
-    });
-
+    if (result?.action === Share.dismissedAction) return false;
     return true;
   } catch (e) {
+    const msg = String(e?.message || e || '');
+    if (/cancel/i.test(msg)) return false;
     console.error('Failed to share text:', e);
     return false;
   }
