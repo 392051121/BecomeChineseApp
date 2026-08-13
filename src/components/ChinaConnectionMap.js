@@ -96,30 +96,23 @@ export function ChinaConnectionMap({
     }));
   }, [activeIds]);
 
-  // Measure layout width so SVG has real pixel height (avoids blank maps from height:100%).
-  const [layoutWidth, setLayoutWidth] = useState(0);
-  const measuredWidth = layoutWidth > 0 ? layoutWidth : 320;
-  const svgHeight = Math.round((measuredWidth * VIEWBOX_HEIGHT) / VIEWBOX_WIDTH);
   const activeCount = provinces.filter((p) => p.active).length;
 
   return (
     <View
       style={styles.wrap}
-      onLayout={(e) => {
-        const w = e?.nativeEvent?.layout?.width ?? 0;
-        if (w > 0 && Math.abs(w - layoutWidth) > 0.5) setLayoutWidth(w);
-      }}
       accessible
       accessibilityLabel="China provincial map"
       accessibilityRole="image"
       accessibilityHint={`Shows ${activeCount} of ${provinces.length} provinces highlighted`}
     >
-      <Svg
-        width={measuredWidth}
-        height={svgHeight}
-        viewBox={`0 0 ${VIEWBOX_WIDTH} ${VIEWBOX_HEIGHT}`}
-        preserveAspectRatio="xMidYMid meet"
-      >
+      <View style={styles.svgCanvas}>
+        <Svg
+          width="100%"
+          height="100%"
+          viewBox={`0 0 ${VIEWBOX_WIDTH} ${VIEWBOX_HEIGHT}`}
+          preserveAspectRatio="xMidYMid meet"
+        >
         {/* Ocean / paper background */}
         <Rect
           x="0"
@@ -228,6 +221,7 @@ export function ChinaConnectionMap({
           </SvgText>
         </G>
       </Svg>
+      </View>
 
       {/* Caption */}
       <View pointerEvents="none" style={styles.caption}>
@@ -252,13 +246,18 @@ export function ChinaConnectionMap({
 const styles = StyleSheet.create({
   wrap: {
     width: '100%',
-    aspectRatio: VIEWBOX_WIDTH / VIEWBOX_HEIGHT,
-    minHeight: 280,
     backgroundColor: '#FBF7F1',
     borderRadius: 8,
     borderWidth: 0.5,
     borderColor: theme.colors.border,
     overflow: 'hidden',
+  },
+  // Fixed-height canvas so the diagram never collapses to 0 height (which
+  // happened with aspectRatio inside scroll/卷-axis containers). Matches the
+  // proven InteractiveChinaMap pattern: SVG width/height 100% fills this box.
+  svgCanvas: {
+    width: '100%',
+    height: 340,
   },
   caption: {
     position: 'absolute',

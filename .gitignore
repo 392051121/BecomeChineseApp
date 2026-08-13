@@ -52,3 +52,6 @@ yarn-error.*
 
 # workspace memory (local-only, never commit)
 .workbuddy/
+
+# local gradle user home (built on this machine for APK packaging)
+.gradle-home/

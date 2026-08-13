@@ -293,7 +293,16 @@ export function TravelScreen({ route }) {
     if (!city) return;
     setActiveCityId(city.id);
     setExplorationCityId(city.id);
-  }, [pendingCityId, navigation]);
+    // Scroll so the activated city card is actually visible — deep links from
+    // History/Dynasty must land on the region, not silently sit off-screen.
+    const idx = filteredCities.findIndex((c) => c.id === pendingCityId);
+    if (idx >= 0 && listRef.current) {
+      // Header + search + lead card account for ~210px; each card ~300px tall.
+      setTimeout(() => {
+        listRef.current?.scrollToOffset({ offset: Math.max(0, idx * 300 - 210), animated: true });
+      }, 60);
+    }
+  }, [pendingCityId, navigation, filteredCities]);
 
   // Track stamp earning for active city
   useEffect(() => {

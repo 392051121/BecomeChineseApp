@@ -10,27 +10,30 @@ import {
   Text,
   View,
 } from 'react-native';
-import { Sparkles, Clock, Map, UtensilsCrossed, Scroll, Target, Lightbulb, ArrowRight, Check } from 'lucide-react-native';
+import { ArrowRight, Check } from 'lucide-react-native';
 import * as Haptics from 'expo-haptics';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 import { theme } from '../theme/theme';
 import { useTheme } from '../theme/ThemeContext';
 import { PaperTexture } from '../components/PaperTexture';
+import { SealStamp } from '../components/ChineseDecorations';
+import { BrushFoodIcon, BrushMapIcon, BrushFireIcon, BrushTrophyIcon, BrushCalendarIcon, BrushScrollIcon } from '../components/BrushIcons';
 import { STORAGE_KEYS } from '../config/storageKeys';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
+// Icons mapped per interest — custom ink-brush style for a cohesive cultural feel
 const interestOptions = [
-  { id: 'history', label: 'History', labelCn: '历史', icon: Scroll, desc: 'Dynasties, emperors, and timelines' },
-  { id: 'food', label: 'Food', labelCn: '美食', icon: UtensilsCrossed, desc: 'Regional dishes and food culture' },
-  { id: 'places', label: 'Places', labelCn: '城市', icon: Map, desc: 'Cities, landmarks, and local stories' },
-  { id: 'comprehensive', label: 'All Paths', labelCn: '综合', icon: Sparkles, desc: 'Explore everything together' },
+  { id: 'history', label: 'History', labelCn: '历史', icon: BrushScrollIcon, desc: '朝代的脉络' },
+  { id: 'food', label: 'Food', labelCn: '美食', icon: BrushFoodIcon, desc: '风味的坐标' },
+  { id: 'places', label: 'Places', labelCn: '城市', icon: BrushMapIcon, desc: '城市的记忆' },
+  { id: 'comprehensive', label: 'All Paths', labelCn: '综合', icon: BrushFireIcon, desc: '全景式漫游' },
 ];
 
 const goalOptions = [
-  { id: 'casual', label: 'Casual Discovery', labelCn: '轻度了解', icon: Lightbulb, desc: 'A few minutes a day, light browsing' },
-  { id: 'focused', label: 'Focused Learning', labelCn: '深度学习', icon: Target, desc: 'Build knowledge systematically' },
+  { id: 'casual', label: 'Casual Discovery', labelCn: '轻度了解', icon: BrushCalendarIcon, desc: '每天几分钟，轻松浏览' },
+  { id: 'focused', label: 'Focused Learning', labelCn: '深度学习', icon: BrushTrophyIcon, desc: '系统构建知识体系' },
 ];
 
 const steps = [
@@ -52,9 +55,7 @@ export function OnboardingScreen({ onComplete }) {
 
   function goToNextStep() {
     if (currentStep >= steps.length - 1) return;
-
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
-
     Animated.parallel([
       Animated.timing(fadeAnim, { toValue: 0, duration: 150, useNativeDriver: true }),
       Animated.timing(slideAnim, { toValue: -20, duration: 150, useNativeDriver: true }),
@@ -71,13 +72,9 @@ export function OnboardingScreen({ onComplete }) {
   function toggleInterest(id) {
     Haptics.selectionAsync().catch(() => {});
     setSelectedInterests((prev) => {
-      if (id === 'comprehensive') {
-        return ['comprehensive'];
-      }
+      if (id === 'comprehensive') return ['comprehensive'];
       const filtered = prev.filter((i) => i !== 'comprehensive');
-      if (prev.includes(id)) {
-        return filtered.filter((i) => i !== id);
-      }
+      if (prev.includes(id)) return filtered.filter((i) => i !== id);
       return [...filtered, id];
     });
   }
@@ -89,18 +86,11 @@ export function OnboardingScreen({ onComplete }) {
 
   async function handleComplete() {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {});
-
-    const userData = {
-      interests: selectedInterests,
-      goal: selectedGoal,
-      completedAt: new Date().toISOString(),
-    };
-
+    const userData = { interests: selectedInterests, goal: selectedGoal, completedAt: new Date().toISOString() };
     await Promise.all([
       AsyncStorage.setItem(STORAGE_KEYS.ONBOARDING_COMPLETE, 'true'),
       AsyncStorage.setItem(STORAGE_KEYS.USER_INTERESTS, JSON.stringify(userData)),
     ]).catch(() => {});
-
     onComplete(userData);
   }
 
@@ -110,55 +100,56 @@ export function OnboardingScreen({ onComplete }) {
     <SafeAreaView style={styles.safeArea}>
       <PaperTexture intensity="medium" />
 
-      {/* Progress bar */}
+      {/* Progress — seal dot per step */}
       <View style={styles.progressWrap}>
-        <View style={styles.progressTrack}>
-          <View style={[styles.progressFill, { width: `${progress * 100}%` }]} />
+        <View style={styles.stepDots}>
+          {steps.map((s, i) => (
+            <View
+              key={s.id}
+              style={[
+                styles.stepDot,
+                i <= currentStep && styles.stepDotActive,
+                i === currentStep && styles.stepDotCurrent,
+              ]}
+            />
+          ))}
         </View>
-        <Text style={styles.progressText}>{steps[currentStep].title}</Text>
+        <Text style={styles.progressText}>
+          {steps[currentStep].titleCn}
+          <Text style={styles.progressTextEn}>  ·  {steps[currentStep].title}</Text>
+        </Text>
       </View>
 
       {/* Content */}
       <View style={styles.content}>
         <Animated.View style={[styles.animatedContent, { opacity: fadeAnim, transform: [{ translateX: slideAnim }] }]}>
-          {currentStep === 0 && (
-            <WelcomeStep serifFont={serifFont} />
-          )}
-          {currentStep === 1 && (
-            <InterestsStep
-              selectedInterests={selectedInterests}
-              onToggle={toggleInterest}
-            />
-          )}
-          {currentStep === 2 && (
-            <GoalsStep
-              selectedGoal={selectedGoal}
-              onSelect={selectGoal}
-            />
-          )}
-          {currentStep === 3 && (
-            <ReadyStep
-              selectedInterests={selectedInterests}
-              selectedGoal={selectedGoal}
-              serifFont={serifFont}
-            />
-          )}
+          {currentStep === 0 && <WelcomeStep serifFont={serifFont} />}
+          {currentStep === 1 && <InterestsStep selectedInterests={selectedInterests} onToggle={toggleInterest} />}
+          {currentStep === 2 && <GoalsStep selectedGoal={selectedGoal} onSelect={selectGoal} />}
+          {currentStep === 3 && <ReadyStep selectedInterests={selectedInterests} selectedGoal={selectedGoal} serifFont={serifFont} />}
         </Animated.View>
       </View>
 
       {/* Bottom actions */}
       <View style={styles.bottomBar}>
-        {currentStep < steps.length - 1 ? (
-          <Pressable style={styles.nextBtn} onPress={goToNextStep} accessibilityRole="button" accessibilityLabel="Continue" accessibilityHint="Double tap to go to next step">
-            <Text style={styles.nextBtnText}>Continue</Text>
+        <Pressable
+          style={({ pressed }) => [styles.nextBtn, pressed && styles.nextBtnPressed]}
+          onPress={currentStep < steps.length - 1 ? goToNextStep : handleComplete}
+          accessibilityRole="button"
+          accessibilityLabel={currentStep < steps.length - 1 ? 'Continue' : 'Start Exploring'}
+        >
+          <Text style={styles.nextBtnText}>
+            {currentStep < steps.length - 1 ? '下一步' : '开始探索'}
+          </Text>
+          <Text style={styles.nextBtnTextEn}>
+            {currentStep < steps.length - 1 ? 'Continue' : 'Start Exploring'}
+          </Text>
+          {currentStep < steps.length - 1 ? (
             <ArrowRight size={16} color="#FFFFFF" strokeWidth={2} />
-          </Pressable>
-        ) : (
-          <Pressable style={styles.startBtn} onPress={handleComplete} accessibilityRole="button" accessibilityLabel="Start Exploring" accessibilityHint="Double tap to begin using the app">
-            <Check size={18} color="#FFFFFF" strokeWidth={2.5} />
-            <Text style={styles.startBtnText}>Start Exploring</Text>
-          </Pressable>
-        )}
+          ) : (
+            <Check size={16} color="#FFFFFF" strokeWidth={2.5} />
+          )}
+        </Pressable>
       </View>
     </SafeAreaView>
   );
@@ -167,30 +158,33 @@ export function OnboardingScreen({ onComplete }) {
 function WelcomeStep({ serifFont }) {
   return (
     <View style={styles.stepContent}>
-      <View style={styles.heroIconWrap}>
-        <Sparkles size={32} color={theme.colors.primary} strokeWidth={1.5} />
+      <View style={styles.heroSealWrap}>
+        <SealStamp label="华" size={72} />
       </View>
-      <Text style={styles.heroTitle}>Become Chinese</Text>
+      <Text style={[styles.heroTitle, { fontFamily: serifFont }]}>Become Chinese</Text>
       <Text style={styles.heroTitleCn}>成为中国人</Text>
-      <Text style={styles.heroSubtitle}>
-        A cultural atlas for understanding China through its cities, dishes, and dynasties.
-      </Text>
-      <Text style={styles.heroSubtitleCn}>
-        通过城市、美食与朝代，理解中国文化的地图。
-      </Text>
+      <Text style={styles.heroRule} />
+      <Text style={styles.heroSubtitle}>A cultural atlas for understanding China through its cities, dishes, and dynasties.</Text>
+      <Text style={styles.heroSubtitleCn}>通过城市、美食与朝代，理解中国文化的地图。</Text>
 
       <View style={styles.featureList}>
         <View style={styles.featureItem}>
-          <Clock size={16} color={theme.colors.primary} strokeWidth={2} />
-          <Text style={styles.featureText}>Daily questions to build your knowledge</Text>
+          <View style={styles.featureIcon}>
+            <BrushCalendarIcon size={16} color={theme.colors.primary} />
+          </View>
+          <Text style={styles.featureText}>每日一问，日积月累</Text>
         </View>
         <View style={styles.featureItem}>
-          <Map size={16} color={theme.colors.primary} strokeWidth={2} />
-          <Text style={styles.featureText}>Explore cities and their stories</Text>
+          <View style={styles.featureIcon}>
+            <BrushMapIcon size={16} color={theme.colors.primary} />
+          </View>
+          <Text style={styles.featureText}>探索城市与它们的故事</Text>
         </View>
         <View style={styles.featureItem}>
-          <UtensilsCrossed size={16} color={theme.colors.primary} strokeWidth={2} />
-          <Text style={styles.featureText}>Discover regional dishes and culture</Text>
+          <View style={styles.featureIcon}>
+            <BrushFoodIcon size={16} color={theme.colors.primary} />
+          </View>
+          <Text style={styles.featureText}>认识各地的菜系与文化</Text>
         </View>
       </View>
     </View>
@@ -200,8 +194,8 @@ function WelcomeStep({ serifFont }) {
 function InterestsStep({ selectedInterests, onToggle }) {
   return (
     <View style={styles.stepContent}>
-      <Text style={styles.stepTitle}>What interests you most?</Text>
-      <Text style={styles.stepSubtitle}>选择你最感兴趣的方向</Text>
+      <Text style={styles.stepTitle}>你想探索什么？</Text>
+      <Text style={styles.stepTitleEn}>What interests you most?</Text>
 
       <View style={styles.optionsGrid}>
         {interestOptions.map((option) => {
@@ -213,16 +207,13 @@ function InterestsStep({ selectedInterests, onToggle }) {
               style={[styles.optionCard, isSelected && styles.optionCardSelected]}
               onPress={() => onToggle(option.id)}
               accessibilityRole="button"
-              accessibilityLabel={`${option.label} - ${option.labelCn}. ${option.desc}`}
-              accessibilityHint={isSelected ? "Selected. Double tap to deselect" : "Double tap to select"}
+              accessibilityLabel={`${option.labelCn} ${option.label}`}
             >
               <View style={[styles.optionIconWrap, isSelected && styles.optionIconWrapSelected]}>
-                <Icon size={22} color={isSelected ? '#FFFFFF' : theme.colors.primary} strokeWidth={2} />
+                <Icon size={22} color={isSelected ? '#FFFFFF' : theme.colors.primary} />
               </View>
-              <Text style={[styles.optionLabel, isSelected && styles.optionLabelSelected]}>
-                {option.label}
-              </Text>
-              <Text style={styles.optionLabelCn}>{option.labelCn}</Text>
+              <Text style={[styles.optionLabelCn, isSelected && styles.optionLabelSelected]}>{option.labelCn}</Text>
+              <Text style={styles.optionLabel}>{option.label}</Text>
               <Text style={styles.optionDesc}>{option.desc}</Text>
               {isSelected && (
                 <View style={styles.checkBadge}>
@@ -240,8 +231,8 @@ function InterestsStep({ selectedInterests, onToggle }) {
 function GoalsStep({ selectedGoal, onSelect }) {
   return (
     <View style={styles.stepContent}>
-      <Text style={styles.stepTitle}>How do you want to learn?</Text>
-      <Text style={styles.stepSubtitle}>选择你的学习方式</Text>
+      <Text style={styles.stepTitle}>你想怎么学？</Text>
+      <Text style={styles.stepTitleEn}>How do you want to learn?</Text>
 
       <View style={styles.goalsList}>
         {goalOptions.map((option) => {
@@ -253,20 +244,15 @@ function GoalsStep({ selectedGoal, onSelect }) {
               style={[styles.goalCard, isSelected && styles.goalCardSelected]}
               onPress={() => onSelect(option.id)}
               accessibilityRole="button"
-              accessibilityLabel={`${option.label} - ${option.labelCn}. ${option.desc}`}
-              accessibilityHint={isSelected ? "Selected" : "Double tap to select"}
+              accessibilityLabel={option.labelCn}
             >
-              <View style={styles.goalLeft}>
-                <View style={[styles.goalIconWrap, isSelected && styles.goalIconWrapSelected]}>
-                  <Icon size={20} color={isSelected ? '#FFFFFF' : theme.colors.primary} strokeWidth={2} />
-                </View>
-                <View style={styles.goalTextWrap}>
-                  <Text style={[styles.goalLabel, isSelected && styles.goalLabelSelected]}>
-                    {option.label}
-                  </Text>
-                  <Text style={styles.goalLabelCn}>{option.labelCn}</Text>
-                  <Text style={styles.goalDesc}>{option.desc}</Text>
-                </View>
+              <View style={[styles.goalIconWrap, isSelected && styles.goalIconWrapSelected]}>
+                <Icon size={20} color={isSelected ? '#FFFFFF' : theme.colors.primary} />
+              </View>
+              <View style={styles.goalTextWrap}>
+                <Text style={[styles.goalLabelCn, isSelected && styles.goalLabelSelected]}>{option.labelCn}</Text>
+                <Text style={styles.goalLabel}>{option.label}</Text>
+                <Text style={styles.goalDesc}>{option.desc}</Text>
               </View>
               {isSelected && (
                 <View style={styles.goalCheckBadge}>
@@ -283,36 +269,35 @@ function GoalsStep({ selectedGoal, onSelect }) {
 
 function ReadyStep({ selectedInterests, selectedGoal, serifFont }) {
   const interestLabels = selectedInterests
-    .map((id) => interestOptions.find((o) => o.id === id)?.label)
+    .map((id) => interestOptions.find((o) => o.id === id)?.labelCn)
     .filter(Boolean);
-
-  const goalLabel = goalOptions.find((o) => o.id === selectedGoal)?.label ?? 'Casual Discovery';
+  const goalLabel = goalOptions.find((o) => o.id === selectedGoal)?.labelCn ?? '轻度了解';
 
   return (
     <View style={styles.stepContent}>
-      <View style={styles.readyIconWrap}>
-        <Sparkles size={28} color="#FFFFFF" strokeWidth={1.5} />
+      <View style={styles.readySealWrap}>
+        <SealStamp label="始" size={72} variant="success" />
       </View>
-      <Text style={styles.readyTitle}>You're All Set</Text>
-      <Text style={styles.readyTitleCn}>准备就绪</Text>
+      <Text style={[styles.readyTitle, { fontFamily: serifFont }]}>准备好了</Text>
+      <Text style={styles.readyTitleEn}>You're All Set</Text>
 
       <View style={styles.summaryCard}>
-        <Text style={styles.summaryLabel}>Your Journey</Text>
+        <Text style={styles.summaryLabel}>你的旅程 · Your Journey</Text>
         <View style={styles.summaryRow}>
-          <Text style={styles.summaryKey}>Interests:</Text>
-          <Text style={styles.summaryValue}>{interestLabels.join(', ')}</Text>
+          <Text style={styles.summaryKey}>兴趣</Text>
+          <Text style={styles.summaryValue}>{interestLabels.join('、')}</Text>
         </View>
         <View style={styles.summaryRow}>
-          <Text style={styles.summaryKey}>Goal:</Text>
+          <Text style={styles.summaryKey}>目标</Text>
           <Text style={styles.summaryValue}>{goalLabel}</Text>
         </View>
       </View>
 
       <Text style={styles.readyHint}>
-        Start with today's daily question, or explore the paths that interest you.
+        从今日问答开始，或探索你最感兴趣的路径。祝你漫游愉快。
       </Text>
       <Text style={styles.readyHintCn}>
-        从今日问答开始，或探索你感兴趣的路径。
+        Start with today's daily question, or explore the paths that interest you.
       </Text>
     </View>
   );
@@ -323,35 +308,49 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: theme.colors.background,
   },
+
+  // Progress
   progressWrap: {
-    paddingHorizontal: 20,
-    paddingTop: 16,
-    paddingBottom: 8,
+    paddingHorizontal: 28,
+    paddingTop: 20,
+    paddingBottom: 12,
+    alignItems: 'center',
   },
-  progressTrack: {
-    height: 3,
-    backgroundColor: 'rgba(51, 51, 51, 0.08)',
-    borderRadius: 2,
-    overflow: 'hidden',
+  stepDots: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    marginBottom: 12,
   },
-  progressFill: {
-    height: 3,
+  stepDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: 'rgba(27, 23, 21, 0.12)',
+  },
+  stepDotActive: {
     backgroundColor: theme.colors.primary,
-    borderRadius: 2,
+  },
+  stepDotCurrent: {
+    width: 20,
   },
   progressText: {
-    marginTop: 10,
-    color: theme.colors.primary,
-    fontSize: 11,
-    letterSpacing: 1.4,
-    textTransform: 'uppercase',
+    color: theme.colors.text,
+    fontSize: 15,
     fontWeight: '800',
-    textAlign: 'left',
+    letterSpacing: 1,
+    textAlign: 'center',
+  },
+  progressTextEn: {
+    color: theme.colors.mutedText,
+    fontSize: 11,
+    fontWeight: '500',
+    letterSpacing: 0.5,
   },
 
   content: {
     flex: 1,
-    paddingHorizontal: 20,
+    paddingHorizontal: 28,
     paddingTop: 20,
   },
   animatedContent: {
@@ -362,15 +361,10 @@ const styles = StyleSheet.create({
     alignItems: 'flex-start',
   },
 
-  // Welcome step
-  heroIconWrap: {
-    width: 64,
-    height: 64,
-    borderRadius: 20,
-    backgroundColor: theme.colors.cinnabarGlow,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 20,
+  // Welcome
+  heroSealWrap: {
+    marginBottom: 22,
+    alignSelf: 'center',
   },
   heroTitle: {
     color: theme.colors.text,
@@ -381,14 +375,22 @@ const styles = StyleSheet.create({
   },
   heroTitleCn: {
     color: theme.colors.primary,
-    fontSize: 22,
+    fontSize: 20,
     fontWeight: '600',
     marginTop: 4,
-    letterSpacing: 2,
+    letterSpacing: 3,
     textAlign: 'left',
   },
+  heroRule: {
+    marginTop: 18,
+    width: 40,
+    height: 2,
+    borderRadius: 1,
+    backgroundColor: theme.colors.primary,
+    opacity: 0.5,
+  },
   heroSubtitle: {
-    marginTop: 16,
+    marginTop: 12,
     color: theme.colors.text,
     fontSize: 15,
     lineHeight: 22,
@@ -409,7 +411,15 @@ const styles = StyleSheet.create({
   featureItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 12,
+    gap: 14,
+  },
+  featureIcon: {
+    width: 34,
+    height: 34,
+    borderRadius: 10,
+    backgroundColor: theme.colors.cinnabarGlow,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   featureText: {
     color: theme.colors.text,
@@ -421,16 +431,16 @@ const styles = StyleSheet.create({
   // Step titles
   stepTitle: {
     color: theme.colors.text,
-    fontSize: 26,
+    fontSize: 28,
     fontWeight: '800',
-    letterSpacing: 0.5,
+    letterSpacing: 1,
     textAlign: 'left',
   },
-  stepSubtitle: {
+  stepTitleEn: {
     color: theme.colors.mutedText,
-    fontSize: 14,
+    fontSize: 13,
     marginTop: 4,
-    marginBottom: 24,
+    marginBottom: 26,
     textAlign: 'left',
   },
 
@@ -443,19 +453,24 @@ const styles = StyleSheet.create({
   optionCard: {
     width: '48%',
     borderRadius: theme.radii.lg,
-    borderWidth: 0.5,
+    borderWidth: 1,
     borderColor: theme.colors.border,
     backgroundColor: theme.colors.card,
-    padding: 16,
+    padding: 18,
     position: 'relative',
+    shadowColor: '#000',
+    shadowOpacity: 0.04,
+    shadowRadius: 6,
+    shadowOffset: { width: 0, height: 2 },
+    elevation: 1,
   },
   optionCardSelected: {
     borderColor: theme.colors.primary,
-    backgroundColor: '#FFF7F0',
+    backgroundColor: '#FFF5EE',
   },
   optionIconWrap: {
-    width: 44,
-    height: 44,
+    width: 46,
+    height: 46,
     borderRadius: 12,
     backgroundColor: theme.colors.cinnabarGlow,
     alignItems: 'center',
@@ -465,20 +480,20 @@ const styles = StyleSheet.create({
   optionIconWrapSelected: {
     backgroundColor: theme.colors.primary,
   },
-  optionLabel: {
+  optionLabelCn: {
     color: theme.colors.text,
-    fontSize: 16,
-    fontWeight: '700',
+    fontSize: 17,
+    fontWeight: '800',
+    textAlign: 'left',
+  },
+  optionLabel: {
+    color: theme.colors.mutedText,
+    fontSize: 11,
+    marginTop: 1,
     textAlign: 'left',
   },
   optionLabelSelected: {
     color: theme.colors.primary,
-  },
-  optionLabelCn: {
-    color: theme.colors.mutedText,
-    fontSize: 12,
-    marginTop: 2,
-    textAlign: 'left',
   },
   optionDesc: {
     color: theme.colors.mutedText,
@@ -489,8 +504,8 @@ const styles = StyleSheet.create({
   },
   checkBadge: {
     position: 'absolute',
-    top: 10,
-    right: 10,
+    top: 12,
+    right: 12,
     width: 24,
     height: 24,
     borderRadius: 12,
@@ -501,31 +516,30 @@ const styles = StyleSheet.create({
 
   // Goals
   goalsList: {
-    gap: 12,
+    gap: 14,
   },
   goalCard: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     borderRadius: theme.radii.lg,
-    borderWidth: 0.5,
+    borderWidth: 1,
     borderColor: theme.colors.border,
     backgroundColor: theme.colors.card,
-    padding: 16,
+    padding: 18,
+    shadowColor: '#000',
+    shadowOpacity: 0.04,
+    shadowRadius: 6,
+    shadowOffset: { width: 0, height: 2 },
+    elevation: 1,
   },
   goalCardSelected: {
     borderColor: theme.colors.primary,
-    backgroundColor: '#FFF7F0',
-  },
-  goalLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 14,
-    flex: 1,
+    backgroundColor: '#FFF5EE',
   },
   goalIconWrap: {
-    width: 44,
-    height: 44,
+    width: 46,
+    height: 46,
     borderRadius: 12,
     backgroundColor: theme.colors.cinnabarGlow,
     alignItems: 'center',
@@ -536,20 +550,21 @@ const styles = StyleSheet.create({
   },
   goalTextWrap: {
     flex: 1,
+    marginLeft: 14,
   },
-  goalLabel: {
+  goalLabelCn: {
     color: theme.colors.text,
-    fontSize: 16,
-    fontWeight: '700',
+    fontSize: 17,
+    fontWeight: '800',
     textAlign: 'left',
   },
   goalLabelSelected: {
     color: theme.colors.primary,
   },
-  goalLabelCn: {
+  goalLabel: {
     color: theme.colors.mutedText,
-    fontSize: 12,
-    marginTop: 2,
+    fontSize: 11,
+    marginTop: 1,
     textAlign: 'left',
   },
   goalDesc: {
@@ -560,33 +575,28 @@ const styles = StyleSheet.create({
     textAlign: 'left',
   },
   goalCheckBadge: {
-    width: 24,
-    height: 24,
-    borderRadius: 12,
+    width: 26,
+    height: 26,
+    borderRadius: 13,
     backgroundColor: theme.colors.primary,
     alignItems: 'center',
     justifyContent: 'center',
   },
 
-  // Ready step
-  readyIconWrap: {
-    width: 64,
-    height: 64,
-    borderRadius: 20,
-    backgroundColor: theme.colors.primary,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 20,
+  // Ready
+  readySealWrap: {
+    marginBottom: 22,
+    alignSelf: 'center',
   },
   readyTitle: {
     color: theme.colors.text,
-    fontSize: 32,
+    fontSize: 34,
     fontWeight: '700',
     textAlign: 'left',
   },
-  readyTitleCn: {
+  readyTitleEn: {
     color: theme.colors.primary,
-    fontSize: 18,
+    fontSize: 15,
     fontWeight: '600',
     marginTop: 4,
     letterSpacing: 1,
@@ -594,17 +604,17 @@ const styles = StyleSheet.create({
   },
   summaryCard: {
     marginTop: 24,
+    width: '100%',
     borderRadius: theme.radii.md,
-    borderWidth: 0.5,
+    borderWidth: 1,
     borderColor: theme.colors.border,
-    backgroundColor: theme.colors.surface,
-    padding: 16,
+    backgroundColor: theme.colors.card,
+    padding: 18,
   },
   summaryLabel: {
     color: theme.colors.primary,
-    fontSize: 10,
+    fontSize: 11,
     letterSpacing: 1.2,
-    textTransform: 'uppercase',
     fontWeight: '800',
     marginBottom: 12,
     textAlign: 'left',
@@ -616,7 +626,7 @@ const styles = StyleSheet.create({
   summaryKey: {
     color: theme.colors.mutedText,
     fontSize: 13,
-    width: 80,
+    width: 60,
     textAlign: 'left',
   },
   summaryValue: {
@@ -627,7 +637,7 @@ const styles = StyleSheet.create({
     textAlign: 'left',
   },
   readyHint: {
-    marginTop: 20,
+    marginTop: 24,
     color: theme.colors.text,
     fontSize: 14,
     lineHeight: 21,
@@ -644,7 +654,7 @@ const styles = StyleSheet.create({
 
   // Bottom bar
   bottomBar: {
-    paddingHorizontal: 20,
+    paddingHorizontal: 28,
     paddingVertical: 20,
     paddingBottom: 34,
   },
@@ -653,60 +663,28 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     gap: 8,
-    borderRadius: 12,
+    borderRadius: 14,
     backgroundColor: theme.colors.primary,
-    paddingVertical: 16,
+    paddingVertical: 17,
+    shadowColor: theme.colors.primaryDark,
+    shadowOpacity: 0.25,
+    shadowRadius: 10,
+    shadowOffset: { width: 0, height: 4 },
+    elevation: 4,
+  },
+  nextBtnPressed: {
+    opacity: 0.92,
+    transform: [{ scale: 0.99 }],
   },
   nextBtnText: {
     color: '#FFFFFF',
-    fontSize: 15,
+    fontSize: 16,
     fontWeight: '800',
-    letterSpacing: 0.5,
+    letterSpacing: 1,
   },
-  startBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 8,
-    borderRadius: 12,
-    backgroundColor: theme.colors.primary,
-    paddingVertical: 16,
-  },
-  startBtnText: {
-    color: '#FFFFFF',
-    fontSize: 15,
-    fontWeight: '800',
-    letterSpacing: 0.5,
+  nextBtnTextEn: {
+    color: 'rgba(255, 255, 255, 0.75)',
+    fontSize: 11,
+    fontWeight: '500',
   },
 });
-
-// Helper functions for checking onboarding status
-export async function isOnboardingComplete() {
-  try {
-    const value = await AsyncStorage.getItem(STORAGE_KEYS.ONBOARDING_COMPLETE);
-    return value === 'true';
-  } catch {
-    return false;
-  }
-}
-
-export async function resetOnboarding() {
-  try {
-    await AsyncStorage.multiRemove([
-      STORAGE_KEYS.ONBOARDING_COMPLETE,
-      STORAGE_KEYS.USER_INTERESTS,
-    ]);
-    return true;
-  } catch {
-    return false;
-  }
-}
-
-export async function getUserInterests() {
-  try {
-    const value = await AsyncStorage.getItem(STORAGE_KEYS.USER_INTERESTS);
-    return value ? JSON.parse(value) : null;
-  } catch {
-    return null;
-  }
-}
