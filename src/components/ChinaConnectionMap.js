@@ -151,7 +151,6 @@ export function ChinaConnectionMap({
                 <Path
                   d={province.path}
                   fill={province.active ? theme.colors.primary : theme.colors.backgroundDark}
-                  fillOpacity={1}
                   stroke={province.active ? theme.colors.primaryDark : 'rgba(51, 51, 51, 0.25)'}
                   strokeWidth={province.active ? 1.5 : 0.5}
                   strokeLinecap="round"
@@ -169,13 +168,13 @@ export function ChinaConnectionMap({
                   />
                 ) : null}
 
-                {showLabels && province.centroid && province.active ? (
+                {showLabels && province.centroid ? (
                   <SvgText
                     x={province.centroid.x}
                     y={province.centroid.y + 3}
-                    fontSize="10"
-                    fontWeight="700"
-                    fill="#FFFFFF"
+                    fontSize={province.active ? 10 : 8}
+                    fontWeight={province.active ? '700' : '400'}
+                    fill={province.active ? '#FFFFFF' : 'rgba(51, 51, 51, 0.65)'}
                     textAnchor="middle"
                   >
                     {province.name}
