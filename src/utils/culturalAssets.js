@@ -4,6 +4,10 @@ import { STORAGE_KEYS } from '../config/storageKeys';
 import { CACHE_CONFIG, STORAGE_LIMITS as LIMITS } from '../config/constants';
 import { showError, ERROR_MESSAGES, logger } from './errorHandling';
 import { updateTaskProgress } from './dailyTasks';
+// Local bindings required — re-export alone does not create identifiers usable in this module.
+import { getProvinceId, normalizeProvinceId } from './provinceIds';
+
+export { getProvinceId, normalizeProvinceId };
 
 const MAX_RECENT_ITEMS = STORAGE_LIMITS.MAX_RECENT_ITEMS;
 
@@ -36,9 +40,6 @@ function normalizeArray(input) {
   return Array.isArray(input) ? input : [];
 }
 
-export function getProvinceId(item) {
-  return item?.province_id ?? item?.provinceId ?? item?.province ?? null;
-}
 
 function ensureState(raw) {
   const state = raw && typeof raw === 'object' ? raw : {};
@@ -225,12 +226,26 @@ export async function incrementNamesGenerated() {
   return result;
 }
 
+function withCanonicalProvince(item) {
+  if (!item || typeof item !== 'object') return item;
+  const provinceId = getProvinceId(item);
+  if (!provinceId) return item;
+  return {
+    ...item,
+    province_id: provinceId,
+    provinceId,
+    // Keep a clean machine id in province for map lookups (UI can still format elsewhere)
+    province: provinceId,
+  };
+}
+
 export async function toggleCollectionItem(type, item) {
   if (!item?.id) return getCulturalAssets();
   const result = await patchCulturalAssets((state) => {
     const current = normalizeArray(state.favorites?.[type]);
     const exists = current.some((x) => x?.id === item.id);
-    const nextList = exists ? current.filter((x) => x?.id !== item.id) : uniqueById([item, ...current]).slice(0, LIMITS.MAX_FAVORITES_PER_TYPE);
+    const payload = withCanonicalProvince(item);
+    const nextList = exists ? current.filter((x) => x?.id !== item.id) : uniqueById([payload, ...current]).slice(0, LIMITS.MAX_FAVORITES_PER_TYPE);
     return {
       ...state,
       favorites: {
@@ -254,7 +269,7 @@ export async function setCollectionItem(type, item, nextActive) {
     const current = normalizeArray(state.favorites?.[type]);
     const exists = current.some((x) => x?.id === item.id);
     let nextList = current;
-    if (nextActive && !exists) nextList = uniqueById([item, ...current]).slice(0, LIMITS.MAX_FAVORITES_PER_TYPE);
+    if (nextActive && !exists) nextList = uniqueById([withCanonicalProvince(item), ...current]).slice(0, LIMITS.MAX_FAVORITES_PER_TYPE);
     if (!nextActive && exists) nextList = current.filter((x) => x?.id !== item.id);
     return {
       ...state,
@@ -282,7 +297,7 @@ export async function setCollectionActive(type, nextActive, allItems = []) {
   return patchCulturalAssets((state) => {
     const current = normalizeArray(state.favorites?.[type]);
     const nextList = nextActive
-      ? uniqueById([...current, ...allItems].filter(Boolean))
+      ? uniqueById([...current, ...allItems].filter(Boolean).map(withCanonicalProvince))
       : [];
     return {
       ...state,
@@ -410,8 +425,18 @@ export async function addRecentlyViewed(item) {
   try {
     const current = await getRecentlyViewed();
     const filtered = current.filter((i) => !(i.id === item.id && i.type === item.type));
+    const provinceId = getProvinceId(item);
     const next = [
-      { id: item.id, type: item.type, nameEn: item.nameEn, nameCn: item.nameCn, province: item.province, viewedAt: Date.now() },
+      {
+        id: item.id,
+        type: item.type,
+        nameEn: item.nameEn,
+        nameCn: item.nameCn,
+        province: provinceId || item.province,
+        province_id: provinceId || item.province_id || item.provinceId || null,
+        provinceId: provinceId || item.provinceId || item.province_id || null,
+        viewedAt: Date.now(),
+      },
       ...filtered,
     ].slice(0, MAX_RECENT_ITEMS);
     await AsyncStorage.setItem(STORAGE_KEYS.RECENTLY_VIEWED, JSON.stringify(next));

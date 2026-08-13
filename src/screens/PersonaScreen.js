@@ -11,7 +11,7 @@ import {
   TextInput,
   View,
 } from 'react-native';
-import { Heart, MapPin, Medal, Share2, Sparkles, Trophy, Volume2, Copy, Check, Bookmark, ArrowRight, Moon, Sun, Palette as PaletteIcon, ShieldCheck } from 'lucide-react-native';
+import { Heart, MapPin, Medal, Share2, Sparkles, Trophy, Volume2, Copy, Check, Bookmark, ArrowRight, Palette as PaletteIcon, ShieldCheck } from 'lucide-react-native';
 import { useNavigation } from '@react-navigation/native';
 import * as Haptics from 'expo-haptics';
 import * as Speech from 'expo-speech';
@@ -56,6 +56,8 @@ import {
   getProvinceId,
   getCulturalAssets,
 } from '../utils/culturalAssets';
+import { getExplorationStats } from '../utils/explorationStats';
+import { normalizeProvinceId } from '../utils/provinceIds';
 import { generateAtlasShareText, shareText, shareViewAsImage } from '../utils/sharing';
 import { theme } from '../theme/theme';
 import { useTheme } from '../theme/ThemeContext';
@@ -63,31 +65,8 @@ import { useToast } from '../components/Toast';
 
 export function PersonaScreen() {
   const navigation = useNavigation();
-  const { colors, isDark, toggleTheme, preference, setTheme } = useTheme();
+  const { colors } = useTheme();
   const toast = useToast();
-
-  // Theme transition animation
-  const themeTransitionAnim = useRef(new Animated.Value(0)).current;
-  const prevIsDarkRef = useRef(isDark);
-
-  // Animate theme change
-  useEffect(() => {
-    if (prevIsDarkRef.current !== isDark) {
-      // Reset and start animation
-      themeTransitionAnim.setValue(0);
-      Animated.timing(themeTransitionAnim, {
-        toValue: 1,
-        duration: 300,
-        useNativeDriver: false, // backgroundColor doesn't support native driver
-      }).start();
-      prevIsDarkRef.current = isDark;
-    }
-  }, [isDark, themeTransitionAnim]);
-
-  const themeTransitionBg = themeTransitionAnim.interpolate({
-    inputRange: [0, 1],
-    outputRange: [isDark ? '#F8F5EE' : '#1A1A1A', colors.background],
-  });
 
   const serifFont = useMemo(
     () =>
@@ -108,6 +87,7 @@ export function PersonaScreen() {
   const [collectedCities, setCollectedCities] = useState([]);
   const [collectedRecipes, setCollectedRecipes] = useState([]);
   const [collectedDynasties, setCollectedDynasties] = useState([]);
+  const [exploredProvinceIds, setExploredProvinceIds] = useState([]);
   const [quizStreak, setQuizStreak] = useState(0);
   const [quizTotalSolved, setQuizTotalSolved] = useState(0);
   const [namesGenerated, setNamesGenerated] = useState(0);
@@ -123,49 +103,73 @@ export function PersonaScreen() {
 
   // Track mounted state for async operations
   const mountedRef = useRef(true);
+  const hasLoadedOnceRef = useRef(false);
+
+  const loadProfileData = async ({ showLoading = false } = {}) => {
+    if (showLoading && mountedRef.current) setLoadingFavorites(true);
+    try {
+      const assets = await getCulturalAssets();
+      if (!mountedRef.current) return;
+      setFavorites(Array.isArray(assets?.favorites?.names) ? assets.favorites.names : []);
+      setCollectedCities(Array.isArray(assets?.favorites?.cities) ? assets.favorites.cities : []);
+      setCollectedRecipes(Array.isArray(assets?.favorites?.recipes) ? assets.favorites.recipes : []);
+      setCollectedDynasties(Array.isArray(assets?.favorites?.dynasties) ? assets.favorites.dynasties : []);
+      try {
+        const exploration = await getExplorationStats();
+        // Only keep ids that normalize to real chinaGeo provinces
+        const explored = Object.keys(exploration?.provincesExplored || {})
+          .map((id) => normalizeProvinceId(id))
+          .filter(Boolean);
+        if (mountedRef.current) setExploredProvinceIds([...new Set(explored)]);
+      } catch {
+        if (mountedRef.current) setExploredProvinceIds([]);
+      }
+      setQuizStreak(assets?.quiz?.streak ?? 0);
+      setQuizTotalSolved(assets?.quiz?.totalSolved ?? 0);
+      setNamesGenerated(assets?.stats?.namesGenerated ?? 0);
+    } catch {
+      if (!mountedRef.current) return;
+      setFavorites([]);
+      setCollectedCities([]);
+      setCollectedRecipes([]);
+      setCollectedDynasties([]);
+      setQuizStreak(0);
+      setQuizTotalSolved(0);
+      setNamesGenerated(0);
+    } finally {
+      if (mountedRef.current) {
+        setLoadingFavorites(false);
+        hasLoadedOnceRef.current = true;
+      }
+    }
+  };
 
   useEffect(() => {
     mountedRef.current = true;
+    loadProfileData({ showLoading: !hasLoadedOnceRef.current });
+
+    // Re-read favorites + exploration whenever Profile tab gains focus,
+    // so viewing Places/Food/History then returning still updates the map.
+    const unsubscribe = navigation.addListener('focus', () => {
+      loadProfileData({ showLoading: false });
+    });
+
+    // Load personalization (avatar frame + title)
     (async () => {
       try {
-        const assets = await getCulturalAssets();
-        if (!mountedRef.current) return;
-        setFavorites(Array.isArray(assets?.favorites?.names) ? assets.favorites.names : []);
-        setCollectedCities(Array.isArray(assets?.favorites?.cities) ? assets.favorites.cities : []);
-        setCollectedRecipes(Array.isArray(assets?.favorites?.recipes) ? assets.favorites.recipes : []);
-        setCollectedDynasties(Array.isArray(assets?.favorites?.dynasties) ? assets.favorites.dynasties : []);
-        setQuizStreak(assets?.quiz?.streak ?? 0);
-        setQuizTotalSolved(assets?.quiz?.totalSolved ?? 0);
-        setNamesGenerated(assets?.stats?.namesGenerated ?? 0);
+        const p = await getPersonalization();
+        if (mountedRef.current) setPersonalization(p);
       } catch {
-        if (!mountedRef.current) return;
-        setFavorites([]);
-        setCollectedCities([]);
-        setCollectedRecipes([]);
-        setCollectedDynasties([]);
-        setQuizStreak(0);
-        setQuizTotalSolved(0);
-        setNamesGenerated(0);
-    } finally {
-      if (mountedRef.current) setLoadingFavorites(false);
-    }
-  })();
+        if (mountedRef.current) setPersonalization(null);
+      }
+    })();
 
-  // Load personalization (avatar frame + title)
-  (async () => {
-    try {
-      const p = await getPersonalization();
-      if (mountedRef.current) setPersonalization(p);
-    } catch {
-      if (mountedRef.current) setPersonalization(null);
-    }
-  })();
-
-  return () => {
+    return () => {
       mountedRef.current = false;
+      unsubscribe();
       Speech.stop();
     };
-  }, []);
+  }, [navigation]);
 
   function toggleTrait(traitKey) {
     setSelectedTraits((prev) => (prev.includes(traitKey) ? prev.filter((t) => t !== traitKey) : [...prev, traitKey]));
@@ -218,12 +222,49 @@ export function PersonaScreen() {
 
   const connectedProvinces = useMemo(() => {
     const set = new Set();
-    [...favorites, ...collectedCities, ...collectedRecipes, ...collectedDynasties].forEach((item) => {
+
+    const resolveProvince = (item, catalog) => {
+      if (!item) return null;
+      // Prefer fields on the stored favorite; fall back to full catalog entry by id
+      // so older bookmarks without province_id still light the map after data fixes.
+      const full = catalog?.find?.((row) => row.id === item.id) || item;
+      return getProvinceId(full) || getProvinceId(item) || normalizeProvinceId(item.province);
+    };
+
+    // Name favorites rarely have a real province (often "General") — skip noise
+    favorites.forEach((item) => {
       const provinceId = getProvinceId(item);
-      if (provinceId && provinceId !== 'General') set.add(provinceId);
+      if (provinceId) set.add(provinceId);
     });
+    collectedCities.forEach((item) => {
+      const provinceId = resolveProvince(item, cities);
+      if (provinceId) set.add(provinceId);
+    });
+    collectedRecipes.forEach((item) => {
+      const provinceId = resolveProvince(item, recipes);
+      if (provinceId) set.add(provinceId);
+    });
+
+    // Saved dynasties light up their full heartland (intentional collection signal).
+    collectedDynasties.forEach((item) => {
+      const full = dynasties.find((d) => d.id === item?.id) || item;
+      const list = Array.isArray(full?.heartlandProvinces) ? full.heartlandProvinces : [];
+      list.forEach((id) => {
+        const n = normalizeProvinceId(id);
+        if (n) set.add(n);
+      });
+      const capital = getProvinceId(full) || resolveProvince(item, dynasties);
+      if (capital) set.add(capital);
+    });
+
+    // Provinces from intentional views (already scrubbed / normalized on load)
+    exploredProvinceIds.forEach((id) => {
+      const n = normalizeProvinceId(id);
+      if (n) set.add(n);
+    });
+
     return set;
-  }, [favorites, collectedCities, collectedRecipes, collectedDynasties]);
+  }, [favorites, collectedCities, collectedRecipes, collectedDynasties, exploredProvinceIds]);
 
   async function handleFavorite() {
     if (!generated || isFavorited) return;
@@ -328,7 +369,7 @@ export function PersonaScreen() {
   }
 
   return (
-    <Animated.View style={[styles.safeArea, { backgroundColor: themeTransitionBg }]}>
+    <Animated.View style={[styles.safeArea, { backgroundColor: colors.background }]}>
       <SafeAreaView style={styles.safeAreaInner}>
         <KeyboardAvoidingView style={styles.safeArea} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
         <HandscrollContainer style={styles.scrollShell}>
@@ -341,39 +382,6 @@ export function PersonaScreen() {
               style={styles.header}
               includeTopInset={false}
             />
-
-            {/* Theme Toggle */}
-            <View style={styles.themeToggleRow}>
-              <Pressable
-                style={[styles.themeBtn, preference === 'light' && styles.themeBtnActive]}
-                onPress={() => setTheme('light')}
-                accessibilityRole="button"
-                accessibilityLabel="Light theme"
-                accessibilityHint="Double tap to enable light theme"
-              >
-                <Sun size={16} color={preference === 'light' ? colors.primary : colors.mutedText} strokeWidth={2} />
-                <Text style={[styles.themeBtnText, preference === 'light' && { color: colors.primary }]}>Light</Text>
-              </Pressable>
-              <Pressable
-                style={[styles.themeBtn, preference === 'system' && styles.themeBtnActive]}
-                onPress={() => setTheme('system')}
-                accessibilityRole="button"
-                accessibilityLabel="System theme"
-                accessibilityHint="Double tap to follow system theme"
-              >
-                <Text style={[styles.themeBtnText, preference === 'system' && { color: colors.primary }]}>Auto</Text>
-              </Pressable>
-              <Pressable
-                style={[styles.themeBtn, preference === 'dark' && styles.themeBtnActive]}
-                onPress={() => setTheme('dark')}
-                accessibilityRole="button"
-                accessibilityLabel="Dark theme"
-                accessibilityHint="Double tap to enable dark theme"
-              >
-                <Moon size={16} color={preference === 'dark' ? colors.primary : colors.mutedText} strokeWidth={2} />
-                <Text style={[styles.themeBtnText, preference === 'dark' && { color: colors.primary }]}>Dark</Text>
-              </Pressable>
-            </View>
 
             {/* Identity hero - primary artifact */}
             <SectionCard style={[styles.identityHeroCard, { backgroundColor: colors.softCard }]} tone="soft">
@@ -506,23 +514,38 @@ export function PersonaScreen() {
               title="Atlas Progress"
               titleCn="探索地图"
               defaultOpen
-              count={connectionMap.collectedCount}
+              count={connectedProvinces.size}
               tone="soft"
             >
               <View style={styles.connectionCardInner}>
-                <Text style={styles.connectionStory}>Your connected provinces and saved names accumulate here.</Text>
+                <Text style={styles.connectionStory}>
+                  Provinces light up when you save cities, dishes, dynasties, or intentionally open a place/recipe.
+                </Text>
+                <Text style={styles.connectionMeta}>
+                  {connectedProvinces.size} province{connectedProvinces.size === 1 ? '' : 's'} connected
+                </Text>
                 <View style={styles.progressLine}>
-                  <View style={[styles.progressFill, { width: `${Math.max(8, (connectionMap.collectedCount / Math.max(1, connectionMap.totalCount)) * 100)}%` }]} />
+                  <View style={[styles.progressFill, { width: `${Math.max(8, (connectedProvinces.size / 34) * 100)}%` }]} />
                 </View>
                 <View style={styles.mapWrap}>
-                  <ChinaConnectionMap connectedProvinces={connectedProvinces} />
-                  <View style={styles.provincePills}>
-                    {Array.from(connectedProvinces).slice(0, 8).map((provinceId) => (
-                      <View key={provinceId} style={styles.provincePill}>
-                        <Text style={styles.provincePillText}>{provinceId}</Text>
-                      </View>
-                    ))}
-                  </View>
+                  <ChinaConnectionMap
+                    connectedProvinces={connectedProvinces}
+                    legendActiveLabel="Explored"
+                    legendInactiveLabel="Other"
+                  />
+                  {connectedProvinces.size > 0 ? (
+                    <View style={styles.provincePills}>
+                      {Array.from(connectedProvinces).slice(0, 12).map((provinceId) => (
+                        <View key={provinceId} style={styles.provincePill}>
+                          <Text style={styles.provincePillText}>{provinceId}</Text>
+                        </View>
+                      ))}
+                    </View>
+                  ) : (
+                    <Text style={styles.mapEmptyHint}>
+                      Bookmark a city or dish, or open city stories in Places — provinces will appear here.
+                    </Text>
+                  )}
                 </View>
               </View>
             </CollapsibleSection>
@@ -741,31 +764,6 @@ const styles = StyleSheet.create({
   scrollShell: { flex: 1 },
   container: { flex: 1, paddingHorizontal: 20, paddingTop: 12, paddingBottom: 100 },
   header: { marginBottom: 10 },
-
-  // Theme toggle
-  themeToggleRow: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    gap: 8,
-    marginBottom: 14,
-  },
-  themeBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    borderRadius: 999,
-    borderWidth: 0.5,
-    paddingHorizontal: 14,
-    paddingVertical: 10,
-    minHeight: 44,
-  },
-  themeBtnActive: {
-    borderWidth: 1,
-  },
-  themeBtnText: {
-    fontSize: 12,
-    fontWeight: '700',
-  },
 
   // Identity hero
   identityHeroCard: { marginTop: 14, padding: 18, overflow: 'hidden' },

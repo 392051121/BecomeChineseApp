@@ -1,10 +1,11 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
-import Svg, { G, Path, Rect, Text as SvgText, Defs, LinearGradient, Stop } from 'react-native-svg';
+import Svg, { G, Path, Rect, Text as SvgText } from 'react-native-svg';
 import { geoMercator, geoPath } from 'd3-geo';
 
 import { theme } from '../theme/theme';
 import chinaGeo from '../data/chinaGeo.json';
+import { normalizeProvinceId } from '../utils/provinceIds';
 
 // SVG viewport dimensions
 const VIEWBOX_WIDTH = 600;
@@ -13,7 +14,6 @@ const VIEWBOX_HEIGHT = 700;
 // China center coordinates
 const CHINA_CENTER = [105, 35];
 
-// Calculate projection
 function createProjection() {
   return geoMercator()
     .center(CHINA_CENTER)
@@ -21,145 +21,168 @@ function createProjection() {
     .translate([VIEWBOX_WIDTH / 2, VIEWBOX_HEIGHT / 2]);
 }
 
-// Convert GeoJSON to SVG path
-function geoToSvgPath(feature, projection) {
-  const pathGenerator = geoPath().projection(projection);
-  return pathGenerator(feature);
-}
-
-// Get centroid for label positioning
 function getCentroid(feature, projection) {
-  const coords = feature.geometry.coordinates[0];
-  if (!coords || coords.length === 0) return null;
-
-  let sumX = 0, sumY = 0;
-  coords.forEach(([lng, lat]) => {
-    const projected = projection([lng, lat]);
-    if (projected) {
-      sumX += projected[0];
-      sumY += projected[1];
-    }
-  });
-
-  return {
-    x: sumX / coords.length,
-    y: sumY / coords.length
-  };
+  try {
+    const pathGenerator = geoPath().projection(projection);
+    const [x, y] = pathGenerator.centroid(feature);
+    if (!Number.isFinite(x) || !Number.isFinite(y)) return null;
+    return { x, y };
+  } catch {
+    const coords = feature?.geometry?.coordinates?.[0];
+    if (!coords || coords.length === 0) return null;
+    let sumX = 0;
+    let sumY = 0;
+    let n = 0;
+    coords.forEach(([lng, lat]) => {
+      const projected = projection([lng, lat]);
+      if (projected) {
+        sumX += projected[0];
+        sumY += projected[1];
+        n += 1;
+      }
+    });
+    if (!n) return null;
+    return { x: sumX / n, y: sumY / n };
+  }
 }
 
-export function ChinaConnectionMap({ connectedProvinces = new Set() }) {
-  const projection = useMemo(() => createProjection(), []);
+// Precompute paths once (features are static)
+const BASE_PROJECTION = createProjection();
+const PATH_GEN = geoPath().projection(BASE_PROJECTION);
+const PRECOMPUTED_PROVINCES = chinaGeo.features.map((feature) => {
+  const path = PATH_GEN(feature) || '';
+  const centroid = getCentroid(feature, BASE_PROJECTION);
+  return {
+    id: feature.properties.id,
+    name: feature.properties.name,
+    nameEn: feature.properties.nameEn,
+    path,
+    centroid,
+  };
+});
+
+function toActiveSet(connectedProvinces) {
+  const raw = (() => {
+    if (connectedProvinces instanceof Set) return [...connectedProvinces];
+    if (Array.isArray(connectedProvinces)) return connectedProvinces;
+    if (connectedProvinces && typeof connectedProvinces === 'object') {
+      // Accept both { Province: true } maps and plain Set-like objects
+      return Object.keys(connectedProvinces);
+    }
+    return [];
+  })();
+
+  const set = new Set();
+  raw.forEach((id) => {
+    // Only accept canonical chinaGeo ids — never keep raw display strings.
+    const normalized = normalizeProvinceId(id);
+    if (normalized) set.add(normalized);
+  });
+  return set;
+}
+
+export function ChinaConnectionMap({
+  connectedProvinces = new Set(),
+  legendActiveLabel = 'Connected',
+  legendInactiveLabel = 'Unexplored',
+  showLabels = true,
+}) {
+  const activeIds = useMemo(() => toActiveSet(connectedProvinces), [connectedProvinces]);
 
   const provinces = useMemo(() => {
-    return chinaGeo.features.map((feature) => {
-      const id = feature.properties.id;
-      const path = geoToSvgPath(feature, projection);
-      const centroid = getCentroid(feature, projection);
+    return PRECOMPUTED_PROVINCES.map((province) => ({
+      ...province,
+      active: activeIds.has(province.id),
+    }));
+  }, [activeIds]);
 
-      return {
-        id,
-        name: feature.properties.name,
-        nameEn: feature.properties.nameEn,
-        path,
-        centroid,
-        active: connectedProvinces.has(id),
-      };
-    });
-  }, [projection, connectedProvinces]);
+  // Measure layout width so SVG has real pixel height (avoids blank maps from height:100%).
+  const [layoutWidth, setLayoutWidth] = useState(0);
+  const measuredWidth = layoutWidth > 0 ? layoutWidth : 320;
+  const svgHeight = Math.round((measuredWidth * VIEWBOX_HEIGHT) / VIEWBOX_WIDTH);
+  const activeCount = provinces.filter((p) => p.active).length;
 
   return (
-    <View style={styles.wrap} accessible={true} accessibilityLabel="China provincial map" accessibilityRole="image" accessibilityHint={`Shows ${provinces.filter(p => p.active).length} of ${provinces.length} provinces connected`}>
+    <View
+      style={styles.wrap}
+      onLayout={(e) => {
+        const w = e?.nativeEvent?.layout?.width ?? 0;
+        if (w > 0 && Math.abs(w - layoutWidth) > 0.5) setLayoutWidth(w);
+      }}
+      accessible
+      accessibilityLabel="China provincial map"
+      accessibilityRole="image"
+      accessibilityHint={`Shows ${activeCount} of ${provinces.length} provinces highlighted`}
+    >
       <Svg
-        width="100%"
-        height="100%"
+        width={measuredWidth}
+        height={svgHeight}
         viewBox={`0 0 ${VIEWBOX_WIDTH} ${VIEWBOX_HEIGHT}`}
         preserveAspectRatio="xMidYMid meet"
       >
-        <Defs>
-          <LinearGradient id="activeGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-            <Stop offset="0%" stopColor={theme.colors.mapGradientStart} />
-            <Stop offset="100%" stopColor={theme.colors.primaryDark} />
-          </LinearGradient>
-          <LinearGradient id="inactiveGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-            <Stop offset="0%" stopColor={theme.colors.backgroundLight} />
-            <Stop offset="100%" stopColor={theme.colors.backgroundDark} />
-          </LinearGradient>
-          <LinearGradient id="oceanGradient" x1="0%" y1="0%" x2="0%" y2="100%">
-            <Stop offset="0%" stopColor={theme.colors.surface} />
-            <Stop offset="100%" stopColor={theme.colors.background} />
-          </LinearGradient>
-        </Defs>
-
-        {/* Ocean background */}
+        {/* Ocean / paper background */}
         <Rect
           x="0"
           y="0"
           width={VIEWBOX_WIDTH}
           height={VIEWBOX_HEIGHT}
-          fill="url(#oceanGradient)"
+          fill={theme.colors.surface}
         />
 
-        {/* China landmass shadow */}
+        {/* China landmass shadow — filter first so every child has a stable key */}
         <G transform="translate(2, 2)">
-          {provinces.map((province) => (
-            <Path
-              key={`shadow-${province.id}`}
-              d={province.path}
-              fill="rgba(0, 0, 0, 0.05)"
-            />
-          ))}
+          {provinces
+            .filter((province) => !!province.path)
+            .map((province) => (
+              <Path
+                key={`shadow-${province.id}`}
+                d={province.path}
+                fill="rgba(0, 0, 0, 0.05)"
+              />
+            ))}
         </G>
 
-        {/* Province shapes */}
+        {/* Province shapes — filter null paths so list children always carry keys */}
         <G>
-          {provinces.map((province) => (
-            <G key={province.id}>
-              {/* Main province shape */}
-              <Path
-                key={`main-${province.id}`}
-                d={province.path}
-                fill={province.active ? 'url(#activeGradient)' : 'url(#inactiveGradient)'}
-                fillOpacity={province.active ? 1 : 0.9}
-                stroke={province.active ? theme.colors.primary : 'rgba(51, 51, 51, 0.2)'}
-                strokeWidth={province.active ? 1.5 : 0.5}
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              />
-
-              {/* Highlight for active provinces */}
-              {province.active && (
+          {provinces
+            .filter((province) => !!province.path)
+            .map((province) => (
+              <G key={province.id}>
                 <Path
-                  key={`highlight-${province.id}`}
                   d={province.path}
-                  fill="transparent"
-                  stroke="rgba(255, 255, 255, 0.35)"
-                  strokeWidth="1"
+                  fill={province.active ? theme.colors.primary : theme.colors.backgroundDark}
+                  fillOpacity={1}
+                  stroke={province.active ? theme.colors.primaryDark : 'rgba(51, 51, 51, 0.25)'}
+                  strokeWidth={province.active ? 1.5 : 0.5}
                   strokeLinecap="round"
                   strokeLinejoin="round"
                 />
-              )}
 
-              {/* Province label */}
-              {province.centroid && (
-                <SvgText
-                  key={`label-${province.id}`}
-                  x={province.centroid.x}
-                  y={province.centroid.y}
-                  textAnchor="middle"
-                >
-                  <Text
-                    style={{
-                      fontSize: province.active ? 10 : 8,
-                      fontWeight: '700',
-                      color: province.active ? '#FFFFFF' : 'rgba(51, 51, 51, 0.7)',
-                    }}
+                {province.active ? (
+                  <Path
+                    d={province.path}
+                    fill="transparent"
+                    stroke="rgba(255, 255, 255, 0.35)"
+                    strokeWidth={1}
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                ) : null}
+
+                {showLabels && province.centroid && province.active ? (
+                  <SvgText
+                    x={province.centroid.x}
+                    y={province.centroid.y + 3}
+                    fontSize="10"
+                    fontWeight="700"
+                    fill="#FFFFFF"
+                    textAnchor="middle"
                   >
                     {province.name}
-                  </Text>
-                </SvgText>
-              )}
-            </G>
-          ))}
+                  </SvgText>
+                ) : null}
+              </G>
+            ))}
         </G>
 
         {/* South China Sea inset */}
@@ -174,55 +197,53 @@ export function ChinaConnectionMap({ connectedProvinces = new Set() }) {
             stroke="rgba(51, 51, 51, 0.25)"
             strokeWidth="0.8"
           />
-          {/* Hainan in inset */}
           <Path
             d="M45 55 L55 52 L62 60 L58 72 L48 75 L40 68 Z"
-            fill={connectedProvinces.has('Hainan') ? 'url(#activeGradient)' : 'url(#inactiveGradient)'}
+            fill={activeIds.has('Hainan') ? theme.colors.primary : theme.colors.backgroundDark}
             stroke="rgba(51, 51, 51, 0.2)"
             strokeWidth="0.5"
           />
-          {/* Taiwan in inset */}
           <Path
             d="M75 35 L85 32 L90 45 L85 58 L75 55 L72 45 Z"
-            fill={connectedProvinces.has('Taiwan') ? 'url(#activeGradient)' : 'url(#inactiveGradient)'}
+            fill={activeIds.has('Taiwan') ? theme.colors.primary : theme.colors.backgroundDark}
             stroke="rgba(51, 51, 51, 0.2)"
             strokeWidth="0.5"
           />
-          <SvgText x="50" y="85" textAnchor="middle">
-            <Text style={{ fontSize: 7, color: 'rgba(51, 51, 51, 0.6)' }}>南海诸岛</Text>
+          <SvgText
+            x="50"
+            y="85"
+            fontSize="7"
+            fill="rgba(51, 51, 51, 0.6)"
+            textAnchor="middle"
+          >
+            南海诸岛
           </SvgText>
         </G>
 
         {/* Compass */}
         <G transform="translate(35, 45)">
-          <Path
-            d="M12 0 L15 12 L12 9 L9 12 Z"
-            fill="rgba(51, 51, 51, 0.5)"
-          />
-          <Path
-            d="M12 24 L9 12 L12 15 L15 12 Z"
-            fill="rgba(51, 51, 51, 0.25)"
-          />
-          <SvgText x="12" y="-5" textAnchor="middle">
-            <Text style={{ fontSize: 8, color: 'rgba(51, 51, 51, 0.6)' }}>N</Text>
+          <Path d="M12 0 L15 12 L12 9 L9 12 Z" fill="rgba(51, 51, 51, 0.5)" />
+          <Path d="M12 24 L9 12 L12 15 L15 12 Z" fill="rgba(51, 51, 51, 0.25)" />
+          <SvgText x="12" y="-5" fontSize="8" fill="rgba(51, 51, 51, 0.6)" textAnchor="middle">
+            N
           </SvgText>
         </G>
       </Svg>
 
       {/* Caption */}
       <View pointerEvents="none" style={styles.caption}>
-        <Text style={styles.captionText}>China Provincial Atlas</Text>
+        <Text style={styles.captionText}>China Provincial Atlas · {activeCount} lit</Text>
       </View>
 
       {/* Legend */}
       <View pointerEvents="none" style={styles.legend}>
         <View style={styles.legendItem}>
           <View style={[styles.legendDot, styles.legendDotActive]} />
-          <Text style={styles.legendText}>Connected</Text>
+          <Text style={styles.legendText}>{legendActiveLabel}</Text>
         </View>
         <View style={styles.legendItem}>
           <View style={styles.legendDot} />
-          <Text style={styles.legendText}>Unexplored</Text>
+          <Text style={styles.legendText}>{legendInactiveLabel}</Text>
         </View>
       </View>
     </View>
@@ -233,6 +254,7 @@ const styles = StyleSheet.create({
   wrap: {
     width: '100%',
     aspectRatio: VIEWBOX_WIDTH / VIEWBOX_HEIGHT,
+    minHeight: 280,
     backgroundColor: '#FBF7F1',
     borderRadius: 8,
     borderWidth: 0.5,

@@ -229,12 +229,14 @@ export function BadgesSection({ stats, onBadgePress }) {
         </View>
       </SectionCard>
 
-      {/* Badge Categories */}
-      {categoryOrder.map((category) => {
-        const categoryBadges = badges.filter((b) => b.category === category);
-        if (categoryBadges.length === 0) return null;
-
-        return (
+      {/* Badge Categories — filter empty groups so no null list children (key warning) */}
+      {categoryOrder
+        .map((category) => ({
+          category,
+          categoryBadges: badges.filter((b) => b.category === category),
+        }))
+        .filter(({ categoryBadges }) => categoryBadges.length > 0)
+        .map(({ category, categoryBadges }) => (
           <View key={category} style={styles.categorySection}>
             <Text style={styles.categoryLabel}>{badgeCategories[category]}</Text>
             <View style={styles.badgesGrid}>
@@ -252,8 +254,7 @@ export function BadgesSection({ stats, onBadgePress }) {
               })}
             </View>
           </View>
-        );
-      })}
+        ))}
     </View>
   );
 }

@@ -2,7 +2,6 @@ import React, { useMemo, useEffect, useRef } from 'react';
 import {
   Pressable,
   SafeAreaView,
-  ScrollView,
   StyleSheet,
   Text,
   View,
@@ -22,12 +21,17 @@ import { SectionCard } from '../components/SectionCard';
 import { LinkedConceptText } from '../components/LinkedConceptText';
 import { DetailHeader } from '../components/DetailHeader';
 import { PaperTexture } from '../components/PaperTexture';
+import { ChinaConnectionMap } from '../components/ChinaConnectionMap';
+import { getDynastyHeartlandProvinces } from '../data/relations';
+import { normalizeProvinceId } from '../utils/provinceIds';
 import { cities } from '../data/cities';
 import { recipes } from '../data/recipes';
 import { people } from '../data/people';
 import { shareText, generateDynastyShareText } from '../utils/sharing';
 import { earnStamp } from '../utils/stampCollection';
+import { trackViewedItem } from '../utils/explorationStats';
 import { useReadingPosition } from '../hooks/useReadingPosition';
+import { navigateApp } from '../utils/navigation';
 
 export function DynastyDetailScreen({ route, navigation }) {
   const { colors } = useTheme();
@@ -94,9 +98,47 @@ export function DynastyDetailScreen({ route, navigation }) {
     }
   }, [dynasty]);
 
-  // Track stamp earning - user viewing dynasty details
+  // Multi-province heartland for the connection map (curated + province relations).
+  // Union attached field + relation lookup so neither empty path wins alone.
+  const heartlandList = useMemo(() => {
+    if (!dynasty?.id) return [];
+    const attached = Array.isArray(dynasty?.heartlandProvinces) ? dynasty.heartlandProvinces : [];
+    const fromRelations = getDynastyHeartlandProvinces(
+      dynasty.id,
+      dynasty.provinceId || dynasty.province_id || dynasty.province
+    );
+    const capital = dynasty.provinceId || dynasty.province_id || dynasty.province;
+    const raw = [...attached, ...fromRelations, capital].filter(Boolean);
+    // Normalize ids so they always match chinaGeo.json (drop General / junk)
+    const seen = new Set();
+    const out = [];
+    raw.forEach((id) => {
+      const n = normalizeProvinceId(id);
+      if (n && !seen.has(n)) {
+        seen.add(n);
+        out.push(n);
+      }
+    });
+    return out;
+  }, [dynasty?.id, dynasty?.heartlandProvinces, dynasty?.provinceId, dynasty?.province_id, dynasty?.province]);
+
+  // Array form works with ChinaConnectionMap (also accepts Set)
+  const heartlandProvinces = heartlandList;
+
+  const heartlandLabel = useMemo(() => heartlandList.join(' · '), [heartlandList]);
+
+  // Track exploration with capital province only. Full heartland lights up on the
+  // educational Heartland map below and when the user saves the dynasty — browsing
+  // every detail should not flood Profile Atlas with ~half of China.
   useEffect(() => {
     if (!dynasty?.id) return;
+
+    trackViewedItem('dynasty', {
+      id: dynasty.id,
+      province_id: dynasty.province_id || dynasty.provinceId,
+      provinceId: dynasty.provinceId || dynasty.province_id,
+      province: dynasty.province_id || dynasty.provinceId || dynasty.province,
+    }).catch(() => {});
 
     const timeoutId = setTimeout(async () => {
       await earnStamp('dynasty', dynasty, {
@@ -108,7 +150,7 @@ export function DynastyDetailScreen({ route, navigation }) {
     }, 3000);
 
     return () => clearTimeout(timeoutId);
-  }, [dynasty?.id]);
+  }, [dynasty?.id, dynasty?.province_id, dynasty?.provinceId, dynasty?.province]);
 
   if (!dynasty) {
     return (
@@ -129,15 +171,13 @@ export function DynastyDetailScreen({ route, navigation }) {
         onShare={handleShare}
         shareLabel="Share this dynasty"
       />
-      <HandscrollContainer>
-
-        <ScrollView
-          ref={scrollRef}
-          contentContainerStyle={styles.content}
-          showsVerticalScrollIndicator={false}
-          onScroll={onScroll}
-          scrollEventThrottle={16}
-        >
+      <HandscrollContainer
+        scrollRef={scrollRef}
+        onScroll={onScroll}
+        scrollEventThrottle={16}
+        initialScrollOffset={savedOffset > 0 ? savedOffset : 0}
+      >
+        <View style={styles.content}>
           <ScreenHeader
             kicker={dynasty?.years ?? 'Dynasty'}
             title={dynasty?.nameEn ?? 'Dynasty'}
@@ -158,6 +198,33 @@ export function DynastyDetailScreen({ route, navigation }) {
               <Text style={styles.dynastyName}>{dynasty.nameCn}</Text>
               <Text style={styles.dynastyNameEn}>{dynasty.nameEn} Dynasty</Text>
               <Text style={styles.period}>{dynasty.years}</Text>
+            </View>
+          </SectionCard>
+
+          <SectionCard style={styles.card}>
+            <View style={styles.sectionHeader}>
+              <MapPin size={14} color={theme.colors.primary} />
+              <Text style={styles.sectionTitle}>Heartland · 核心疆域</Text>
+            </View>
+            <Text style={styles.sectionHint}>
+              Core regions · 核心省区:{' '}
+              {heartlandLabel || dynasty.provinceId || dynasty.province_id || dynasty.province || '—'}
+            </Text>
+            {heartlandList.length > 0 ? (
+              <View style={styles.provincePills}>
+                {heartlandList.map((provinceId) => (
+                  <View key={provinceId} style={styles.provincePill}>
+                    <Text style={styles.provincePillText}>{provinceId}</Text>
+                  </View>
+                ))}
+              </View>
+            ) : null}
+            <View style={styles.mapWrap}>
+              <ChinaConnectionMap
+                connectedProvinces={heartlandProvinces}
+                legendActiveLabel="Core"
+                legendInactiveLabel="Other"
+              />
             </View>
           </SectionCard>
 
@@ -279,7 +346,7 @@ export function DynastyDetailScreen({ route, navigation }) {
                     <Pressable
                       key={city.id}
                       style={styles.relatedItem}
-                      onPress={() => navigation.getParent()?.navigate('Places', { cityId: city.id })}
+                      onPress={() => navigateApp(navigation, 'Places', { cityId: city.id })}
                       accessibilityRole="button"
                       accessibilityLabel={`${city.nameEn} - ${city.nameCn}`}
                       accessibilityHint="Double tap to explore cities"
@@ -307,7 +374,7 @@ export function DynastyDetailScreen({ route, navigation }) {
                     <Pressable
                       key={food.id}
                       style={styles.relatedItem}
-                      onPress={() => navigation.getParent()?.navigate('Food', { recipeId: food.id })}
+                      onPress={() => navigateApp(navigation, 'Food', { recipeId: food.id })}
                       accessibilityRole="button"
                       accessibilityLabel={`${food.nameEn} - ${food.nameCn}`}
                       accessibilityHint="Double tap to explore recipes"
@@ -349,7 +416,7 @@ export function DynastyDetailScreen({ route, navigation }) {
               ) : null;
             })()}
           </SectionCard>
-        </ScrollView>
+        </View>
       </HandscrollContainer>
     </SafeAreaView>
   );
@@ -369,6 +436,33 @@ const styles = StyleSheet.create({
   period: { marginTop: 6, color: theme.colors.mutedText },
   tagline: { marginTop: 8, color: theme.colors.text, fontStyle: 'italic' },
   card: { padding: 14 },
+  mapWrap: {
+    marginTop: 12,
+    width: '100%',
+    minHeight: 300,
+    borderRadius: 12,
+    overflow: 'hidden',
+    backgroundColor: theme.colors.surface,
+  },
+  provincePills: {
+    marginTop: 10,
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 6,
+  },
+  provincePill: {
+    backgroundColor: theme.colors.cinnabarGlow,
+    borderRadius: 999,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderWidth: 0.5,
+    borderColor: theme.colors.border,
+  },
+  provincePillText: {
+    color: theme.colors.primary,
+    fontSize: 11,
+    fontWeight: '700',
+  },
   sectionHeader: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   sectionTitle: { color: theme.colors.primary, fontSize: 12, fontWeight: '800', letterSpacing: 1.2, textTransform: 'uppercase' },
   sectionHint: { marginTop: 4, color: theme.colors.mutedText, fontSize: 11 },

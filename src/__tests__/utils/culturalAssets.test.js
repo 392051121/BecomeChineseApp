@@ -4,6 +4,7 @@
 
 import {
   getProvinceId,
+  normalizeProvinceId,
   buildProvinceStats,
   calculateNextStreak,
   getCultureRank,
@@ -50,15 +51,15 @@ jest.mock('../../utils/errorHandling', () => ({
 describe('Cultural Assets Utilities', () => {
   describe('getProvinceId', () => {
     it('extracts province_id', () => {
-      expect(getProvinceId({ province_id: 'guangdong' })).toBe('guangdong');
+      expect(getProvinceId({ province_id: 'guangdong' })).toBe('Guangdong');
     });
 
     it('extracts provinceId', () => {
-      expect(getProvinceId({ provinceId: 'sichuan' })).toBe('sichuan');
+      expect(getProvinceId({ provinceId: 'sichuan' })).toBe('Sichuan');
     });
 
     it('extracts province', () => {
-      expect(getProvinceId({ province: 'beijing' })).toBe('beijing');
+      expect(getProvinceId({ province: 'beijing' })).toBe('Beijing');
     });
 
     it('returns null for missing province', () => {
@@ -68,7 +69,12 @@ describe('Cultural Assets Utilities', () => {
     });
 
     it('prioritizes province_id over other fields', () => {
-      expect(getProvinceId({ province_id: 'first', provinceId: 'second', province: 'third' })).toBe('first');
+      expect(getProvinceId({ province_id: 'Guangdong', provinceId: 'Sichuan', province: 'Beijing' })).toBe('Guangdong');
+    });
+
+    it('parses display province strings', () => {
+      expect(getProvinceId({ province: 'Guangdong / Guangdong' })).toBe('Guangdong');
+      expect(getProvinceId({ province: 'Chengdu / Sichuan' })).toBe('Sichuan');
     });
   });
 
@@ -88,7 +94,7 @@ describe('Cultural Assets Utilities', () => {
 
       expect(result.total).toBe(3);
       expect(result.provinces).toHaveLength(3);
-      expect(result.provinces.find(p => p.province === 'guangdong').total).toBe(2);
+      expect(result.provinces.find(p => p.province === 'Guangdong').total).toBe(2);
     });
 
     it('marks visited provinces from favorites', () => {
@@ -103,7 +109,7 @@ describe('Cultural Assets Utilities', () => {
 
       const result = buildProvinceStats({ favorites, cities, recipes });
 
-      const gd = result.provinces.find(p => p.province === 'guangdong');
+      const gd = result.provinces.find(p => p.province === 'Guangdong');
       expect(gd.visited).toBe(true);
     });
 
@@ -195,7 +201,7 @@ describe('Cultural Assets Utilities', () => {
 
       expect(result.totalCount).toBe(2);
       expect(result.collectedCount).toBe(1);
-      expect(result.connectedProvinces.has('guangdong')).toBe(true);
+      expect(result.connectedProvinces.has('Guangdong')).toBe(true);
     });
 
     it('handles empty data', () => {

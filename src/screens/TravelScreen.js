@@ -29,26 +29,38 @@ import { theme } from '../theme/theme';
 import { useTheme } from '../theme/ThemeContext';
 import { logger } from '../utils/errorHandling';
 import { useToast } from '../components/Toast';
+import { navigateApp } from '../utils/navigation';
 
-const CityCard = memo(function CityCard({ item, isActive, isBookmarked, onActivate, onBookmark, onShare, navigation }) {
+const CityCard = memo(function CityCard({
+  item,
+  isActive,
+  trackExploration,
+  isBookmarked,
+  onActivate,
+  onBookmark,
+  onShare,
+  navigation,
+}) {
   const relatedFood = recipes.find((recipe) => recipe.province_id === item.province_id);
   const relatedDynasty = dynasties.find((dynasty) => dynasty.province_id === item.province_id);
 
-  // Track view when card becomes active
+  // Track exploration only when TravelScreen marks the activation as intentional
+  // (user tap / deep-link). Do NOT count the default cities[0] selection on mount.
   useEffect(() => {
-    if (isActive) {
-      addRecentlyViewed({
-        id: item.id,
-        type: 'city',
-        nameEn: item.nameEn,
-        nameCn: item.nameCn,
-        province: item.province,
-      }).catch(() => {});
+    if (!isActive || !trackExploration) return;
 
-      // Track exploration for achievements
-      trackViewedItem('city', item).catch(() => {});
-    }
-  }, [isActive, item]);
+    addRecentlyViewed({
+      id: item.id,
+      type: 'city',
+      nameEn: item.nameEn,
+      nameCn: item.nameCn,
+      province: item.province_id || item.provinceId || item.province,
+      province_id: item.province_id || item.provinceId,
+      provinceId: item.provinceId || item.province_id,
+    }).catch(() => {});
+
+    trackViewedItem('city', item).catch(() => {});
+  }, [isActive, trackExploration, item]);
 
   return (
     <SectionCard style={styles.cardWrap} tone="soft">
@@ -171,7 +183,7 @@ const CityCard = memo(function CityCard({ item, isActive, isBookmarked, onActiva
                   label="Food"
                   title={`${relatedFood.nameEn} / ${relatedFood.nameCn}`}
                   hint="Explore"
-                  onPress={() => navigation.getParent()?.navigate('Food', { recipeId: relatedFood.id })}
+                  onPress={() => navigateApp(navigation, 'Food', { recipeId: relatedFood.id })}
                 />
               ) : null}
               {relatedDynasty ? (
@@ -179,7 +191,7 @@ const CityCard = memo(function CityCard({ item, isActive, isBookmarked, onActiva
                   label="History"
                   title={`${relatedDynasty.nameEn} / ${relatedDynasty.nameCn}`}
                   hint="Explore"
-                  onPress={() => navigation.getParent()?.navigate('History', {
+                  onPress={() => navigateApp(navigation, 'History', {
                     screen: 'DynastyDetail',
                     params: { dynastyId: relatedDynasty.id },
                   })}
@@ -201,7 +213,10 @@ export function TravelScreen({ route }) {
   const { colors } = useTheme();
   const toast = useToast();
   const data = useMemo(() => cities, []);
+  // UI-only default selection (expand first card). Exploration tracking stays off
+  // until the user taps a city or arrives via deep-link cityId.
   const [activeCityId, setActiveCityId] = useState(cities[0]?.id ?? null);
+  const [explorationCityId, setExplorationCityId] = useState(null);
   const [bookmarked, setBookmarked] = useState({});
   const [searchQuery, setSearchQuery] = useState('');
   const [refreshing, setRefreshing] = useState(false);
@@ -259,7 +274,11 @@ export function TravelScreen({ route }) {
     setRefreshing(false);
   }, []);
 
-  const activateCity = useCallback((cityId) => setActiveCityId(cityId), []);
+  const activateCity = useCallback((cityId) => {
+    setActiveCityId(cityId);
+    // User explicitly expanded this card → count toward atlas exploration
+    setExplorationCityId(cityId);
+  }, []);
 
   // Deep-link support: when navigating here with a `cityId` param (e.g. from a
   // collection entry, learning path step, or related-city card), activate that
@@ -273,6 +292,7 @@ export function TravelScreen({ route }) {
     navigation.setParams({ cityId: undefined });
     if (!city) return;
     setActiveCityId(city.id);
+    setExplorationCityId(city.id);
   }, [pendingCityId, navigation]);
 
   // Track stamp earning for active city
@@ -313,7 +333,10 @@ export function TravelScreen({ route }) {
     await toggleCollectionItem('cities', {
       id: item.id,
       nameEn: item.nameEn,
-      province: item.province,
+      nameCn: item.nameCn,
+      province_id: item.province_id || item.provinceId,
+      provinceId: item.provinceId || item.province_id,
+      province: item.province_id || item.provinceId || item.province,
       imageAsset: item.imageAsset,
       tagline: item.tagline,
     }).catch(() => {});
@@ -341,6 +364,7 @@ export function TravelScreen({ route }) {
       <CityCard
         item={item}
         isActive={activeCityId === item.id}
+        trackExploration={explorationCityId === item.id}
         isBookmarked={!!bookmarked[item.id]}
         onActivate={activateCity}
         onBookmark={() => toggleBookmark(item)}
@@ -348,19 +372,21 @@ export function TravelScreen({ route }) {
         navigation={navigation}
       />
     ),
-    [activeCityId, bookmarked, activateCity, toggleBookmark, handleShare, navigation]
+    [activeCityId, explorationCityId, bookmarked, activateCity, toggleBookmark, handleShare, navigation]
   );
 
+  // Map overview highlights provinces the user has saved or intentionally opened —
+  // NOT every province that simply has catalog content (that made the whole map look "on").
   const connectedProvinces = useMemo(() => {
     const provinceSet = new Set();
-    // Add all provinces that have cities
-    cities.forEach(city => {
-      if (city.province_id) {
+    cities.forEach((city) => {
+      if (!city.province_id) return;
+      if (bookmarked[city.id] || explorationCityId === city.id) {
         provinceSet.add(city.province_id);
       }
     });
     return provinceSet;
-  }, []);
+  }, [bookmarked, explorationCityId]);
 
   const ListHeader = useMemo(() => (
     <>
@@ -410,7 +436,7 @@ export function TravelScreen({ route }) {
             const provinceCityIndex = filteredCities.findIndex(c => c.province_id === province.id);
             if (provinceCityIndex !== -1) {
               const provinceCity = filteredCities[provinceCityIndex];
-              setActiveCityId(provinceCity.id);
+              activateCity(provinceCity.id);
               // Scroll to the city card (accounting for header height)
               // Each card is roughly 300px tall, plus header offset
               const headerHeight = 200; // Approximate header height
@@ -422,7 +448,7 @@ export function TravelScreen({ route }) {
         />
       </View>
     </SectionCard>
-  ), [connectedProvinces, collectionStats, filteredCities]);
+  ), [connectedProvinces, collectionStats, filteredCities, activateCity]);
 
   return (
     <SafeAreaView style={styles.safeArea}>

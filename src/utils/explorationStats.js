@@ -8,6 +8,7 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { STORAGE_KEYS } from '../config/storageKeys';
 import { STORAGE_LIMITS } from '../config/constants';
+import { getProvinceId, normalizeProvinceId } from './provinceIds';
 
 const MAX_VIEWED_ITEMS = STORAGE_LIMITS.MAX_RECENT_ITEMS || 100;
 
@@ -15,6 +16,56 @@ const MAX_VIEWED_ITEMS = STORAGE_LIMITS.MAX_RECENT_ITEMS || 100;
 let explorationCache = null;
 let cacheTimestamp = 0;
 const CACHE_TTL = 5000; // 5 seconds
+
+/**
+ * Default empty stats shape
+ */
+function defaultStats() {
+  return {
+    citiesViewed: [],
+    recipesViewed: [],
+    dynastiesViewed: [],
+    peopleViewed: [],
+    provincesExplored: {},
+  };
+}
+
+/**
+ * Drop non-geo province keys and merge duplicates after alias normalize.
+ * Returns { stats, changed } so callers can optionally persist the scrub.
+ */
+export function scrubExplorationProvinces(stats) {
+  const base = stats && typeof stats === 'object' ? stats : defaultStats();
+  const raw = base.provincesExplored && typeof base.provincesExplored === 'object'
+    ? base.provincesExplored
+    : {};
+  const next = {};
+  let changed = false;
+
+  Object.entries(raw).forEach(([key, itemIds]) => {
+    const n = normalizeProvinceId(key);
+    if (!n) {
+      changed = true;
+      return;
+    }
+    if (n !== key) changed = true;
+    if (!next[n]) next[n] = [];
+    const list = Array.isArray(itemIds) ? itemIds : [];
+    list.forEach((id) => {
+      if (id != null && !next[n].includes(id)) next[n].push(id);
+    });
+  });
+
+  if (!changed) {
+    // Still treat length mismatch as change (dedupe across aliases)
+    if (Object.keys(next).length !== Object.keys(raw).length) changed = true;
+  }
+
+  return {
+    stats: { ...base, provincesExplored: next },
+    changed,
+  };
+}
 
 /**
  * Get exploration stats from storage
@@ -28,28 +79,21 @@ export async function getExplorationStats() {
 
     const saved = await AsyncStorage.getItem(STORAGE_KEYS.EXPLORATION_STATS);
     if (saved) {
-      explorationCache = JSON.parse(saved);
+      const parsed = JSON.parse(saved);
+      const { stats: scrubbed, changed } = scrubExplorationProvinces(parsed);
+      explorationCache = scrubbed;
       cacheTimestamp = Date.now();
+      // Persist one-time cleanup of bad keys (e.g. display strings) so Profile map stops over-lighting.
+      if (changed) {
+        await AsyncStorage.setItem(STORAGE_KEYS.EXPLORATION_STATS, JSON.stringify(scrubbed));
+      }
       return explorationCache;
     }
 
-    // Return default structure
-    return {
-      citiesViewed: [],
-      recipesViewed: [],
-      dynastiesViewed: [],
-      peopleViewed: [],
-      provincesExplored: {},
-    };
+    return defaultStats();
   } catch (e) {
     console.error('Failed to get exploration stats:', e);
-    return {
-      citiesViewed: [],
-      recipesViewed: [],
-      dynastiesViewed: [],
-      peopleViewed: [],
-      provincesExplored: {},
-    };
+    return defaultStats();
   }
 }
 
@@ -71,11 +115,18 @@ async function saveExplorationStats(stats) {
  * @param {string} type - 'city' | 'recipe' | 'dynasty' | 'person'
  * @param {object} item - The item being viewed (must have id, and province_id for cities)
  */
+const VIEWED_TYPE_KEYS = {
+  city: 'citiesViewed',
+  recipe: 'recipesViewed',
+  dynasty: 'dynastiesViewed',
+  person: 'peopleViewed',
+};
+
 export async function trackViewedItem(type, item) {
   if (!item || !item.id) return;
 
   const stats = await getExplorationStats();
-  const typeKey = `${type}sViewed`;
+  const typeKey = VIEWED_TYPE_KEYS[type] || `${type}sViewed`;
 
   if (!stats[typeKey]) {
     stats[typeKey] = [];
@@ -86,24 +137,49 @@ export async function trackViewedItem(type, item) {
     stats[typeKey] = [...stats[typeKey], item.id].slice(-MAX_VIEWED_ITEMS);
   }
 
-  // Track province exploration for cities
-  if (type === 'city' && item.province_id) {
+  // Track province exploration (canonical chinaGeo ids only).
+  // - city / recipe: primary province of that content only
+  // - dynasty: capital + optional heartlandProvinces (multi-province core)
+  if (type === 'city' || type === 'recipe' || type === 'dynasty') {
+    const provinceKeys = new Set();
+    const primary =
+      getProvinceId(item) ||
+      normalizeProvinceId(item?.province_id || item?.provinceId || item?.province);
+    if (primary) provinceKeys.add(primary);
+
+    // Heartland multi-province highlight is only meaningful for dynasties.
+    // Do not let other content types bulk-write extras via heartlandProvinces.
+    if (type === 'dynasty') {
+      const extras = [
+        ...(Array.isArray(item?.heartlandProvinces) ? item.heartlandProvinces : []),
+        ...(Array.isArray(item?.provinceIds) ? item.provinceIds : []),
+      ];
+      extras.forEach((id) => {
+        const n = normalizeProvinceId(id);
+        if (n) provinceKeys.add(n);
+      });
+    }
+
     if (!stats.provincesExplored) {
       stats.provincesExplored = {};
     }
-    if (!stats.provincesExplored[item.province_id]) {
-      stats.provincesExplored[item.province_id] = [];
-    }
-    if (!stats.provincesExplored[item.province_id].includes(item.id)) {
-      stats.provincesExplored[item.province_id] = [
-        ...stats.provincesExplored[item.province_id],
-        item.id,
-      ];
-    }
+    provinceKeys.forEach((provinceKey) => {
+      if (!stats.provincesExplored[provinceKey]) {
+        stats.provincesExplored[provinceKey] = [];
+      }
+      if (!stats.provincesExplored[provinceKey].includes(item.id)) {
+        stats.provincesExplored[provinceKey] = [
+          ...stats.provincesExplored[provinceKey],
+          item.id,
+        ];
+      }
+    });
   }
 
-  await saveExplorationStats(stats);
-  return stats;
+  // Always re-scrub before save so alias collisions collapse to one geo id
+  const { stats: clean } = scrubExplorationProvinces(stats);
+  await saveExplorationStats(clean);
+  return clean;
 }
 
 /**
@@ -158,7 +234,7 @@ export async function getCompletedProvinces(allCities) {
  */
 export async function getExplorationProgress(type, allItems) {
   const stats = await getExplorationStats();
-  const typeKey = `${type}sViewed`;
+  const typeKey = VIEWED_TYPE_KEYS[type] || `${type}sViewed`;
   const viewed = stats[typeKey]?.length || 0;
   const total = allItems?.length || 0;
 
