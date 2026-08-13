@@ -21,6 +21,7 @@ import { getCurrentSolarTerm, getCurrentSeason, getSeasonalColors, getFestivalBo
 import { PaperTexture } from '../components/PaperTexture';
 import { theme } from '../theme/theme';
 import { useTheme } from '../theme/ThemeContext';
+import { navigateApp } from '../utils/navigation';
 
 const quickActions = [
   { id: 'history', label: 'History', labelCn: '历史', icon: Scroll, target: 'History', color: '#B33B24', seasonKey: 'autumn', prose: 'Rise and fall of dynasties' },
@@ -30,7 +31,7 @@ const quickActions = [
 
 export function HomeScreen() {
   const navigation = useNavigation();
-  const { colors, isDark } = useTheme();
+  const { colors } = useTheme();
   const [assets, setAssets] = useState(null);
   const [wrongAnswersCount, setWrongAnswersCount] = useState(0);
   const [refreshing, setRefreshing] = useState(false);
@@ -137,7 +138,7 @@ export function HomeScreen() {
     <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.background }]}>
       {/* Global 宣纸背景质感 */}
       <View pointerEvents="none" style={styles.paperWrap}>
-        {!isDark && <PaperTexture style={styles.paperTexture} idPrefix="home_bg" />}
+        <PaperTexture style={styles.paperTexture} idPrefix="home_bg" />
       </View>
 
       <HandscrollContainer
@@ -156,19 +157,19 @@ export function HomeScreen() {
           <Pressable
             style={[
               styles.heroCard,
-              isDark ? styles.heroCardDark : styles.heroCardLight,
+              styles.heroCardLight,
             ]}
             onPress={() => {
               // Prefer canonical Seasons detail key (detailId); fall back to pinyin id
               // which SolarTermDetailScreen now resolves via normalizeSolarTermId.
               const termId = seasonMeta?.term?.detailId || seasonMeta?.term?.id;
               if (termId) {
-                navigation.getParent()?.navigate('Seasons', {
+                navigateApp(navigation, 'Seasons', {
                   screen: 'SolarTermDetail',
                   params: { termId },
                 });
               } else {
-                navigation.getParent()?.navigate('Seasons');
+                navigateApp(navigation, 'Seasons');
               }
             }}
             accessibilityRole="button"
@@ -225,7 +226,7 @@ export function HomeScreen() {
           {/* ============ 今日任务卡 ============ */}
           <Pressable
             style={({ pressed }) => [styles.taskCard, pressed && styles.taskCardPressed]}
-            onPress={() => navigation.getParent()?.navigate('Seasons')}
+            onPress={() => navigateApp(navigation, 'Seasons')}
             accessibilityRole="button"
             accessibilityLabel={!solvedToday ? "Priority task: Complete daily quiz" : "Today's task completed"}
           >
@@ -279,7 +280,7 @@ export function HomeScreen() {
                     isHighlight && styles.exploreCardHighlight,
                     { borderColor: colors.border },
                   ]}
-                  onPress={() => navigation.getParent()?.navigate(action.target)}
+                  onPress={() => navigateApp(navigation, action.target)}
                   accessibilityRole="button"
                   accessibilityLabel={`${action.label} - ${action.labelCn}`}
                 >
@@ -301,7 +302,7 @@ export function HomeScreen() {
           <View style={styles.quickRow}>
             <Pressable
               style={[styles.quickBtn, { backgroundColor: colors.card, borderColor: colors.border }]}
-              onPress={() => navigation.getParent()?.navigate('Profile', { screen: 'Collection' })}
+              onPress={() => navigateApp(navigation, 'Profile', { screen: 'Collection' })}
               accessibilityRole="button"
               accessibilityLabel="View Collection"
             >
@@ -310,7 +311,7 @@ export function HomeScreen() {
             </Pressable>
             <Pressable
               style={[styles.quickBtn, { backgroundColor: colors.card, borderColor: colors.border }]}
-              onPress={() => navigation.getParent()?.navigate('Seasons')}
+              onPress={() => navigateApp(navigation, 'Seasons')}
               accessibilityRole="button"
               accessibilityLabel="Open Calendar"
             >
@@ -337,7 +338,7 @@ export function HomeScreen() {
           {wrongAnswersCount > 0 && (
             <Pressable
               style={({ pressed }) => [styles.reviewPromptCard, pressed && styles.reviewPromptPressed]}
-              onPress={() => navigation.getParent()?.navigate('Seasons', { screen: 'WrongAnswerReview' })}
+              onPress={() => navigateApp(navigation, 'Seasons', { screen: 'WrongAnswerReview' })}
               accessibilityRole="button"
               accessibilityLabel={`${wrongAnswersCount} questions waiting for review`}
             >
@@ -470,9 +471,6 @@ const styles = StyleSheet.create({
   },
   heroCardLight: {
     backgroundColor: '#7A2418',
-  },
-  heroCardDark: {
-    backgroundColor: '#3A1610',
   },
   heroGlow: {
     position: 'absolute',

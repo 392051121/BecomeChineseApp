@@ -18,6 +18,7 @@ import { cities } from '../data/cities';
 import { recipes } from '../data/recipes';
 import { dynasties } from '../data/dynasties';
 import { people } from '../data/people';
+import { navigateApp } from '../utils/navigation';
 
 /** Path step id aliases → canonical data ids (e.g. confucius → kongzi). */
 const PERSON_ID_ALIASES = {
@@ -215,22 +216,22 @@ export function PathDetailScreen() {
 
     // Navigate to the right surface carrying the id so the detail opens directly.
     if (type === 'recipe') {
-      navigation.getParent()?.navigate('Food', { recipeId: id });
+      navigateApp(navigation, 'Food', { recipeId: id });
     } else if (type === 'city') {
-      navigation.getParent()?.navigate('Places', { cityId: id });
+      navigateApp(navigation, 'Places', { cityId: id });
     } else if (type === 'dynasty') {
-      navigation.getParent()?.navigate('History', {
+      navigateApp(navigation, 'History', {
         screen: 'DynastyDetail',
         params: { dynastyId: id },
       });
     } else if (type === 'person') {
-      navigation.getParent()?.navigate('History', {
+      navigateApp(navigation, 'History', {
         screen: 'PersonDetail',
         params: { personId: id },
       });
     } else {
       const screen = getTypeScreen(type);
-      navigation.getParent()?.navigate(screen);
+      navigateApp(navigation, screen);
     }
   }
 
@@ -301,7 +302,7 @@ export function PathDetailScreen() {
               </Text>
               <Pressable
                 style={styles.exploreMoreBtn}
-                onPress={() => navigation.getParent()?.navigate('Home')}
+                onPress={() => navigateApp(navigation, 'Home')}
                 accessibilityRole="button"
                 accessibilityLabel="Explore More Paths"
                 accessibilityHint="Double tap to return to home screen"

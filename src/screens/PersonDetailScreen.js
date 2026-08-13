@@ -28,6 +28,7 @@ import { theme } from '../theme/theme';
 import { useTheme } from '../theme/ThemeContext';
 import { useToast } from '../components/Toast';
 import { useReadingPosition } from '../hooks/useReadingPosition';
+import { navigateApp } from '../utils/navigation';
 
 export function PersonDetailScreen({ route, navigation }) {
   const { colors } = useTheme();
@@ -109,20 +110,22 @@ export function PersonDetailScreen({ route, navigation }) {
   };
 
   const handleShare = async () => {
+    if (!person) return;
     Haptics.selectionAsync().catch(() => {});
+    const summary = person.summaryEn ? `${String(person.summaryEn).slice(0, 100)}...` : '';
     const lines = [
       `🀄 BecomeChinese History`,
       ``,
-      `${person.nameCn} · ${person.nameEn}`,
-      `${person.subtitleEn}`,
+      `${person.nameCn || ''} · ${person.nameEn || ''}`.trim(),
+      person.subtitleEn || '',
       ``,
-      `${person.summaryEn?.slice(0, 100)}...`,
+      summary,
       ``,
       person.achievements?.length > 0 ? `✨ Achievements: ${person.achievements.slice(0, 3).join(', ')}` : '',
       ``,
       `Discover more historical figures.`,
     ];
-    await shareText(lines.filter(Boolean).join('\n'), `Share ${person.nameEn}`);
+    await shareText(lines.filter(Boolean).join('\n'), `Share ${person.nameEn || 'Person'}`);
   };
 
   if (!person) {
@@ -244,7 +247,7 @@ export function PersonDetailScreen({ route, navigation }) {
               <Pressable
                 key={city.id}
                 style={[styles.relatedItem, { backgroundColor: colors.surface, borderColor: colors.border }]}
-                onPress={() => navigation.getParent()?.navigate('Places', { cityId: city.id })}
+                onPress={() => navigateApp(navigation, 'Places', { cityId: city.id })}
                 accessibilityRole="button"
                 accessibilityLabel={`${city.nameEn} - ${city.nameCn}`}
               >

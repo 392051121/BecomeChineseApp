@@ -20,6 +20,7 @@ import { getRarityColor } from '../config/rarity';
 import { theme } from '../theme/theme';
 import { useTheme } from '../theme/ThemeContext';
 import { FLATLIST_CONFIG, DISPLAY_LIMITS } from '../config/constants';
+import { navigateApp } from '../utils/navigation';
 
 const categories = [
   { id: 'cities', label: 'Cities', labelCn: '城市', icon: MapPin, color: '#6B8A94' },
@@ -49,9 +50,9 @@ function CollectionItem({ item, type, onPress }) {
           <Text style={styles.itemName} numberOfLines={1}>{item.nameEn}</Text>
           {rarity !== 'common' && <RarityBadge rarity={rarity} size="small" showLabel={false} />}
         </View>
-        {item.nameCn && <Text style={styles.itemNameCn} numberOfLines={1}>{item.nameCn}</Text>}
-        {item.province && <Text style={styles.itemMeta}>{item.province}</Text>}
-        {item.region && <Text style={styles.itemMeta}>{item.region}</Text>}
+        {!!item.nameCn && <Text style={styles.itemNameCn} numberOfLines={1}>{item.nameCn}</Text>}
+        {!!item.province && <Text style={styles.itemMeta}>{item.province}</Text>}
+        {!!item.region && <Text style={styles.itemMeta}>{item.region}</Text>}
       </View>
       <ArrowRight size={14} color={theme.colors.mutedText} strokeWidth={2} />
     </Pressable>
@@ -260,28 +261,28 @@ export function CollectionScreen() {
   function handleItemPress(item, type) {
     // Typed deep-links so each collection entry opens the right detail surface.
     if (type === 'dynasties') {
-      navigation.getParent()?.navigate('History', {
+      navigateApp(navigation, 'History', {
         screen: 'DynastyDetail',
         params: { dynastyId: item.id },
       });
       return;
     }
     if (type === 'people') {
-      navigation.getParent()?.navigate('History', {
+      navigateApp(navigation, 'History', {
         screen: 'PersonDetail',
         params: { personId: item.id },
       });
       return;
     }
     if (type === 'recipes') {
-      navigation.getParent()?.navigate('Food', { recipeId: item.id });
+      navigateApp(navigation, 'Food', { recipeId: item.id });
       return;
     }
     if (type === 'cities') {
-      navigation.getParent()?.navigate('Places', { cityId: item.id });
+      navigateApp(navigation, 'Places', { cityId: item.id });
       return;
     }
-    navigation.getParent()?.navigate('Home');
+    navigateApp(navigation, 'Home');
   }
 
   function toggleViewMode() {
@@ -491,7 +492,7 @@ export function CollectionScreen() {
                           )}
                         </View>
                         <Text style={styles.gridItemName} numberOfLines={1}>{item.nameEn}</Text>
-                        {item.nameCn && <Text style={styles.gridItemNameCn} numberOfLines={1}>{item.nameCn}</Text>}
+                        {!!item.nameCn && <Text style={styles.gridItemNameCn} numberOfLines={1}>{item.nameCn}</Text>}
                       </Pressable>
                     );
                   }}
@@ -519,7 +520,7 @@ export function CollectionScreen() {
               description="Save cities, dishes, and dynasties to build your personal cultural atlas."
               icon={Bookmark}
               action="Explore Places"
-              onAction={() => navigation.getParent()?.navigate('Places')}
+              onAction={() => navigateApp(navigation, 'Places')}
               centered
             />
           )}

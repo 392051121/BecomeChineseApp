@@ -13,6 +13,7 @@ import { useTheme } from '../theme/ThemeContext';
 import { ScreenHeader } from '../components/ScreenHeader';
 import { StampAlbum } from '../components/StampAlbum';
 import { StampUnlockAnimation } from '../components/StampUnlockAnimation';
+import { navigateApp } from '../utils/navigation';
 
 export function StampCollectionScreen() {
   const { colors } = useTheme();
@@ -38,22 +39,22 @@ export function StampCollectionScreen() {
     const type = stamp?.type;
 
     if (type === 'city' && contentId) {
-      navigation.getParent()?.navigate('Places', { cityId: contentId });
+      navigateApp(navigation, 'Places', { cityId: contentId });
       return;
     }
     if (type === 'food' && contentId) {
-      navigation.getParent()?.navigate('Food', { recipeId: contentId });
+      navigateApp(navigation, 'Food', { recipeId: contentId });
       return;
     }
     if (type === 'dynasty' && contentId) {
-      navigation.getParent()?.navigate('History', {
+      navigateApp(navigation, 'History', {
         screen: 'DynastyDetail',
         params: { dynastyId: contentId },
       });
       return;
     }
     if (type === 'person' && contentId) {
-      navigation.getParent()?.navigate('History', {
+      navigateApp(navigation, 'History', {
         screen: 'PersonDetail',
         params: { personId: contentId },
       });
@@ -68,7 +69,7 @@ export function StampCollectionScreen() {
       person: 'History',
     }[type];
     if (tabOnly) {
-      navigation.getParent()?.navigate(tabOnly);
+      navigateApp(navigation, tabOnly);
     }
   }, [navigation]);
 

@@ -7,6 +7,7 @@ import { theme } from '../theme/theme';
 import { useTheme } from '../theme/ThemeContext';
 import { SectionCard } from './SectionCard';
 import { getTypeIcon, getTypeColor, getTypeScreen, getTypeLabel } from '../utils/contentTypes';
+import { navigateApp } from '../utils/navigation';
 
 /**
  * ExploreNextSection
@@ -30,14 +31,14 @@ export function ExploreNextSection({ items = [], sourceType, sourceId }) {
 
     // Deep-link into a dedicated detail route when one exists.
     if (type === 'dynasty' && screen === 'History') {
-      navigation.getParent()?.navigate('History', {
+      navigateApp(navigation, 'History', {
         screen: 'DynastyDetail',
         params: { dynastyId: item.id },
       });
       return;
     }
     if (type === 'person' && screen === 'History') {
-      navigation.getParent()?.navigate('History', {
+      navigateApp(navigation, 'History', {
         screen: 'PersonDetail',
         params: { personId: item.id },
       });
@@ -46,18 +47,18 @@ export function ExploreNextSection({ items = [], sourceType, sourceId }) {
 
     // recipe -> Food tab, carrying the id so the detail sheet opens directly.
     if (type === 'recipe' && screen === 'Food') {
-      navigation.getParent()?.navigate('Food', { recipeId: item.id });
+      navigateApp(navigation, 'Food', { recipeId: item.id });
       return;
     }
 
     // city -> Places tab, carrying the id so the city activates directly.
     if (type === 'city' && screen === 'Places') {
-      navigation.getParent()?.navigate('Places', { cityId: item.id });
+      navigateApp(navigation, 'Places', { cityId: item.id });
       return;
     }
 
     // fallback -> tab.
-    navigation.getParent()?.navigate(screen);
+    navigateApp(navigation, screen);
   };
 
   return (

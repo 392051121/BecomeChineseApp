@@ -16,7 +16,7 @@ import { TravelScreen } from '../screens/TravelScreen';
 const Tab = createBottomTabNavigator();
 
 export function RootTabs() {
-  const { colors, isDark } = useTheme();
+  const { colors } = useTheme();
 
   return (
     <NavigationContainer>
@@ -27,12 +27,29 @@ export function RootTabs() {
           headerShown: false,
         }}
       >
-        <Tab.Screen name="Home" component={HomeStack} />
-        <Tab.Screen name="Seasons" component={SeasonsStack} />
-        <Tab.Screen name="History" component={HistoryStack} />
+        {/* Nested stack tabs: leave → pop to list root so next entry isn't a stale detail. */}
+        <Tab.Screen
+          name="Home"
+          component={HomeStack}
+          options={{ popToTopOnBlur: true }}
+        />
+        <Tab.Screen
+          name="Seasons"
+          component={SeasonsStack}
+          options={{ popToTopOnBlur: true }}
+        />
+        <Tab.Screen
+          name="History"
+          component={HistoryStack}
+          options={{ popToTopOnBlur: true }}
+        />
         <Tab.Screen name="Food" component={FoodScreen} />
         <Tab.Screen name="Places" component={TravelScreen} />
-        <Tab.Screen name="Profile" component={ProfileStack} />
+        <Tab.Screen
+          name="Profile"
+          component={ProfileStack}
+          options={{ popToTopOnBlur: true }}
+        />
       </Tab.Navigator>
     </NavigationContainer>
   );

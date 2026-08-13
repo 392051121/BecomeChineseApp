@@ -32,6 +32,7 @@ import { addRecentlyViewed } from '../utils/culturalAssets';
 import { theme } from '../theme/theme';
 import { useTheme } from '../theme/ThemeContext';
 import { logger } from '../utils/errorHandling';
+import { navigateApp } from '../utils/navigation';
 
 const EXPANDED_SECTIONS_KEY = 'becomeChinese_historyExpandedSections';
 
@@ -83,7 +84,8 @@ export function HistoryScreen() {
   const [expandedSections, setExpandedSections] = useState(() => {
     const initial = {};
     dynasties.forEach((item) => {
-      initial[`${item.id}-chapter`] = true;
+      // Keep list compact: open DynastyDetail for the full chapter experience.
+      initial[`${item.id}-chapter`] = false;
       initial[`${item.id}-emperors`] = false;
     });
     return initial;
@@ -150,7 +152,7 @@ export function HistoryScreen() {
   function toggleSection(sectionKey, item) {
     setExpandedSections((prev) => {
       const newState = { ...prev, [sectionKey]: !prev[sectionKey] };
-      // Track view when chapter is opened
+      // Track view when chapter preview is expanded on the list
       if (newState[sectionKey] && item && sectionKey.endsWith('-chapter')) {
         addRecentlyViewed({
           id: item.id,
@@ -159,27 +161,29 @@ export function HistoryScreen() {
           nameCn: item.nameCn,
           province: item.province_id,
         }).catch(() => {});
-
-        // Try to earn stamp after viewing for 3 seconds
-        setTimeout(async () => {
-          const { earnStamp } = await import('../utils/stampCollection');
-          await earnStamp('dynasty', item, {
-            viewTimeMs: 3000,
-            scrollDepth: 0.7,
-            interactions: 1,
-            expanded: true,
-          });
-        }, 3000);
       }
       return newState;
     });
   }
 
+  /** Open the full DynastyDetail screen (same page as Confucius → Zhou). */
+  const openDynastyDetail = useCallback((item) => {
+    if (!item?.id) return;
+    addRecentlyViewed({
+      id: item.id,
+      type: 'dynasty',
+      nameEn: item.nameEn,
+      nameCn: item.nameCn,
+      province: item.province_id,
+    }).catch(() => {});
+    navigation.navigate('DynastyDetail', { dynastyId: item.id });
+  }, [navigation]);
+
   const renderDynastyItem = useMemo(() => {
     return ({ item, index }) => {
       const chapterKey = `${item.id}-chapter`;
       const emperorKey = `${item.id}-emperors`;
-      const chapterOpen = expandedSections[chapterKey] ?? true;
+      const chapterOpen = expandedSections[chapterKey] ?? false;
       const emperorOpen = expandedSections[emperorKey] ?? false;
       const relatedCity = cities.find((city) => city.province_id === item.province_id);
       const relatedFood = recipes.find((recipe) => recipe.province_id === item.province_id);
@@ -191,14 +195,14 @@ export function HistoryScreen() {
         <SectionCard style={styles.chapterCard} tone={index % 2 === 0 ? 'soft' : 'panel'}>
           <Pressable
             style={styles.chapterHeader}
-            onPress={() => toggleSection(chapterKey, item)}
+            onPress={() => openDynastyDetail(item)}
             accessibilityRole="button"
             accessibilityLabel={`${item.nameEn} - ${item.nameCn} dynasty`}
-            accessibilityHint={chapterOpen ? "Double tap to collapse chapter" : "Double tap to expand chapter"}
+            accessibilityHint="Double tap to open the full dynasty chapter"
           >
             <Text style={[styles.chapterTitle, { color: colors.text }]}>{item.nameEn}</Text>
             <Text style={[styles.chapterTitleZh, { color: colors.primary }]}>{item.nameCn}</Text>
-            <Text style={[styles.cardHint, { color: colors.mutedText }]}>{chapterOpen ? 'Collapse chapter' : 'Open chapter'}</Text>
+            <Text style={[styles.cardHint, { color: colors.primary }]}>Open full chapter →</Text>
           </Pressable>
 
           {chapterOpen ? (
@@ -207,6 +211,17 @@ export function HistoryScreen() {
                 <Text style={[styles.periodYears, { color: colors.text }]}>{item.years ?? item.period}</Text>
                 <Text style={[styles.periodTagline, { color: colors.mutedText }]}>{item.tagline ?? item.subtitleEn}</Text>
               </View>
+
+              <Pressable
+                style={[styles.detailCta, { backgroundColor: colors.cinnabarGlow, borderColor: colors.border }]}
+                onPress={() => openDynastyDetail(item)}
+                accessibilityRole="button"
+                accessibilityLabel={`Read full ${item.nameEn} chapter`}
+              >
+                <Text style={[styles.detailCtaText, { color: colors.primary }]}>
+                  View full page · map · rulers · artifacts
+                </Text>
+              </Pressable>
 
               <View style={styles.metaBlock}>
                 <Text style={[styles.metaLabel, { color: colors.mutedText }]}>World Context</Text>
@@ -237,7 +252,7 @@ export function HistoryScreen() {
                       label="Place"
                       title={`${relatedCity.nameEn} / ${relatedCity.nameCn}`}
                       hint="Continue"
-                      onPress={() => navigation.getParent()?.navigate('Places', { cityId: relatedCity.id })}
+                      onPress={() => navigateApp(navigation, 'Places', { cityId: relatedCity.id })}
                     />
                   ) : null}
                   {relatedFood ? (
@@ -245,7 +260,7 @@ export function HistoryScreen() {
                       label="Food"
                       title={`${relatedFood.nameEn} / ${relatedFood.nameCn}`}
                       hint="Continue"
-                      onPress={() => navigation.getParent()?.navigate('Food', { recipeId: relatedFood.id })}
+                      onPress={() => navigateApp(navigation, 'Food', { recipeId: relatedFood.id })}
                     />
                   ) : null}
                   {!relatedCity && !relatedFood ? <Text style={[styles.relatedText, { color: colors.mutedText }]}>No related paths yet.</Text> : null}
@@ -288,7 +303,7 @@ export function HistoryScreen() {
                       <Pressable
                         key={person.id}
                         style={[styles.personCardInline, { backgroundColor: colors.surface, borderColor: colors.border }]}
-                        onPress={() => navigation.getParent()?.navigate('History', {
+                        onPress={() => navigateApp(navigation, 'History', {
                           screen: 'PersonDetail',
                           params: { personId: person.id, person }
                         })}
@@ -310,7 +325,7 @@ export function HistoryScreen() {
         </SectionCard>
       );
     };
-  }, [expandedSections, colors, navigation]);
+  }, [expandedSections, colors, navigation, openDynastyDetail]);
 
   const ListHeader = useMemo(() => (
     <View style={styles.container}>
@@ -393,6 +408,20 @@ const styles = StyleSheet.create({
   storyGuideBadge: { color: theme.colors.text, fontSize: 10, fontWeight: '700' },
   storyGuideTitle: { marginTop: 6, color: theme.colors.text, fontSize: 15, lineHeight: 22, fontWeight: '700' },
   storyGuideText: { marginTop: 4, color: theme.colors.mutedText, fontSize: 12, lineHeight: 18 },
+  detailCta: {
+    marginTop: 10,
+    marginBottom: 4,
+    borderWidth: 0.5,
+    borderRadius: 10,
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+    alignItems: 'center',
+  },
+  detailCtaText: {
+    fontSize: 12,
+    fontWeight: '700',
+    letterSpacing: 0.2,
+  },
 
   // Simplified summary row
   sectionSummaryRow: { flexDirection: 'row', gap: 10, marginTop: 10 },

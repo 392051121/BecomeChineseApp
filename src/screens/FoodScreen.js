@@ -23,6 +23,7 @@ import { useSearch } from '../components/SearchBar';
 import { EnhancedSearchBar } from '../components/EnhancedSearchBar';
 import { getLocalImage } from '../assets/localImages';
 import { toggleCollectionItem, addRecentlyViewed, getFavoritesSnapshot } from '../utils/culturalAssets';
+import { trackViewedItem } from '../utils/explorationStats';
 import { ScreenHeader } from '../components/ScreenHeader';
 import { SectionCard } from '../components/SectionCard';
 import { StampFeedback } from '../components/StampFeedback';
@@ -34,6 +35,7 @@ import { theme } from '../theme/theme';
 import { useTheme } from '../theme/ThemeContext';
 import { logger } from '../utils/errorHandling';
 import { useToast } from '../components/Toast';
+import { navigateApp } from '../utils/navigation';
 
 const RecipeCard = memo(function RecipeCard({ item, index, onPress }) {
   const isLeftCard = index % 2 === 0;
@@ -129,7 +131,10 @@ export function FoodScreen({ route }) {
     await toggleCollectionItem('recipes', {
       id: item.id,
       nameEn: item.nameEn,
-      province: item.province,
+      nameCn: item.nameCn,
+      province_id: item.province_id || item.provinceId,
+      provinceId: item.provinceId || item.province_id,
+      province: item.province_id || item.provinceId || item.province,
       imageAsset: item.imageAsset,
       culturalStory: item.culturalStory,
     }).catch(() => {});
@@ -144,13 +149,17 @@ export function FoodScreen({ route }) {
   // Track view when recipe is selected
   useEffect(() => {
     if (selectedRecipe) {
-      addRecentlyViewed({
+      const provincePayload = {
         id: selectedRecipe.id,
         type: 'recipe',
         nameEn: selectedRecipe.nameEn,
         nameCn: selectedRecipe.nameCn,
-        province: selectedRecipe.province,
-      }).catch(() => {});
+        province_id: selectedRecipe.province_id || selectedRecipe.provinceId,
+        provinceId: selectedRecipe.provinceId || selectedRecipe.province_id,
+        province: selectedRecipe.province_id || selectedRecipe.provinceId || selectedRecipe.province,
+      };
+      addRecentlyViewed(provincePayload).catch(() => {});
+      trackViewedItem('recipe', provincePayload).catch(() => {});
 
       // Try to earn stamp after viewing for 3 seconds
       const timeoutId = setTimeout(async () => {
@@ -365,7 +374,7 @@ export function FoodScreen({ route }) {
                         hint="Explore"
                         onPress={() => {
                           setSelectedRecipe(null);
-                          navigation.getParent()?.navigate('Places', { cityId: relatedCity.id });
+                          navigateApp(navigation, 'Places', { cityId: relatedCity.id });
                         }}
                       />
                     ) : null}
@@ -376,7 +385,7 @@ export function FoodScreen({ route }) {
                         hint="Explore"
                         onPress={() => {
                           setSelectedRecipe(null);
-                          navigation.getParent()?.navigate('History', {
+                          navigateApp(navigation, 'History', {
                             screen: 'DynastyDetail',
                             params: { dynastyId: relatedDynasty.id },
                           });
@@ -417,7 +426,7 @@ export function FoodScreen({ route }) {
                   </View>
                 )}
 
-                {selectedRecipe.tips && (
+                {!!selectedRecipe.tips && (
                   <View style={styles.section}>
                     <Text style={styles.sectionLabel}>Chef's Tips</Text>
                     <Text style={styles.tipsText}>{selectedRecipe.tips}</Text>

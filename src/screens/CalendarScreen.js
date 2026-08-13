@@ -32,6 +32,7 @@ import { getCurrentSolarTerm, getSolarTermById, solarTerms } from '../data/solar
 import { getBeginnerNote } from '../utils/culturalContext';
 import { SectionCard } from '../components/SectionCard';
 import { ExploreNextSection } from '../components/ExploreNextSection';
+import { navigateApp } from '../utils/navigation';
 
 export function CalendarScreen() {
   const navigation = useNavigation();
@@ -231,7 +232,7 @@ export function CalendarScreen() {
               <View style={styles.seasonalDateRight}>
                 <Text style={[styles.seasonalTermEn, { color: colors.text }]}>{solarTerm.englishName}</Text>
                 <Text style={[styles.seasonalTermZh, { color: seasonColor }]}>{solarTerm.chineseName}</Text>
-                {solarTerm.pinyin && (
+                {!!solarTerm.pinyin && (
                   <Text style={[styles.seasonalPinyin, { color: colors.mutedText }]}>{solarTerm.pinyin}</Text>
                 )}
               </View>
@@ -243,7 +244,7 @@ export function CalendarScreen() {
             </View>
 
             {/* Nature Change */}
-            {solarTerm.natureChange && (
+            {!!solarTerm.natureChange && (
               <View style={[styles.seasonalSection, { backgroundColor: colors.surface, borderColor: colors.border }]}>
                 <View style={styles.seasonalSectionHeader}>
                   <Leaf size={16} color={seasonColor} strokeWidth={2} />
@@ -254,7 +255,7 @@ export function CalendarScreen() {
             )}
 
             {/* Custom */}
-            {solarTerm.custom && (
+            {!!solarTerm.custom && (
               <View style={[styles.seasonalSection, { backgroundColor: colors.surface, borderColor: colors.border }]}>
                 <View style={styles.seasonalSectionHeader}>
                   <Sparkles size={16} color={seasonColor} strokeWidth={2} />
@@ -306,28 +307,28 @@ export function CalendarScreen() {
                     // Deep-link into a dedicated detail route when one exists,
                     // otherwise land on the tab (matches ExploreNextSection).
                     if (item.type === 'dynasty' && screen === 'History') {
-                      navigation.getParent()?.navigate('History', {
+                      navigateApp(navigation, 'History', {
                         screen: 'DynastyDetail',
                         params: { dynastyId: item.id },
                       });
                       return;
                     }
                     if (item.type === 'person' && screen === 'History') {
-                      navigation.getParent()?.navigate('History', {
+                      navigateApp(navigation, 'History', {
                         screen: 'PersonDetail',
                         params: { personId: item.id },
                       });
                       return;
                     }
                     if (item.type === 'recipe' && screen === 'Food') {
-                      navigation.getParent()?.navigate('Food', { recipeId: item.id });
+                      navigateApp(navigation, 'Food', { recipeId: item.id });
                       return;
                     }
                     if (item.type === 'city' && screen === 'Places') {
-                      navigation.getParent()?.navigate('Places', { cityId: item.id });
+                      navigateApp(navigation, 'Places', { cityId: item.id });
                       return;
                     }
-                    navigation.getParent()?.navigate(screen);
+                    navigateApp(navigation, screen);
                   }}
                   accessibilityRole="button"
                   accessibilityLabel={item.reason}

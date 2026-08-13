@@ -26,6 +26,7 @@ import { theme } from '../theme/theme';
 import { useTheme } from '../theme/ThemeContext';
 import { earnStamp } from '../utils/stampCollection';
 import { addRecentlyViewed } from '../utils/culturalAssets';
+import { navigateApp } from '../utils/navigation';
 
 const SEASON_COLORS = {
   spring: '#6F8F72',
@@ -113,7 +114,7 @@ export function SolarTermDetailScreen({ route }) {
 
   const handleRecipePress = (recipe) => {
     // Food lives on a sibling tab, not in SeasonsStack — must cross-tab navigate.
-    navigation.getParent()?.navigate('Food', { recipeId: recipe.id });
+    navigateApp(navigation, 'Food', { recipeId: recipe.id });
   };
 
   // Track stamp earning and recently viewed
