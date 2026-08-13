@@ -35,7 +35,7 @@
 | 5 | **隐私政策 URL** | 双端 | 粘贴 `https://392051121.github.io/BecomeChineseApp/privacy.html` |
 | 6 | **商店截图** | 双端 | 见下方第三节（关键待办） |
 | 7 | **开发者账号资质** | 双端 | Google 需身份验证（VIC），Apple 需付费开发者账号（$99/年），提前开通 |
-| 8 | **联系邮箱/网址** | 双端 | 需真实可用邮箱（当前 `support@becomechinese.app` 域名未注册，需替换为真实邮箱） |
+| 8 | **联系邮箱/网址** | 双端 | ✅ `392051121@qq.com`，网址 `https://392051121.github.io/BecomeChineseApp/` |
 
 ---
 
@@ -61,9 +61,9 @@
 
 ⚠️ 截图必须是**真机或模拟器实时运行的真实 UI**，不能用 `assets/cities|recipes|dynasties` 里的素材图冒充。
 
-### 3.2 联系邮箱/网址确认
+### 3.2 联系邮箱/网址确认 ✅
 
-`docs/STORE_LISTING.md` 里的 `support@becomechinese.app` 域名未注册。商店审核需要**真实可用的联系邮箱**。建议用一个你实际拥有的邮箱（如 Gmail）替换。
+已统一为真实邮箱 `392051121@qq.com`，网址 `https://392051121.github.io/BecomeChineseApp/`。已同步更新 `STORE_LISTING.md`、`PRIVACY_POLICY.md`、`privacy.html`。
 
 ---
 
@@ -92,9 +92,8 @@
 ## 六、下一步建议
 
 1. **立即**：产出 8 张商店截图（最硬的阻塞项）
-2. **确认**：联系邮箱换成真实邮箱
-3. **后台**：开通 Apple 付费开发者账号 + Google 身份验证（有审核排队，尽早）
-4. **提交**：上架时把 Data safety / App Privacy / IARC / 隐私 URL 逐一填好
+2. **后台**：开通 Apple 付费开发者账号 + Google 身份验证（有审核排队，尽早）
+3. **提交**：上架时把 Data safety / App Privacy / IARC / 隐私 URL 逐一填好
 
 ---
 

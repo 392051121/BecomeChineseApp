@@ -58,8 +58,8 @@ Expected Rating: Everyone (3+)
 
 ## Contact Information
 - Developer: Become Chinese Team
-- Website: https://becomechinese.app
-- Support: support@becomechinese.app
+- Website: https://392051121.github.io/BecomeChineseApp/
+- Support: 392051121@qq.com
 
 ## Screenshots Needed
 1. Home screen - Today's Discovery hero card
