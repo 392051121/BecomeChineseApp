@@ -11,6 +11,36 @@ import { normalizeProvinceId } from '../utils/provinceIds';
 const VIEWBOX_WIDTH = 600;
 const VIEWBOX_HEIGHT = 700;
 
+// d3-geo's Mercator projection emits an extra "antimeridian clip" subpath whose
+// coordinates are thousands of units outside the viewBox (e.g. ±1100, ±2684).
+// With react-native-svg's preserveAspectRatio="meet", that out-of-bounds
+// bounding box shrinks the whole China outline to near-invisible -> a "blank"
+// gray box. We strip any subpath whose coordinates fall well outside the canvas.
+function stripClipArtifacts(rawPath) {
+  if (!rawPath) return '';
+  const subs = rawPath
+    .split('Z')
+    .map((s) => s.trim())
+    .filter((s) => s.startsWith('M'));
+  const kept = [];
+  const MARGIN = 400; // generous clearance around the viewBox
+  for (const sub of subs) {
+    const nums = [...sub.matchAll(/-?\d+\.?\d*/g)].map((m) => parseFloat(m[0]));
+    if (nums.length < 6) continue;
+    let sane = true;
+    for (let i = 0; i < nums.length; i += 2) {
+      const x = nums[i];
+      const y = nums[i + 1];
+      if (x < -MARGIN || x > VIEWBOX_WIDTH + MARGIN || y < -MARGIN || y > VIEWBOX_HEIGHT + MARGIN) {
+        sane = false;
+        break;
+      }
+    }
+    if (sane) kept.push(`${sub}Z`);
+  }
+  return kept.join('');
+}
+
 // China center coordinates
 const CHINA_CENTER = [105, 35];
 
@@ -50,7 +80,7 @@ function getCentroid(feature, projection) {
 const BASE_PROJECTION = createProjection();
 const PATH_GEN = geoPath().projection(BASE_PROJECTION);
 const PRECOMPUTED_PROVINCES = chinaGeo.features.map((feature) => {
-  const path = PATH_GEN(feature) || '';
+  const path = stripClipArtifacts(PATH_GEN(feature) || '');
   const centroid = getCentroid(feature, BASE_PROJECTION);
   return {
     id: feature.properties.id,
@@ -143,9 +173,9 @@ export function ChinaConnectionMap({
               <G key={province.id}>
                 <Path
                   d={province.path}
-                  fill={province.active ? theme.colors.primary : theme.colors.backgroundDark}
-                  stroke={province.active ? theme.colors.primaryDark : 'rgba(51, 51, 51, 0.25)'}
-                  strokeWidth={province.active ? 1.5 : 0.5}
+                  fill={province.active ? theme.colors.primary : '#E3DACC'}
+                  stroke={province.active ? theme.colors.primaryDark : 'rgba(51, 51, 51, 0.35)'}
+                  strokeWidth={province.active ? 1.5 : 0.8}
                   strokeLinecap="round"
                   strokeLinejoin="round"
                 />
@@ -165,9 +195,9 @@ export function ChinaConnectionMap({
                   <SvgText
                     x={province.centroid.x}
                     y={province.centroid.y + 3}
-                    fontSize={province.active ? 10 : 8}
-                    fontWeight={province.active ? '700' : '400'}
-                    fill={province.active ? '#FFFFFF' : 'rgba(51, 51, 51, 0.65)'}
+                    fontSize={province.active ? 11 : 8}
+                    fontWeight={province.active ? '700' : '600'}
+                    fill={province.active ? '#FFFFFF' : 'rgba(51, 51, 51, 0.72)'}
                     textAnchor="middle"
                   >
                     {province.name}
@@ -246,6 +276,7 @@ export function ChinaConnectionMap({
 const styles = StyleSheet.create({
   wrap: {
     width: '100%',
+    position: 'relative',
     backgroundColor: '#FBF7F1',
     borderRadius: 8,
     borderWidth: 0.5,

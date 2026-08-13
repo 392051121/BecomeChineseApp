@@ -55,3 +55,6 @@ yarn-error.*
 
 # local gradle user home (built on this machine for APK packaging)
 .gradle-home/
+
+# built APK copies at repo root (deliverables, not source)
+*.apk

@@ -19,6 +19,34 @@ const VIEWBOX_WIDTH = 600;
 const VIEWBOX_HEIGHT = 700;
 const CHINA_CENTER = [105, 35];
 
+// d3-geo's Mercator projection emits an "antimeridian clip" subpath far outside
+// the viewBox (coords in the thousands). With preserveAspectRatio="meet" that
+// out-of-bounds box shrinks China to near-invisible -> blank gray map. Strip it.
+function stripClipArtifacts(rawPath) {
+  if (!rawPath) return '';
+  const subs = rawPath
+    .split('Z')
+    .map((s) => s.trim())
+    .filter((s) => s.startsWith('M'));
+  const kept = [];
+  const MARGIN = 400;
+  for (const sub of subs) {
+    const nums = [...sub.matchAll(/-?\d+\.?\d*/g)].map((m) => parseFloat(m[0]));
+    if (nums.length < 6) continue;
+    let sane = true;
+    for (let i = 0; i < nums.length; i += 2) {
+      const x = nums[i];
+      const y = nums[i + 1];
+      if (x < -MARGIN || x > VIEWBOX_WIDTH + MARGIN || y < -MARGIN || y > VIEWBOX_HEIGHT + MARGIN) {
+        sane = false;
+        break;
+      }
+    }
+    if (sane) kept.push(`${sub}Z`);
+  }
+  return kept.join('');
+}
+
 function createProjection() {
   return geoMercator()
     .center(CHINA_CENTER)
@@ -28,7 +56,7 @@ function createProjection() {
 
 function geoToSvgPath(feature, projection) {
   const pathGenerator = geoPath().projection(projection);
-  return pathGenerator(feature);
+  return stripClipArtifacts(pathGenerator(feature));
 }
 
 function getCentroid(feature, projection) {
