@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { NavigationContainer } from '@react-navigation/native';
 
@@ -12,14 +12,24 @@ import { HistoryStack } from './HistoryStack';
 import { HomeStack } from './HomeStack';
 import { ProfileStack } from './ProfileStack';
 import { TravelScreen } from '../screens/TravelScreen';
+import { navigationRef } from '../utils/navigation';
+import { isDailyReminderEnabled, scheduleDailyTermNotification } from '../utils/dailyNotification';
 
 const Tab = createBottomTabNavigator();
 
 export function RootTabs() {
   const { colors } = useTheme();
 
+  // Daily "Today's Solar Term" reminder: schedule once the main app is mounted
+  // (i.e. after onboarding), unless the user has explicitly disabled it.
+  useEffect(() => {
+    isDailyReminderEnabled()
+      .then((enabled) => (enabled ? scheduleDailyTermNotification() : Promise.resolve(false)))
+      .catch(() => {});
+  }, []);
+
   return (
-    <NavigationContainer>
+    <NavigationContainer ref={navigationRef}>
       <GlobalPaperBackground />
       <Tab.Navigator
         tabBar={(props) => <CustomTabBar {...props} />}

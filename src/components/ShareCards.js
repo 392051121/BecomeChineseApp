@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, StyleSheet, Platform } from 'react-native';
+import { View, Text, StyleSheet } from 'react-native';
 import { Trophy, Star, MapPin, UtensilsCrossed, Scroll, Flame } from 'lucide-react-native';
 
 import { theme } from '../theme/theme';
@@ -11,11 +11,7 @@ import { logger } from '../utils/errorHandling';
  * to generate shareable images.
  */
 
-const serifFont = Platform.select({
-  ios: 'Georgia',
-  android: 'serif',
-  default: 'serif',
-});
+const hanziFont = theme.typography.hanziSerif;
 
 // Achievement Share Card
 export function AchievementShareCard({ badge, xp, level }) {
@@ -75,7 +71,7 @@ export function NameShareCard({ name, pinyin, meaning, rank }) {
       </View>
 
       <View style={shareStyles.content}>
-        <Text style={[shareStyles.hanzi, { fontFamily: serifFont }]}>{name}</Text>
+        <Text style={[shareStyles.hanzi, { fontFamily: hanziFont }]}>{name}</Text>
         <Text style={shareStyles.pinyin}>{pinyin}</Text>
 
         <View style={shareStyles.meaningWrap}>

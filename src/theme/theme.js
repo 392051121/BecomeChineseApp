@@ -12,6 +12,11 @@ export const theme = {
       android: 'serif',
       default: 'serif',
     }),
+    // Bundled CJK serif (subsetted Source Han Serif CN / Noto Serif SC) loaded
+    // via useFonts in App.js. Guarantees beautiful 宋体 rendering of Chinese
+    // characters on every device, independent of the OS default fonts.
+    hanziSerif: 'NotoSerifSC-Regular',
+    hanziSerifBold: 'NotoSerifSC-Bold',
     body: 'System',
     pinyin: 'System',
     lineHeight: 1.56,
@@ -63,32 +68,32 @@ export const theme = {
   // Shadows - subtle depth like ink wash layers
   shadows: {
     subtle: {
-      shadowColor: '#000',
-      shadowOpacity: 0.02,
-      shadowRadius: 8,
-      shadowOffset: { width: 0, height: 4 },
+      shadowColor: '#1B1715',
+      shadowOpacity: 0.05,
+      shadowRadius: 10,
+      shadowOffset: { width: 0, height: 3 },
       elevation: 1,
     },
     medium: {
-      shadowColor: '#000',
-      shadowOpacity: 0.04,
-      shadowRadius: 12,
-      shadowOffset: { width: 0, height: 6 },
+      shadowColor: '#1B1715',
+      shadowOpacity: 0.07,
+      shadowRadius: 14,
+      shadowOffset: { width: 0, height: 5 },
       elevation: 2,
     },
     strong: {
-      shadowColor: '#000',
-      shadowOpacity: 0.06,
-      shadowRadius: 16,
-      shadowOffset: { width: 0, height: 8 },
+      shadowColor: '#1B1715',
+      shadowOpacity: 0.10,
+      shadowRadius: 18,
+      shadowOffset: { width: 0, height: 7 },
       elevation: 3,
     },
     modal: {
       shadowColor: '#000',
-      shadowOpacity: 0.10,
-      shadowRadius: 20,
+      shadowOpacity: 0.18,
+      shadowRadius: 22,
       shadowOffset: { width: 0, height: -8 },
-      elevation: 8,
+      elevation: 10,
     },
   },
 

@@ -14,35 +14,14 @@ function hashStringToInt(input) {
 
 function pickFrom(list, seed) {
   if (!list.length) return null;
-  const idx = seed % list.length;
+  // Coerce any seed into a non-negative integer; bitwise XOR of two u32 values
+  // can exceed 2^31 and become negative, which would index the list out of range.
+  const idx = ((seed >>> 0) % list.length);
   return list[idx];
 }
 
 const surnames = [
-  // Original surnames
-  { hanzi: '林', pinyin: 'Lín', meaningEn: 'forest vitality' },
-  { hanzi: '苏', pinyin: 'Sū', meaningEn: 'renewal and elegance' },
-  { hanzi: '沈', pinyin: 'Shěn', meaningEn: 'depth and composure' },
-  { hanzi: '周', pinyin: 'Zhōu', meaningEn: 'completeness and grace' },
-  { hanzi: '许', pinyin: 'Xǔ', meaningEn: 'promise and trust' },
-  { hanzi: '顾', pinyin: 'Gù', meaningEn: 'care and attentiveness' },
-  { hanzi: '唐', pinyin: 'Táng', meaningEn: 'grand cultural aura' },
-  { hanzi: '白', pinyin: 'Bái', meaningEn: 'clarity and sincerity' },
-  { hanzi: '宋', pinyin: 'Sòng', meaningEn: 'scholarly elegance' },
-  { hanzi: '叶', pinyin: 'Yè', meaningEn: 'fresh growth' },
-  { hanzi: '陆', pinyin: 'Lù', meaningEn: 'steady ground' },
-  { hanzi: '韩', pinyin: 'Hán', meaningEn: 'refined legacy' },
-  { hanzi: '郑', pinyin: 'Zhèng', meaningEn: 'upright principle' },
-  { hanzi: '梁', pinyin: 'Liáng', meaningEn: 'support and bridge' },
-  { hanzi: '程', pinyin: 'Chéng', meaningEn: 'progress and path' },
-  { hanzi: '夏', pinyin: 'Xià', meaningEn: 'warmth and brightness' },
-  { hanzi: '魏', pinyin: 'Wèi', meaningEn: 'fortitude' },
-  { hanzi: '赵', pinyin: 'Zhào', meaningEn: 'noble clarity' },
-  { hanzi: '杜', pinyin: 'Dù', meaningEn: 'stability and rootedness' },
-  { hanzi: '冯', pinyin: 'Féng', meaningEn: 'swift momentum' },
-  { hanzi: '裴', pinyin: 'Péi', meaningEn: 'cultivated style' },
-  { hanzi: '乔', pinyin: 'Qiáo', meaningEn: 'lofty elegance' },
-  // New surnames - Common and meaningful
+  // Common surnames (最常见姓氏 - familiar & credible)
   { hanzi: '李', pinyin: 'Lǐ', meaningEn: 'plum tree abundance' },
   { hanzi: '王', pinyin: 'Wáng', meaningEn: 'noble sovereignty' },
   { hanzi: '张', pinyin: 'Zhāng', meaningEn: 'expansive reach' },
@@ -51,6 +30,8 @@ const surnames = [
   { hanzi: '杨', pinyin: 'Yáng', meaningEn: 'poplar resilience' },
   { hanzi: '黄', pinyin: 'Huáng', meaningEn: 'imperial yellow' },
   { hanzi: '吴', pinyin: 'Wú', meaningEn: 'boundless spirit' },
+  { hanzi: '赵', pinyin: 'Zhào', meaningEn: 'noble clarity' },
+  { hanzi: '周', pinyin: 'Zhōu', meaningEn: 'completeness and grace' },
   { hanzi: '徐', pinyin: 'Xú', meaningEn: 'gentle progress' },
   { hanzi: '孙', pinyin: 'Sūn', meaningEn: 'generational continuity' },
   { hanzi: '马', pinyin: 'Mǎ', meaningEn: 'swift strength' },
@@ -63,19 +44,31 @@ const surnames = [
   { hanzi: '罗', pinyin: 'Luó', meaningEn: 'gathering wisdom' },
   { hanzi: '郑', pinyin: 'Zhèng', meaningEn: 'solemn integrity' },
   { hanzi: '梁', pinyin: 'Liáng', meaningEn: 'bridging strength' },
-  // Literary and poetic surnames
+  { hanzi: '谢', pinyin: 'Xiè', meaningEn: 'gratitude and courtesy' },
+  { hanzi: '宋', pinyin: 'Sòng', meaningEn: 'scholarly elegance' },
+  { hanzi: '唐', pinyin: 'Táng', meaningEn: 'grand cultural aura' },
+  { hanzi: '韩', pinyin: 'Hán', meaningEn: 'refined legacy' },
+  { hanzi: '曹', pinyin: 'Cáo', meaningEn: 'literary talent' },
+  { hanzi: '许', pinyin: 'Xǔ', meaningEn: 'promise and trust' },
+  { hanzi: '邓', pinyin: 'Dèng', meaningEn: 'steadfast virtue' },
+  { hanzi: '萧', pinyin: 'Xiāo', meaningEn: 'serene clarity' },
+  { hanzi: '冯', pinyin: 'Féng', meaningEn: 'swift momentum' },
+  { hanzi: '苏', pinyin: 'Sū', meaningEn: 'renewal and elegance' },
+  { hanzi: '叶', pinyin: 'Yè', meaningEn: 'fresh growth' },
+  { hanzi: '杜', pinyin: 'Dù', meaningEn: 'stability and rootedness' },
+  { hanzi: '沈', pinyin: 'Shěn', meaningEn: 'depth and composure' },
+  { hanzi: '孟', pinyin: 'Mèng', meaningEn: 'philosophical depth' },
+  // Literary and poetic surnames (诗意姓氏 - evocative & elegant)
   { hanzi: '柳', pinyin: 'Liǔ', meaningEn: 'willow grace' },
   { hanzi: '梅', pinyin: 'Méi', meaningEn: 'plum blossom resilience' },
   { hanzi: '云', pinyin: 'Yún', meaningEn: 'cloud-like freedom' },
   { hanzi: '江', pinyin: 'Jiāng', meaningEn: 'river-like persistence' },
   { hanzi: '秦', pinyin: 'Qín', meaningEn: 'ancient dynasty glory' },
   { hanzi: '楚', pinyin: 'Chǔ', meaningEn: 'poetic heritage' },
-  { hanzi: '燕', pinyin: 'Yàn', meaningEn: 'swallow elegance' },
-  { hanzi: '萧', pinyin: 'Xiāo', meaningEn: 'serene clarity' },
-  { hanzi: '尹', pinyin: 'Yǐn', meaningEn: 'governing wisdom' },
-  { hanzi: '邵', pinyin: 'Shào', meaningEn: 'splendid virtue' },
-  { hanzi: '孟', pinyin: 'Mèng', meaningEn: 'philosophical depth' },
-  { hanzi: '曹', pinyin: 'Cáo', meaningEn: 'literary talent' },
+  { hanzi: '程', pinyin: 'Chéng', meaningEn: 'progress and path' },
+  { hanzi: '陆', pinyin: 'Lù', meaningEn: 'steady ground' },
+  { hanzi: '白', pinyin: 'Bái', meaningEn: 'clarity and sincerity' },
+  { hanzi: '顾', pinyin: 'Gù', meaningEn: 'care and attentiveness' },
 ];
 
 const traits = {
@@ -252,39 +245,72 @@ const phoneticInitialMap = {
 };
 
 export function getTraitOptions() {
-  return Object.keys(traits);
+  // Return { key, label } objects so callers can render and select traits
+  // directly (the label matches the traits map's user-facing label).
+  return Object.keys(traits).map((key) => ({ key, label: traits[key].label }));
+}
+
+// Stable, reusable helper: pick distinct given-name characters from a pool so
+// the generated name never repeats the same character and always reads naturally.
+function pickGivenName({ englishName, traitKey, phonetic, baseSeed }) {
+  // A trait pools its own meaning-rich characters; otherwise fall back to a
+  // broad blend across Wise / Gentle / Creative so the result still feels
+  // intentional even without an explicit trait selection.
+  const traitPool = traitKey ? traits[traitKey].given : null;
+  const fallbackPool = [...traits.Wise.given, ...traits.Gentle.given, ...traits.Creative.given];
+  const pool = traitPool && traitPool.length > 0 ? traitPool : fallbackPool;
+
+  // First character: prefer a phonetic hint when the English name has a clear
+  // initial, so the name echoes the user's own sound ("Sarah" → 思 / Sī).
+  const first =
+    phonetic && (!traitKey || traitPool?.some((c) => c.hanzi === phonetic.hanzi))
+      ? phonetic
+      : pickFrom(pool, baseSeed ^ 0x9e3779b9);
+
+  // Second character: a distinct one from the same pool.
+  const others = pool.filter((c) => c.hanzi !== first.hanzi);
+  const second = others.length > 0 ? pickFrom(others, (baseSeed >>> 1) ^ 0x7f4a7c15) : null;
+
+  const hanzi = second ? `${first.hanzi}${second.hanzi}` : first.hanzi;
+  const pinyin = second ? `${first.pinyin} ${second.pinyin}` : first.pinyin;
+
+  return { first, second, hanzi, pinyin };
 }
 
 export function generateChineseName({ englishName, traitKeys = [], randomness = Math.random }) {
   const name = normalizeEnglishName(englishName);
-  const firstChar = name.trim().charAt(0).toLowerCase();
+  const firstChar = name.charAt(0).toLowerCase();
   const phonetic = phoneticInitialMap[firstChar] ?? null;
 
   const traitPoolKeys = traitKeys.filter((k) => traits[k]);
+  // Pick one trait deterministically (not randomly) so a given (name + traits)
+  // pair always produces the same name — surprising but stable.
   const traitKey =
-    traitPoolKeys.length > 0 ? traitPoolKeys[Math.floor(randomness() * traitPoolKeys.length)] : null;
+    traitPoolKeys.length > 0 ? traitPoolKeys[hashStringToInt(name) % traitPoolKeys.length] : null;
 
   const baseSeed = hashStringToInt(`${name}|${traitKey ?? 'none'}`);
   const surname = pickFrom(surnames, baseSeed) ?? surnames[0];
 
-  const givenPool = traitKey
-    ? traits[traitKey].given
-    : [...traits.Wise.given, ...traits.Gentle.given, ...traits.Brave.given];
-  const given1 = phonetic ? phonetic : pickFrom(givenPool, baseSeed ^ 0x9e3779b9);
-  const given2 = pickFrom(givenPool, (baseSeed >>> 1) ^ 0x7f4a7c15);
+  const { first, second, hanzi: givenHanzi, pinyin: givenPinyin } = pickGivenName({
+    englishName: name,
+    traitKey,
+    phonetic,
+    baseSeed,
+  });
 
-  const given = given2 && given2.hanzi !== given1.hanzi ? `${given1.hanzi}${given2.hanzi}` : `${given1.hanzi}`;
-  const pinyin = given2 && given2.hanzi !== given1.hanzi ? `${given1.pinyin} ${given2.pinyin}` : `${given1.pinyin}`;
+  const firstName = name.split(' ')[0] || name;
 
+  // Build a readable, compact explanation instead of the old verbose stack.
   const meaningBits = [];
-  if (phonetic) meaningBits.push(`A sound hint from “${name.split(' ')[0] || 'you'}” → ${phonetic.meaningEn}.`);
-  if (traitKey) meaningBits.push(`Trait focus: ${traitKey}, emphasizing this personality arc in your Chinese identity.`);
-  meaningBits.push(`Surname “${surname.hanzi}” conveys ${surname.meaningEn}.`);
-  meaningBits.push(
-    `Given name suggests ${
-      given2 ? `${given1.meaningEn} paired with ${given2.meaningEn}` : given1.meaningEn
-    }, shaping a balanced personal narrative.`
-  );
+  if (first === phonetic) {
+    meaningBits.push(`“${firstName}” echoes ${first.pinyin} (${first.meaningEn}), a sound-alike opening.`);
+  } else if (traitKey) {
+    meaningBits.push(`The “${traits[traitKey].label}” spirit opens with ${first.pinyin} (${first.meaningEn}).`);
+  }
+  if (second) {
+    meaningBits.push(`${traitKey ? `Paired with` : `Balanced by`} ${second.pinyin} (${second.meaningEn}).`);
+  }
+  meaningBits.push(`Surname ${surname.hanzi} (${surname.pinyin}) means ${surname.meaningEn}.`);
 
   const meaningEn = meaningBits.join(' ');
 
@@ -293,10 +319,10 @@ export function generateChineseName({ englishName, traitKeys = [], randomness = 
     englishName: name,
     traitKey,
     surname,
-    given: { hanzi: given, pinyin, meaningEn },
+    given: { hanzi: givenHanzi, pinyin: givenPinyin, meaningEn },
     full: {
-      hanzi: `${surname.hanzi}${given}`,
-      pinyin: `${surname.pinyin} ${pinyin}`.trim(),
+      hanzi: `${surname.hanzi}${givenHanzi}`,
+      pinyin: `${surname.pinyin} ${givenPinyin}`.trim(),
       meaningEn,
     },
   };

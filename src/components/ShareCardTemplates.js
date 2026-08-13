@@ -1,16 +1,10 @@
 import React from 'react';
-import { View, Text, StyleSheet, Platform } from 'react-native';
+import { View, Text, StyleSheet } from 'react-native';
 import Svg, { Defs, Pattern, Rect, Circle, Path, G, RadialGradient, Stop, ClipPath } from 'react-native-svg';
 
 import { theme } from '../theme/theme';
 import { useTheme } from '../theme/ThemeContext';
 import { SealTexture } from './SealTexture';
-
-const serifFont = Platform.select({
-  ios: 'Georgia',
-  android: 'serif',
-  default: 'serif',
-});
 
 // ============================================
 // INK WASH STYLE - 水墨风格

@@ -10,6 +10,14 @@
  *
  * This helper climbs parents until it finds a navigator that knows the route.
  */
+import { createNavigationContainerRef } from '@react-navigation/native';
+
+/**
+ * Global navigation ref, attached to the root <NavigationContainer> in RootTabs.
+ * Lets non-React code (e.g. the daily-notification tap listener in App.js) jump
+ * to any screen without needing a screen-local `navigation` prop.
+ */
+export const navigationRef = createNavigationContainerRef();
 export function navigateApp(navigation, name, params) {
   if (!navigation || typeof navigation.navigate !== 'function') return false;
 

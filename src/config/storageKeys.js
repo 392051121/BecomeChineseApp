@@ -44,6 +44,9 @@ export const STORAGE_KEYS = {
 
   // Solar-term "Today's Gentle Action" completion state (per-term)
   TERM_ACTIONS_DONE: `${PREFIX}termActionsDone`,
+
+  // Daily solar-term reminder notification preference
+  DAILY_REMINDER_ENABLED: `${PREFIX}dailyReminderEnabled`,
 };
 
 export default STORAGE_KEYS;

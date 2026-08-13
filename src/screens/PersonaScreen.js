@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState, useRef } from 'react';
+import React, { useEffect, useMemo, useState, useRef, useCallback } from 'react';
 import {
   ActivityIndicator,
   Animated,
@@ -7,11 +7,12 @@ import {
   Pressable,
   SafeAreaView,
   StyleSheet,
+  Switch,
   Text,
   TextInput,
   View,
 } from 'react-native';
-import { Heart, MapPin, Medal, Share2, Sparkles, Trophy, Volume2, Copy, Check, Bookmark, ArrowRight, Palette as PaletteIcon, ShieldCheck } from 'lucide-react-native';
+import { Heart, MapPin, Medal, Share2, Sparkles, Trophy, Volume2, Copy, Check, Bookmark, ArrowRight, Bell, Palette as PaletteIcon, ShieldCheck } from 'lucide-react-native';
 import { useNavigation } from '@react-navigation/native';
 import * as Haptics from 'expo-haptics';
 import * as Speech from 'expo-speech';
@@ -59,6 +60,7 @@ import {
 import { getExplorationStats } from '../utils/explorationStats';
 import { normalizeProvinceId } from '../utils/provinceIds';
 import { generateAtlasShareText, shareText, shareViewAsImage } from '../utils/sharing';
+import { isDailyReminderEnabled, setDailyReminderEnabled } from '../utils/dailyNotification';
 import { theme } from '../theme/theme';
 import { useTheme } from '../theme/ThemeContext';
 import { useToast } from '../components/Toast';
@@ -68,15 +70,8 @@ export function PersonaScreen() {
   const { colors } = useTheme();
   const toast = useToast();
 
-  const serifFont = useMemo(
-    () =>
-      Platform.select({
-        ios: 'Georgia',
-        android: 'serif',
-        default: 'serif',
-      }),
-    []
-  );
+  // Serif that renders Chinese characters properly (Songti SC on iOS, Noto Serif CJK on Android).
+  const hanziFont = theme.typography.hanziSerif;
 
   const [englishName, setEnglishName] = useState('');
   const [selectedTraits, setSelectedTraits] = useState([]);
@@ -97,6 +92,7 @@ export function PersonaScreen() {
   const [showShareModal, setShowShareModal] = useState(false);
   const [showPersonalize, setShowPersonalize] = useState(false);
   const [personalization, setPersonalization] = useState(null);
+  const [dailyReminder, setDailyReminder] = useState(true);
   const shareCardRef = useRef(null);
 
   const traitOptions = useMemo(() => getTraitOptions(), []);
@@ -164,6 +160,16 @@ export function PersonaScreen() {
       }
     })();
 
+    // Load daily-reminder preference
+    (async () => {
+      try {
+        const enabled = await isDailyReminderEnabled();
+        if (mountedRef.current) setDailyReminder(enabled);
+      } catch {
+        if (mountedRef.current) setDailyReminder(true);
+      }
+    })();
+
     return () => {
       mountedRef.current = false;
       unsubscribe();
@@ -174,6 +180,17 @@ export function PersonaScreen() {
   function toggleTrait(traitKey) {
     setSelectedTraits((prev) => (prev.includes(traitKey) ? prev.filter((t) => t !== traitKey) : [...prev, traitKey]));
   }
+
+  const handleToggleDailyReminder = useCallback(async (value) => {
+    // Optimistic update; schedule/cancel in the background.
+    setDailyReminder(value);
+    try {
+      await setDailyReminderEnabled(value);
+    } catch {
+      // Revert on failure so the switch reflects reality.
+      setDailyReminder(!value);
+    }
+  }, []);
 
   function handleGenerate() {
     const next = generateChineseName({ englishName, traitKeys: selectedTraits });
@@ -383,60 +400,70 @@ export function PersonaScreen() {
               includeTopInset={false}
             />
 
-            {/* Identity hero - primary artifact */}
+            {/* Explorer identity hero — name tool folded in, compact */}
             <SectionCard style={[styles.identityHeroCard, { backgroundColor: colors.softCard }]} tone="soft">
               <PaperTexture />
               <View style={styles.identityHeroTopRow}>
                 <View style={styles.identityHeroLabelWrap}>
                   <Trophy size={14} color={colors.primary} strokeWidth={2} />
-                  <Text style={[styles.identityHeroLabel, { color: colors.primary }]}>Identity Hero</Text>
+                  <Text style={[styles.identityHeroLabel, { color: colors.primary }]}>Your Chinese Name</Text>
                 </View>
-                <View style={[styles.identityHeroBadge, generated && styles.identityHeroBadgeActive]}>
-                  <Text style={[styles.identityHeroBadgeText, generated && styles.identityHeroBadgeTextActive]}>
-                    {generated ? (isFavorited ? 'Saved' : 'New') : 'Ready'}
-                  </Text>
-                </View>
+                {generated && (
+                  <View style={[styles.identityHeroBadge, styles.identityHeroBadgeActive]}>
+                    <Text style={styles.identityHeroBadgeTextActive}>
+                      {isFavorited ? 'Saved' : 'New'}
+                    </Text>
+                  </View>
+                )}
               </View>
+
+              {/* Name input + traits + generate (compact, always visible) */}
+              <View style={styles.nameInputRow}>
+                <TextInput
+                  value={englishName}
+                  onChangeText={setEnglishName}
+                  placeholder="Enter your English name"
+                  placeholderTextColor={colors.mutedText}
+                  style={[styles.nameInput, { borderColor: colors.border, backgroundColor: colors.surface, color: colors.text }]}
+                  returnKeyType="done"
+                  onSubmitEditing={() => handleGenerate()}
+                />
+                <Pressable style={styles.generateBtnCompact} onPress={handleGenerate} accessibilityRole="button" accessibilityLabel={generated ? "Regenerate name" : "Generate name"} accessibilityHint="Double tap to generate a Chinese name">
+                  <Sparkles size={14} color="#FFFFFF" strokeWidth={2} />
+                  <Text style={styles.generateTextCompact}>{generated ? 'New' : 'Generate'}</Text>
+                </Pressable>
+              </View>
+
+              <View style={styles.traitsRow}>
+                {traitOptions.map((trait) => {
+                  const active = selectedTraits.includes(trait.key);
+                  return (
+                    <Pressable
+                      key={trait.key}
+                      style={[styles.traitChip, active && styles.traitChipActive]}
+                      onPress={() => toggleTrait(trait.key)}
+                      accessibilityRole="button"
+                      accessibilityLabel={`${trait.label} style`}
+                      accessibilityHint={active ? "Selected. Double tap to deselect" : "Double tap to select"}
+                    >
+                      <Text style={[styles.traitText, active && styles.traitTextActive]}>{trait.label}</Text>
+                    </Pressable>
+                  );
+                })}
+              </View>
+
+              {/* Generated result */}
               {generated ? (
                 <>
                   <View style={styles.hanziWrap}>
-                    <Text style={[styles.hanzi, { fontFamily: serifFont, color: colors.text }]}>{generated.full.hanzi}</Text>
+                    <Text style={[styles.hanzi, { fontFamily: hanziFont, color: colors.text }]}>{generated.full.hanzi}</Text>
                   </View>
                   <Text style={[styles.pinyin, { color: colors.primary }]}>{generated.full.pinyin}</Text>
                   <Text style={[styles.meaning, { color: colors.text }]}>{generated.full.meaningEn}</Text>
-                  <View style={styles.identitySummaryRow}>
-                    <View style={[styles.identitySummaryPill, { borderColor: colors.border, backgroundColor: colors.surface }]}>
-                      <Medal size={12} color={colors.primary} strokeWidth={2} />
-                      <Text style={[styles.identitySummaryText, { color: colors.mutedText }]}>Rank {cultureRank}</Text>
-                    </View>
-                    <View style={[styles.identitySummaryPill, { borderColor: colors.border, backgroundColor: colors.surface }]}>
-                      <MapPin size={12} color={colors.primary} strokeWidth={2} />
-                      <Text style={[styles.identitySummaryText, { color: colors.mutedText }]}>{provinceStats.connected} regions</Text>
-                    </View>
-                  </View>
+                  <Text style={[styles.nameDisclaimer, { color: colors.mutedText }]}>
+                    A playful cultural experience — not an official name.
+                  </Text>
 
-                  {/* Personalization: frame + title + customize entry */}
-                  <View style={styles.personaStyleRow}>
-                    <View style={styles.personaFrameWrap}>
-                      <AvatarFrame frame={currentFrame} size={42} />
-                      <View style={styles.personaTitleWrap}>
-                        <UserTitleBadge title={currentTitle} />
-                        <Text style={[styles.personaPreviewMeta, { color: colors.mutedText }]}>
-                          {currentFrame.name} · {currentTitle.name}
-                        </Text>
-                      </View>
-                    </View>
-                    <Pressable
-                      style={[styles.personaCustomizeBtn, { borderColor: colors.primary }]}
-                      onPress={handleOpenPersonalize}
-                      accessibilityRole="button"
-                      accessibilityLabel="Customize avatar frame and title"
-                      accessibilityHint="Double tap to choose a frame or title"
-                    >
-                      <PaletteIcon size={14} color={colors.primary} strokeWidth={2} />
-                      <Text style={[styles.personaCustomizeText, { color: colors.primary }]}>Customize</Text>
-                    </Pressable>
-                  </View>
                   <View style={styles.scrollActions}>
                     <Pressable style={[styles.primaryAction, { backgroundColor: colors.primary }]} onPress={speakChineseName} accessibilityRole="button" accessibilityLabel="Read name aloud" accessibilityHint="Double tap to hear pronunciation">
                       <Volume2 size={14} color="#FFFFFF" strokeWidth={2} />
@@ -463,47 +490,34 @@ export function PersonaScreen() {
                   </View>
                 </>
               ) : (
-                <>
-                  <Text style={[styles.placeholderHanzi, { fontFamily: serifFont }]}>Create your identity</Text>
-                  <Text style={[styles.placeholderText, { color: colors.mutedText }]}>Enter an English name below, choose a style, and generate a Chinese name.</Text>
-                </>
+                <View style={styles.nameEmptyState}>
+                  <Text style={[styles.placeholderHanzi, { fontFamily: hanziFont, color: colors.mutedText }]}>你的名字</Text>
+                  <Text style={[styles.placeholderText, { color: colors.mutedText }]}>
+                    Type your name and pick a style to see it in Chinese — with its meaning and sound-alike hint.
+                  </Text>
+                </View>
               )}
-            </SectionCard>
 
-            {/* Name generator */}
-            <SectionCard style={[styles.generatorCard, { backgroundColor: colors.surface }]} tone="panel">
-              <View style={styles.generatorHeader}>
-                <Sparkles size={14} color={colors.primary} strokeWidth={2} />
-                <Text style={[styles.sectionLabel, { color: colors.primary }]}>Name Generator</Text>
-              </View>
-              <TextInput
-                value={englishName}
-                onChangeText={setEnglishName}
-                placeholder="Enter an English name"
-                placeholderTextColor={colors.mutedText}
-                style={[styles.input, { borderColor: colors.border, backgroundColor: colors.background, color: colors.text }]}
-              />
-              <View style={styles.traitsRow}>
-                {traitOptions.map((trait) => {
-                  const active = selectedTraits.includes(trait.key);
-                  return (
-                    <Pressable
-                      key={trait.key}
-                      style={[styles.traitChip, active && styles.traitChipActive]}
-                      onPress={() => toggleTrait(trait.key)}
-                      accessibilityRole="button"
-                      accessibilityLabel={`${trait.label} style`}
-                      accessibilityHint={active ? "Selected. Double tap to deselect" : "Double tap to select"}
-                    >
-                      <Text style={[styles.traitText, active && styles.traitTextActive]}>{trait.label}</Text>
-                    </Pressable>
-                  );
-                })}
-              </View>
-              <View style={styles.actionsRow}>
-                <Pressable style={styles.generateBtn} onPress={handleGenerate} accessibilityRole="button" accessibilityLabel={generated ? "Regenerate name" : "Generate name"} accessibilityHint="Double tap to generate a Chinese name">
-                  <Sparkles size={14} color="#FFFFFF" strokeWidth={2} />
-                  <Text style={styles.generateText}>{generated ? 'Regenerate' : 'Generate'}</Text>
+              {/* Personalization: frame + title + customize entry */}
+              <View style={styles.personaStyleRow}>
+                <View style={styles.personaFrameWrap}>
+                  <AvatarFrame frame={currentFrame} size={42} />
+                  <View style={styles.personaTitleWrap}>
+                    <UserTitleBadge title={currentTitle} />
+                    <Text style={[styles.personaPreviewMeta, { color: colors.mutedText }]}>
+                      {currentFrame.name} · {currentTitle.name}
+                    </Text>
+                  </View>
+                </View>
+                <Pressable
+                  style={[styles.personaCustomizeBtn, { borderColor: colors.primary }]}
+                  onPress={handleOpenPersonalize}
+                  accessibilityRole="button"
+                  accessibilityLabel="Customize avatar frame and title"
+                  accessibilityHint="Double tap to choose a frame or title"
+                >
+                  <PaletteIcon size={14} color={colors.primary} strokeWidth={2} />
+                  <Text style={[styles.personaCustomizeText, { color: colors.primary }]}>Customize</Text>
                 </Pressable>
               </View>
             </SectionCard>
@@ -665,7 +679,7 @@ export function PersonaScreen() {
                     // item content (hanzi/pinyin/id can collide on duplicates).
                     <View key={`saved-name-${idx}`} style={styles.favoriteRow}>
                       <View style={styles.favoriteLeft}>
-                        <Text style={[styles.favoriteHanzi, { fontFamily: serifFont }]}>{item?.full?.hanzi}</Text>
+                        <Text style={[styles.favoriteHanzi, { fontFamily: hanziFont }]}>{item?.full?.hanzi}</Text>
                         <Text style={styles.favoritePinyin}>{item?.full?.pinyin}</Text>
                       </View>
                       <Text style={styles.favoriteMeaning} numberOfLines={2}>{item?.full?.meaningEn}</Text>
@@ -690,6 +704,31 @@ export function PersonaScreen() {
               )}
             </Pressable>
             {generated ? <StampFeedback label="Atlas Updated" active={true} style={styles.stampFeedback} /> : null}
+
+            {/* Daily reminder toggle */}
+            <Pressable
+              style={[styles.collectionLinkCard, styles.dailyReminderCard]}
+              accessibilityRole="switch"
+              accessibilityState={{ checked: dailyReminder }}
+              accessibilityLabel="Daily solar term reminder"
+              accessibilityHint="Toggle a daily notification about today's solar term"
+              onPress={() => handleToggleDailyReminder(!dailyReminder)}
+            >
+              <View style={styles.dailyReminderIcon}>
+                <Bell size={20} color={theme.colors.primary} strokeWidth={2} />
+              </View>
+              <View style={styles.collectionLinkContent}>
+                <Text style={styles.collectionLinkTitle}>Daily Reminder</Text>
+                <Text style={styles.collectionLinkTitleCn}>每日节气提醒</Text>
+                <Text style={styles.collectionLinkSubtitle}>A quiet nudge about today's solar term</Text>
+              </View>
+              <Switch
+                value={dailyReminder}
+                onValueChange={handleToggleDailyReminder}
+                trackColor={{ false: 'rgba(51,51,51,0.15)', true: theme.colors.primary }}
+                thumbColor="#FFFFFF"
+              />
+            </Pressable>
 
             {/* Privacy Policy link - kept at the very bottom as a quiet footer */}
             <Pressable
@@ -778,9 +817,6 @@ const styles = StyleSheet.create({
   hanzi: { color: theme.colors.text, fontSize: 64, letterSpacing: 4, fontWeight: '700' },
   pinyin: { marginTop: 10, color: theme.colors.primary, fontSize: 15, letterSpacing: 1.4, fontWeight: '700', textTransform: 'uppercase', textAlign: 'center' },
   meaning: { marginTop: 12, color: theme.colors.text, fontSize: 15, lineHeight: 22, letterSpacing: 0.2, textAlign: 'center', opacity: 0.9 },
-  identitySummaryRow: { flexDirection: 'row', justifyContent: 'center', flexWrap: 'wrap', gap: 10, marginTop: 16 },
-  identitySummaryPill: { flexDirection: 'row', alignItems: 'center', gap: 6, borderRadius: 999, borderWidth: 0.5, borderColor: theme.colors.border, backgroundColor: theme.colors.surface, paddingHorizontal: 12, paddingVertical: 6 },
-  identitySummaryText: { color: theme.colors.mutedText, fontSize: 11, letterSpacing: 0.6, fontWeight: '700', textTransform: 'uppercase' },
 
   // Personalization row
   personaStyleRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 10, marginTop: 16 },
@@ -800,19 +836,19 @@ const styles = StyleSheet.create({
   placeholderHanzi: { color: 'rgba(51, 51, 51, 0.22)', fontSize: 48, letterSpacing: 3, fontWeight: '700', textAlign: 'center' },
   placeholderText: { marginTop: 12, color: theme.colors.mutedText, fontSize: 13, letterSpacing: 0.2, lineHeight: 20, textAlign: 'center' },
 
-  // Generator
-  generatorCard: { marginTop: 14, padding: 16, backgroundColor: theme.colors.surface },
-  generatorHeader: { flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 12 },
+  // Name tool (folded into identity hero)
   sectionLabel: { color: theme.colors.primary, fontSize: 10, letterSpacing: 1.2, textTransform: 'uppercase', fontWeight: '800' },
-  input: { borderRadius: 8, borderWidth: 0.5, borderColor: theme.colors.border, paddingHorizontal: 14, paddingVertical: Platform.select({ ios: 12, android: 10, default: 11 }), color: theme.colors.text, fontSize: 15, letterSpacing: 0.2, backgroundColor: theme.colors.background },
+  nameInputRow: { flexDirection: 'row', alignItems: 'center', gap: 10, marginTop: 14 },
+  nameInput: { flex: 1, borderRadius: 10, borderWidth: 0.5, borderColor: theme.colors.border, paddingHorizontal: 14, paddingVertical: Platform.select({ ios: 12, android: 10, default: 11 }), color: theme.colors.text, fontSize: 15, letterSpacing: 0.2, backgroundColor: theme.colors.surface },
+  generateBtnCompact: { borderRadius: 10, backgroundColor: theme.colors.primary, borderWidth: 0.5, borderColor: theme.colors.primary, paddingHorizontal: 18, paddingVertical: 12, alignItems: 'center', justifyContent: 'center', flexDirection: 'row', gap: 6, minHeight: 44 },
+  generateTextCompact: { color: '#FFFFFF', fontSize: 13, letterSpacing: 0.6, fontWeight: '800', textTransform: 'uppercase' },
   traitsRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 12 },
   traitChip: { borderRadius: 999, borderWidth: 0.5, borderColor: 'rgba(161, 63, 46, 0.40)', paddingHorizontal: 14, paddingVertical: 10, backgroundColor: 'transparent', minHeight: 44, justifyContent: 'center' },
   traitChipActive: { backgroundColor: theme.colors.primary, borderColor: theme.colors.primary },
   traitText: { color: theme.colors.primary, fontSize: 12, letterSpacing: 0.2, fontWeight: '700' },
   traitTextActive: { color: '#FFFFFF' },
-  actionsRow: { flexDirection: 'row', gap: 10, marginTop: 14 },
-  generateBtn: { flex: 1, borderRadius: 8, backgroundColor: theme.colors.primary, borderWidth: 0.5, borderColor: theme.colors.primary, paddingVertical: 14, alignItems: 'center', justifyContent: 'center', flexDirection: 'row', gap: 8 },
-  generateText: { color: '#FFFFFF', fontSize: 13, letterSpacing: 0.6, fontWeight: '800', textTransform: 'uppercase' },
+  nameDisclaimer: { marginTop: 10, fontSize: 11, letterSpacing: 0.2, lineHeight: 16, textAlign: 'center' },
+  nameEmptyState: { marginTop: 18, alignItems: 'center' },
 
   // Connection card
   connectionCard: { marginTop: 14, borderRadius: theme.radii.lg, borderWidth: 0.5, borderColor: theme.colors.border, backgroundColor: theme.colors.surface, paddingHorizontal: 16, paddingVertical: 16, shadowColor: '#000', shadowOpacity: 0.02, shadowRadius: 10, shadowOffset: { width: 0, height: 5 }, elevation: 2 },
@@ -861,6 +897,17 @@ const styles = StyleSheet.create({
     height: 48,
     borderRadius: 14,
     backgroundColor: theme.colors.borderAccent,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  dailyReminderCard: {
+    marginTop: 14,
+  },
+  dailyReminderIcon: {
+    width: 48,
+    height: 48,
+    borderRadius: 14,
+    backgroundColor: theme.colors.cinnabarGlow,
     alignItems: 'center',
     justifyContent: 'center',
   },
