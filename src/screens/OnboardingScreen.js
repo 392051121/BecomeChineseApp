@@ -437,6 +437,8 @@ const styles = StyleSheet.create({
     fontWeight: '800',
     letterSpacing: 1,
     textAlign: 'left',
+    width: '100%',
+    flexShrink: 1,
   },
   stepTitleCn: {
     color: theme.colors.mutedText,
@@ -444,6 +446,7 @@ const styles = StyleSheet.create({
     marginTop: 4,
     marginBottom: 26,
     textAlign: 'left',
+    width: '100%',
   },
 
   // Options grid
