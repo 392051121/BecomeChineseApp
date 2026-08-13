@@ -51,6 +51,7 @@
         "expo-notifications",
         {
           "color": "#B33B24",
+          "icon": "./assets/notification-icon.png",
           "defaultChannel": "daily-solar-term"
         }
       ]
