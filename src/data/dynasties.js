@@ -1,7 +1,7 @@
 import dynastiesRaw from './dynasties.json';
 import { fullEmperorsByDynasty } from './fullEmperors';
 import { dynastyImagePrompts, getImageSource } from './imagePrompts';
-import { getDynastyPeople, getDynastyRecipes, provinceDynastyRelations } from './relations';
+import { getDynastyPeople, getDynastyRecipes, getDynastyHeartlandProvinces, provinceDynastyRelations } from './relations';
 
 const provinceMap = {
   xia: 'Henan',
@@ -327,6 +327,8 @@ export const dynasties = wantedDynasties.map((item, index) => {
     regionId: province_id === 'Shaanxi' || province_id === 'Henan' ? 'central'
       : province_id === 'Beijing' || province_id === 'Inner Mongolia' ? 'north'
       : 'general',
+    // Multi-province core territory for Heartland map (auto-filled from relations + curated map)
+    heartlandProvinces: getDynastyHeartlandProvinces(item.id, province_id),
     related_links: {
       places: [],
       history: [],

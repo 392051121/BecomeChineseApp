@@ -211,6 +211,43 @@ export function getDynastyRecipes(dynastyId) {
 }
 
 /**
+ * Curated multi-province heartlands for dynasty map highlighting.
+ * Province ids match chinaGeo.json / provinceDynastyRelations Title Case keys.
+ * Not full historical borders — educational "core + notable regions".
+ */
+export const dynastyHeartlandMap = {
+  xia: ['Henan', 'Shanxi', 'Shaanxi'],
+  shang: ['Henan', 'Shandong', 'Hebei', 'Shanxi'],
+  zhou: ['Shaanxi', 'Henan', 'Shandong', 'Shanxi', 'Hubei'],
+  qin: ['Shaanxi', 'Sichuan', 'Gansu', 'Henan', 'Hubei'],
+  han: ['Shaanxi', 'Henan', 'Sichuan', 'Shandong', 'Gansu', 'Guangdong'],
+  'three-kingdoms': ['Hubei', 'Sichuan', 'Chongqing', 'Henan', 'Shandong', 'Jiangsu'],
+  jin: ['Henan', 'Shandong', 'Jiangsu', 'Zhejiang', 'Sichuan'],
+  sui: ['Shaanxi', 'Henan', 'Jiangsu', 'Zhejiang', 'Beijing', 'Hebei'],
+  tang: ['Shaanxi', 'Henan', 'Gansu', 'Sichuan', 'Jiangsu', 'Zhejiang', 'Xinjiang'],
+  song: ['Henan', 'Zhejiang', 'Jiangsu', 'Sichuan', 'Shandong', 'Fujian'],
+  yuan: ['Inner Mongolia', 'Beijing', 'Hebei', 'Yunnan', 'Tibet', 'Xinjiang'],
+  ming: ['Beijing', 'Jiangsu', 'Zhejiang', 'Yunnan', 'Guangdong', 'Fujian'],
+  qing: ['Beijing', 'Liaoning', 'Xinjiang', 'Tibet', 'Yunnan', 'Guangdong', 'Taiwan'],
+};
+
+/**
+ * Resolve province ids to highlight for a dynasty map.
+ * Prefer curated heartland; merge inverted provinceDynastyRelations; fall back to capital province.
+ */
+export function getDynastyHeartlandProvinces(dynastyId, capitalProvinceId) {
+  const curated = dynastyHeartlandMap[dynastyId] ?? [];
+  const fromRelations = Object.entries(provinceDynastyRelations)
+    .filter(([, dynastyIds]) => (dynastyIds || []).includes(dynastyId))
+    .map(([provinceId]) => provinceId);
+
+  const capital =
+    capitalProvinceId && capitalProvinceId !== 'General' ? [capitalProvinceId] : [];
+
+  return uniqueIds([...curated, ...fromRelations, ...capital]);
+}
+
+/**
  * Get related recipes for a festival
  */
 export function getFestivalRecipes(festivalId) {
