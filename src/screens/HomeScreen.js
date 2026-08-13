@@ -15,7 +15,7 @@ import { DailySignInModal, DailySignInButton } from '../components/DailySignInMo
 import { DailyTasksModal, DailyTasksButton } from '../components/DailyTasksModal';
 import { getTasksSummary } from '../utils/dailyTasks';
 import { SkeletonHomeScreen } from '../components/Skeleton';
-import { calculateTotalXP, getXPLevel } from '../data/badges';
+import { calculateTotalXP } from '../data/badges';
 import { getXPLevel } from '../config/gamification';
 import { getCurrentSolarTerm, getCurrentSeason, getSeasonalColors, getFestivalBonus } from '../utils/solarTermContent';
 import { PaperTexture } from '../components/PaperTexture';
