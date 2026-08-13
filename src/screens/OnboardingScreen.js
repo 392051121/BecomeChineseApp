@@ -25,15 +25,15 @@ const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
 // Icons mapped per interest — custom ink-brush style for a cohesive cultural feel
 const interestOptions = [
-  { id: 'history', label: 'History', labelCn: '历史', icon: BrushScrollIcon, desc: '朝代的脉络' },
-  { id: 'food', label: 'Food', labelCn: '美食', icon: BrushFoodIcon, desc: '风味的坐标' },
-  { id: 'places', label: 'Places', labelCn: '城市', icon: BrushMapIcon, desc: '城市的记忆' },
-  { id: 'comprehensive', label: 'All Paths', labelCn: '综合', icon: BrushFireIcon, desc: '全景式漫游' },
+  { id: 'history', label: 'History', labelCn: '历史', icon: BrushScrollIcon, desc: 'Following the arc of dynasties', descCn: '朝代的脉络' },
+  { id: 'food', label: 'Food', labelCn: '美食', icon: BrushFoodIcon, desc: 'Mapping the flavors of home', descCn: '风味的坐标' },
+  { id: 'places', label: 'Places', labelCn: '城市', icon: BrushMapIcon, desc: 'Tracing the memory of cities', descCn: '城市的记忆' },
+  { id: 'comprehensive', label: 'All Paths', labelCn: '综合', icon: BrushFireIcon, desc: 'A panoramic cultural journey', descCn: '全景式漫游' },
 ];
 
 const goalOptions = [
-  { id: 'casual', label: 'Casual Discovery', labelCn: '轻度了解', icon: BrushCalendarIcon, desc: '每天几分钟，轻松浏览' },
-  { id: 'focused', label: 'Focused Learning', labelCn: '深度学习', icon: BrushTrophyIcon, desc: '系统构建知识体系' },
+  { id: 'casual', label: 'Casual Discovery', labelCn: '轻度了解', icon: BrushCalendarIcon, desc: 'A few minutes a day, easy browsing', descCn: '每天几分钟，轻松浏览' },
+  { id: 'focused', label: 'Focused Learning', labelCn: '深度学习', icon: BrushTrophyIcon, desc: 'Build a systematic body of knowledge', descCn: '系统构建知识体系' },
 ];
 
 const steps = [
@@ -100,7 +100,7 @@ export function OnboardingScreen({ onComplete }) {
     <SafeAreaView style={styles.safeArea}>
       <PaperTexture intensity="medium" />
 
-      {/* Progress — seal dot per step */}
+      {/* Progress — seal dot per step, English-first label */}
       <View style={styles.progressWrap}>
         <View style={styles.stepDots}>
           {steps.map((s, i) => (
@@ -115,8 +115,8 @@ export function OnboardingScreen({ onComplete }) {
           ))}
         </View>
         <Text style={styles.progressText}>
-          {steps[currentStep].titleCn}
-          <Text style={styles.progressTextEn}>  ·  {steps[currentStep].title}</Text>
+          {steps[currentStep].title}
+          <Text style={styles.progressTextCn}>  ·  {steps[currentStep].titleCn}</Text>
         </Text>
       </View>
 
@@ -130,7 +130,7 @@ export function OnboardingScreen({ onComplete }) {
         </Animated.View>
       </View>
 
-      {/* Bottom actions */}
+      {/* Bottom actions — English-first */}
       <View style={styles.bottomBar}>
         <Pressable
           style={({ pressed }) => [styles.nextBtn, pressed && styles.nextBtnPressed]}
@@ -139,10 +139,10 @@ export function OnboardingScreen({ onComplete }) {
           accessibilityLabel={currentStep < steps.length - 1 ? 'Continue' : 'Start Exploring'}
         >
           <Text style={styles.nextBtnText}>
-            {currentStep < steps.length - 1 ? '下一步' : '开始探索'}
-          </Text>
-          <Text style={styles.nextBtnTextEn}>
             {currentStep < steps.length - 1 ? 'Continue' : 'Start Exploring'}
+          </Text>
+          <Text style={styles.nextBtnTextCn}>
+            {currentStep < steps.length - 1 ? '下一步' : '开始探索'}
           </Text>
           {currentStep < steps.length - 1 ? (
             <ArrowRight size={16} color="#FFFFFF" strokeWidth={2} />
@@ -172,19 +172,19 @@ function WelcomeStep({ serifFont }) {
           <View style={styles.featureIcon}>
             <BrushCalendarIcon size={16} color={theme.colors.primary} />
           </View>
-          <Text style={styles.featureText}>每日一问，日积月累</Text>
+          <Text style={styles.featureText}>A daily question that grows your knowledge over time</Text>
         </View>
         <View style={styles.featureItem}>
           <View style={styles.featureIcon}>
             <BrushMapIcon size={16} color={theme.colors.primary} />
           </View>
-          <Text style={styles.featureText}>探索城市与它们的故事</Text>
+          <Text style={styles.featureText}>Explore cities and the stories they hold</Text>
         </View>
         <View style={styles.featureItem}>
           <View style={styles.featureIcon}>
             <BrushFoodIcon size={16} color={theme.colors.primary} />
           </View>
-          <Text style={styles.featureText}>认识各地的菜系与文化</Text>
+          <Text style={styles.featureText}>Discover the cuisines and culture of each region</Text>
         </View>
       </View>
     </View>
@@ -194,8 +194,8 @@ function WelcomeStep({ serifFont }) {
 function InterestsStep({ selectedInterests, onToggle }) {
   return (
     <View style={styles.stepContent}>
-      <Text style={styles.stepTitle}>你想探索什么？</Text>
-      <Text style={styles.stepTitleEn}>What interests you most?</Text>
+      <Text style={styles.stepTitle}>What would you like to explore?</Text>
+      <Text style={styles.stepTitleCn}>你想探索什么？</Text>
 
       <View style={styles.optionsGrid}>
         {interestOptions.map((option) => {
@@ -207,14 +207,15 @@ function InterestsStep({ selectedInterests, onToggle }) {
               style={[styles.optionCard, isSelected && styles.optionCardSelected]}
               onPress={() => onToggle(option.id)}
               accessibilityRole="button"
-              accessibilityLabel={`${option.labelCn} ${option.label}`}
+              accessibilityLabel={`${option.label} ${option.labelCn}`}
             >
               <View style={[styles.optionIconWrap, isSelected && styles.optionIconWrapSelected]}>
                 <Icon size={22} color={isSelected ? '#FFFFFF' : theme.colors.primary} />
               </View>
-              <Text style={[styles.optionLabelCn, isSelected && styles.optionLabelSelected]}>{option.labelCn}</Text>
-              <Text style={styles.optionLabel}>{option.label}</Text>
+              <Text style={[styles.optionLabel, isSelected && styles.optionLabelSelected]}>{option.label}</Text>
+              <Text style={styles.optionLabelCn}>{option.labelCn}</Text>
               <Text style={styles.optionDesc}>{option.desc}</Text>
+              <Text style={styles.optionDescCn}>{option.descCn}</Text>
               {isSelected && (
                 <View style={styles.checkBadge}>
                   <Check size={12} color="#FFFFFF" strokeWidth={3} />
@@ -231,8 +232,8 @@ function InterestsStep({ selectedInterests, onToggle }) {
 function GoalsStep({ selectedGoal, onSelect }) {
   return (
     <View style={styles.stepContent}>
-      <Text style={styles.stepTitle}>你想怎么学？</Text>
-      <Text style={styles.stepTitleEn}>How do you want to learn?</Text>
+      <Text style={styles.stepTitle}>How do you want to learn?</Text>
+      <Text style={styles.stepTitleCn}>你想怎么学？</Text>
 
       <View style={styles.goalsList}>
         {goalOptions.map((option) => {
@@ -244,15 +245,16 @@ function GoalsStep({ selectedGoal, onSelect }) {
               style={[styles.goalCard, isSelected && styles.goalCardSelected]}
               onPress={() => onSelect(option.id)}
               accessibilityRole="button"
-              accessibilityLabel={option.labelCn}
+              accessibilityLabel={option.label}
             >
               <View style={[styles.goalIconWrap, isSelected && styles.goalIconWrapSelected]}>
                 <Icon size={20} color={isSelected ? '#FFFFFF' : theme.colors.primary} />
               </View>
               <View style={styles.goalTextWrap}>
-                <Text style={[styles.goalLabelCn, isSelected && styles.goalLabelSelected]}>{option.labelCn}</Text>
-                <Text style={styles.goalLabel}>{option.label}</Text>
+                <Text style={[styles.goalLabel, isSelected && styles.goalLabelSelected]}>{option.label}</Text>
+                <Text style={styles.goalLabelCn}>{option.labelCn}</Text>
                 <Text style={styles.goalDesc}>{option.desc}</Text>
+                <Text style={styles.goalDescCn}>{option.descCn}</Text>
               </View>
               {isSelected && (
                 <View style={styles.goalCheckBadge}>
@@ -269,35 +271,35 @@ function GoalsStep({ selectedGoal, onSelect }) {
 
 function ReadyStep({ selectedInterests, selectedGoal, serifFont }) {
   const interestLabels = selectedInterests
-    .map((id) => interestOptions.find((o) => o.id === id)?.labelCn)
+    .map((id) => interestOptions.find((o) => o.id === id)?.label)
     .filter(Boolean);
-  const goalLabel = goalOptions.find((o) => o.id === selectedGoal)?.labelCn ?? '轻度了解';
+  const goalLabel = goalOptions.find((o) => o.id === selectedGoal)?.label ?? 'Casual Discovery';
 
   return (
     <View style={styles.stepContent}>
       <View style={styles.readySealWrap}>
         <SealStamp label="始" size={72} variant="success" />
       </View>
-      <Text style={[styles.readyTitle, { fontFamily: serifFont }]}>准备好了</Text>
-      <Text style={styles.readyTitleEn}>You're All Set</Text>
+      <Text style={[styles.readyTitle, { fontFamily: serifFont }]}>You're All Set</Text>
+      <Text style={styles.readyTitleCn}>准备好了</Text>
 
       <View style={styles.summaryCard}>
-        <Text style={styles.summaryLabel}>你的旅程 · Your Journey</Text>
+        <Text style={styles.summaryLabel}>Your Journey · 你的旅程</Text>
         <View style={styles.summaryRow}>
-          <Text style={styles.summaryKey}>兴趣</Text>
-          <Text style={styles.summaryValue}>{interestLabels.join('、')}</Text>
+          <Text style={styles.summaryKey}>Interests</Text>
+          <Text style={styles.summaryValue}>{interestLabels.join(', ')}</Text>
         </View>
         <View style={styles.summaryRow}>
-          <Text style={styles.summaryKey}>目标</Text>
+          <Text style={styles.summaryKey}>Goal</Text>
           <Text style={styles.summaryValue}>{goalLabel}</Text>
         </View>
       </View>
 
       <Text style={styles.readyHint}>
-        从今日问答开始，或探索你最感兴趣的路径。祝你漫游愉快。
+        Start with today's daily question, or explore the paths that interest you. Enjoy the journey.
       </Text>
       <Text style={styles.readyHintCn}>
-        Start with today's daily question, or explore the paths that interest you.
+        从今日问答开始，或探索你最感兴趣的路径。祝你漫游愉快。
       </Text>
     </View>
   );
@@ -341,7 +343,7 @@ const styles = StyleSheet.create({
     letterSpacing: 1,
     textAlign: 'center',
   },
-  progressTextEn: {
+  progressTextCn: {
     color: theme.colors.mutedText,
     fontSize: 11,
     fontWeight: '500',
@@ -428,7 +430,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
 
-  // Step titles
+  // Step titles (English primary)
   stepTitle: {
     color: theme.colors.text,
     fontSize: 28,
@@ -436,7 +438,7 @@ const styles = StyleSheet.create({
     letterSpacing: 1,
     textAlign: 'left',
   },
-  stepTitleEn: {
+  stepTitleCn: {
     color: theme.colors.mutedText,
     fontSize: 13,
     marginTop: 4,
@@ -480,26 +482,33 @@ const styles = StyleSheet.create({
   optionIconWrapSelected: {
     backgroundColor: theme.colors.primary,
   },
-  optionLabelCn: {
+  optionLabel: {
     color: theme.colors.text,
     fontSize: 17,
     fontWeight: '800',
     textAlign: 'left',
   },
-  optionLabel: {
+  optionLabelSelected: {
+    color: theme.colors.primary,
+  },
+  optionLabelCn: {
     color: theme.colors.mutedText,
     fontSize: 11,
     marginTop: 1,
     textAlign: 'left',
   },
-  optionLabelSelected: {
-    color: theme.colors.primary,
-  },
   optionDesc: {
-    color: theme.colors.mutedText,
+    color: theme.colors.text,
     fontSize: 11,
     lineHeight: 16,
     marginTop: 6,
+    textAlign: 'left',
+  },
+  optionDescCn: {
+    color: theme.colors.mutedText,
+    fontSize: 10,
+    lineHeight: 15,
+    marginTop: 2,
     textAlign: 'left',
   },
   checkBadge: {
@@ -552,7 +561,7 @@ const styles = StyleSheet.create({
     flex: 1,
     marginLeft: 14,
   },
-  goalLabelCn: {
+  goalLabel: {
     color: theme.colors.text,
     fontSize: 17,
     fontWeight: '800',
@@ -561,17 +570,24 @@ const styles = StyleSheet.create({
   goalLabelSelected: {
     color: theme.colors.primary,
   },
-  goalLabel: {
+  goalLabelCn: {
     color: theme.colors.mutedText,
     fontSize: 11,
     marginTop: 1,
     textAlign: 'left',
   },
   goalDesc: {
-    color: theme.colors.mutedText,
+    color: theme.colors.text,
     fontSize: 12,
     lineHeight: 17,
     marginTop: 4,
+    textAlign: 'left',
+  },
+  goalDescCn: {
+    color: theme.colors.mutedText,
+    fontSize: 10,
+    lineHeight: 16,
+    marginTop: 2,
     textAlign: 'left',
   },
   goalCheckBadge: {
@@ -594,7 +610,7 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     textAlign: 'left',
   },
-  readyTitleEn: {
+  readyTitleCn: {
     color: theme.colors.primary,
     fontSize: 15,
     fontWeight: '600',
@@ -626,7 +642,7 @@ const styles = StyleSheet.create({
   summaryKey: {
     color: theme.colors.mutedText,
     fontSize: 13,
-    width: 60,
+    width: 70,
     textAlign: 'left',
   },
   summaryValue: {
@@ -682,7 +698,7 @@ const styles = StyleSheet.create({
     fontWeight: '800',
     letterSpacing: 1,
   },
-  nextBtnTextEn: {
+  nextBtnTextCn: {
     color: 'rgba(255, 255, 255, 0.75)',
     fontSize: 11,
     fontWeight: '500',

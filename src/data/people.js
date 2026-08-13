@@ -1,5 +1,6 @@
 import { getImageSource } from './imagePrompts';
 import { personCityRelations, dynastyPersonRelations } from './relations';
+import { peopleBiographies } from './peopleBiographies';
 
 const peopleData = [
   {
@@ -371,5 +372,7 @@ export const people = peopleData.map((item, index) => {
     imageSource: getImageSource(null),
     culturalStory: item.summaryCn,
     cultural_story: item.summaryCn,
+    biography: peopleBiographies[item.id]?.biography ?? '',
+    biographyCn: peopleBiographies[item.id]?.biographyCn ?? '',
   };
 });

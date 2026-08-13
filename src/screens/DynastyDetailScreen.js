@@ -33,6 +33,23 @@ import { trackViewedItem } from '../utils/explorationStats';
 import { useReadingPosition } from '../hooks/useReadingPosition';
 import { navigateApp } from '../utils/navigation';
 
+// Build a lookup so famousPeople entries can resolve to real people.js records.
+const peopleByName = new Map();
+people.forEach((p) => {
+  if (p.nameCn) peopleByName.set(p.nameCn.trim(), p);
+  if (p.nameEn) peopleByName.set(p.nameEn.trim().toLowerCase(), p);
+  if (p.subtitleCn) peopleByName.set(`sub:${p.subtitleCn.trim()}`, p);
+});
+
+function resolveFamousPerson(entry) {
+  if (!entry) return null;
+  return (
+    peopleByName.get(entry.nameCn?.trim()) ??
+    peopleByName.get(entry.name?.trim()?.toLowerCase()) ??
+    null
+  );
+}
+
 export function DynastyDetailScreen({ route, navigation }) {
   const { colors } = useTheme();
   const dynastyId = route?.params?.dynastyId;
@@ -270,18 +287,40 @@ export function DynastyDetailScreen({ route, navigation }) {
                 <Text style={styles.sectionTitle}>Notable Figures · 著名人物</Text>
               </View>
               <Text style={styles.sectionHint}>Key personalities who shaped this era</Text>
-              {dynasty.famousPeople.map((person, idx) => (
-                <View key={`person-${idx}`} style={styles.personRow}>
-                  <View style={styles.personIcon}>
-                    <Text style={styles.personIconText}>{person.nameCn?.[0] ?? person.name[0]}</Text>
-                  </View>
-                  <View style={styles.personInfo}>
-                    <Text style={styles.personName}>{person.name}</Text>
-                    <Text style={styles.personNameCn}>{person.nameCn}</Text>
-                    <Text style={styles.personRole}>{person.role}</Text>
-                  </View>
-                </View>
-              ))}
+              {dynasty.famousPeople.map((person, idx) => {
+                const matched = resolveFamousPerson(person);
+                const disabled = !matched;
+                return (
+                  <Pressable
+                    key={`person-${idx}`}
+                    style={({ pressed }) => [
+                      styles.personRow,
+                      !disabled && pressed && { opacity: 0.6 },
+                    ]}
+                    onPress={
+                      disabled
+                        ? undefined
+                        : () => navigation.navigate('PersonDetail', { personId: matched.id })
+                    }
+                    disabled={disabled}
+                    accessibilityRole={disabled ? undefined : 'button'}
+                    accessibilityLabel={`${person.name} - ${person.nameCn}`}
+                    accessibilityHint={disabled ? undefined : 'Double tap to view person details'}
+                  >
+                    <View style={styles.personIcon}>
+                      <Text style={styles.personIconText}>{person.nameCn?.[0] ?? person.name[0]}</Text>
+                    </View>
+                    <View style={styles.personInfo}>
+                      <Text style={styles.personName}>{person.name}</Text>
+                      <Text style={styles.personNameCn}>{person.nameCn}</Text>
+                      <Text style={styles.personRole}>
+                        {person.role}
+                        {matched ? ' · Tap for details' : ''}
+                      </Text>
+                    </View>
+                  </Pressable>
+                );
+              })}
             </SectionCard>
           )}
 

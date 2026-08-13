@@ -187,6 +187,21 @@ export function PersonDetailScreen({ route, navigation }) {
           <LinkedConceptText text={person.summaryEn} style={[styles.summaryText, { color: colors.text }]} />
         </SectionCard>
 
+        {(person.biography || person.biographyCn) && (
+          <SectionCard style={styles.card}>
+            <View style={styles.sectionHeader}>
+              <BookOpen size={14} color={colors.primary} />
+              <Text style={[styles.sectionTitle, { color: colors.primary }]}>Biography · 生平</Text>
+            </View>
+            {person.biography ? (
+              <Text style={[styles.summaryText, { color: colors.text }]}>{person.biography}</Text>
+            ) : null}
+            {person.biographyCn ? (
+              <Text style={[styles.bioChinese, { color: colors.mutedText }]}>{person.biographyCn}</Text>
+            ) : null}
+          </SectionCard>
+        )}
+
         {person.achievements && person.achievements.length > 0 && (
           <SectionCard style={styles.card}>
             <View style={styles.sectionHeader}>
@@ -304,6 +319,7 @@ const styles = StyleSheet.create({
   sectionHeader: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 10 },
   sectionTitle: { color: theme.colors.primary, fontSize: 12, fontWeight: '800', letterSpacing: 1.2, textTransform: 'uppercase' },
   summaryText: { color: theme.colors.text, fontSize: 14, lineHeight: 22 },
+  bioChinese: { color: theme.colors.mutedText, fontSize: 13, lineHeight: 21, marginTop: 12 },
   listItem: { flexDirection: 'row', alignItems: 'flex-start', gap: 8, marginTop: 8 },
   listDot: { width: 6, height: 6, borderRadius: 3, backgroundColor: theme.colors.primary, marginTop: 7 },
   listText: { flex: 1, color: theme.colors.text, fontSize: 13, lineHeight: 20 },
