@@ -194,8 +194,10 @@ function WelcomeStep({ serifFont }) {
 function InterestsStep({ selectedInterests, onToggle }) {
   return (
     <View style={styles.stepContent}>
-      <Text style={styles.stepTitle}>What would you like to explore?</Text>
-      <Text style={styles.stepTitleCn}>你想探索什么？</Text>
+      <View style={styles.stepTitleWrap}>
+        <Text style={styles.stepTitle}>What would you like to explore?</Text>
+        <Text style={styles.stepTitleCn}>你想探索什么？</Text>
+      </View>
 
       <View style={styles.optionsGrid}>
         {interestOptions.map((option) => {
@@ -232,8 +234,10 @@ function InterestsStep({ selectedInterests, onToggle }) {
 function GoalsStep({ selectedGoal, onSelect }) {
   return (
     <View style={styles.stepContent}>
-      <Text style={styles.stepTitle}>How do you want to learn?</Text>
-      <Text style={styles.stepTitleCn}>你想怎么学？</Text>
+      <View style={styles.stepTitleWrap}>
+        <Text style={styles.stepTitle}>How do you want to learn?</Text>
+        <Text style={styles.stepTitleCn}>你想怎么学？</Text>
+      </View>
 
       <View style={styles.goalsList}>
         {goalOptions.map((option) => {
@@ -360,7 +364,8 @@ const styles = StyleSheet.create({
   },
   stepContent: {
     flex: 1,
-    alignItems: 'flex-start',
+    alignSelf: 'stretch',
+    alignItems: 'stretch',
   },
 
   // Welcome
@@ -430,23 +435,32 @@ const styles = StyleSheet.create({
     flex: 1,
   },
 
-  // Step titles (English primary)
+  // Step titles (English primary). Wrap the heading in a stretch container so
+  // long English lines (e.g. "How do you want to learn?") wrap inside padding
+  // instead of overflowing. Parent must be stretch — flex-start + width:100%
+  // still lets RN Text measure as a single unwrapped line.
+  stepTitleWrap: {
+    alignSelf: 'stretch',
+    width: '100%',
+    marginBottom: 26,
+  },
   stepTitle: {
     color: theme.colors.text,
-    fontSize: 28,
+    fontSize: 22,
+    lineHeight: 30,
     fontWeight: '800',
-    letterSpacing: 1,
+    letterSpacing: 0,
     textAlign: 'left',
-    width: '100%',
+    alignSelf: 'stretch',
     flexShrink: 1,
   },
   stepTitleCn: {
     color: theme.colors.mutedText,
     fontSize: 13,
     marginTop: 4,
-    marginBottom: 26,
+    marginBottom: 0,
     textAlign: 'left',
-    width: '100%',
+    alignSelf: 'stretch',
   },
 
   // Options grid

@@ -21,7 +21,6 @@ import { SectionCard } from '../components/SectionCard';
 import { LinkedConceptText } from '../components/LinkedConceptText';
 import { DetailHeader } from '../components/DetailHeader';
 import { PaperTexture } from '../components/PaperTexture';
-import { ChinaConnectionMap } from '../components/ChinaConnectionMap';
 import { getDynastyHeartlandProvinces } from '../data/relations';
 import { normalizeProvinceId } from '../utils/provinceIds';
 import { cities } from '../data/cities';
@@ -139,9 +138,6 @@ export function DynastyDetailScreen({ route, navigation }) {
     return out;
   }, [dynasty?.id, dynasty?.heartlandProvinces, dynasty?.provinceId, dynasty?.province_id, dynasty?.province]);
 
-  // Array form works with ChinaConnectionMap (also accepts Set)
-  const heartlandProvinces = heartlandList;
-
   const heartlandLabel = useMemo(() => heartlandList.join(' · '), [heartlandList]);
 
   // Track exploration with capital province only. Full heartland lights up on the
@@ -236,13 +232,6 @@ export function DynastyDetailScreen({ route, navigation }) {
                 ))}
               </View>
             ) : null}
-            <View style={styles.mapWrap}>
-              <ChinaConnectionMap
-                connectedProvinces={heartlandProvinces}
-                legendActiveLabel="Core"
-                legendInactiveLabel="Other"
-              />
-            </View>
           </SectionCard>
 
           <SectionCard style={styles.card}>
@@ -475,14 +464,6 @@ const styles = StyleSheet.create({
   period: { marginTop: 6, color: theme.colors.mutedText },
   tagline: { marginTop: 8, color: theme.colors.text, fontStyle: 'italic' },
   card: { padding: 14 },
-  mapWrap: {
-    marginTop: 12,
-    width: '100%',
-    minHeight: 300,
-    borderRadius: 12,
-    overflow: 'hidden',
-    backgroundColor: theme.colors.surface,
-  },
   provincePills: {
     marginTop: 10,
     flexDirection: 'row',

@@ -20,7 +20,6 @@ import * as Clipboard from 'expo-clipboard';
 
 import { PaperTexture } from '../components/PaperTexture';
 import { SealTexture } from '../components/SealTexture';
-import { ChinaConnectionMap } from '../components/ChinaConnectionMap';
 import { HandscrollContainer } from '../components/HandscrollContainer';
 import { StampFeedback } from '../components/StampFeedback';
 import { ScreenHeader } from '../components/ScreenHeader';
@@ -54,11 +53,8 @@ import {
   getCultureRank,
   getFavoritesSnapshot,
   getProvinceConnectionMap,
-  getProvinceId,
   getCulturalAssets,
 } from '../utils/culturalAssets';
-import { getExplorationStats } from '../utils/explorationStats';
-import { normalizeProvinceId } from '../utils/provinceIds';
 import { generateAtlasShareText, shareText, shareViewAsImage } from '../utils/sharing';
 import { isDailyReminderEnabled, setDailyReminderEnabled } from '../utils/dailyNotification';
 import { theme } from '../theme/theme';
@@ -82,7 +78,6 @@ export function PersonaScreen() {
   const [collectedCities, setCollectedCities] = useState([]);
   const [collectedRecipes, setCollectedRecipes] = useState([]);
   const [collectedDynasties, setCollectedDynasties] = useState([]);
-  const [exploredProvinceIds, setExploredProvinceIds] = useState([]);
   const [quizStreak, setQuizStreak] = useState(0);
   const [quizTotalSolved, setQuizTotalSolved] = useState(0);
   const [namesGenerated, setNamesGenerated] = useState(0);
@@ -110,16 +105,6 @@ export function PersonaScreen() {
       setCollectedCities(Array.isArray(assets?.favorites?.cities) ? assets.favorites.cities : []);
       setCollectedRecipes(Array.isArray(assets?.favorites?.recipes) ? assets.favorites.recipes : []);
       setCollectedDynasties(Array.isArray(assets?.favorites?.dynasties) ? assets.favorites.dynasties : []);
-      try {
-        const exploration = await getExplorationStats();
-        // Only keep ids that normalize to real chinaGeo provinces
-        const explored = Object.keys(exploration?.provincesExplored || {})
-          .map((id) => normalizeProvinceId(id))
-          .filter(Boolean);
-        if (mountedRef.current) setExploredProvinceIds([...new Set(explored)]);
-      } catch {
-        if (mountedRef.current) setExploredProvinceIds([]);
-      }
       setQuizStreak(assets?.quiz?.streak ?? 0);
       setQuizTotalSolved(assets?.quiz?.totalSolved ?? 0);
       setNamesGenerated(assets?.stats?.namesGenerated ?? 0);
@@ -144,8 +129,7 @@ export function PersonaScreen() {
     mountedRef.current = true;
     loadProfileData({ showLoading: !hasLoadedOnceRef.current });
 
-    // Re-read favorites + exploration whenever Profile tab gains focus,
-    // so viewing Places/Food/History then returning still updates the map.
+    // Re-read favorites whenever Profile tab gains focus.
     const unsubscribe = navigation.addListener('focus', () => {
       loadProfileData({ showLoading: false });
     });
@@ -236,52 +220,6 @@ export function PersonaScreen() {
     () => getProvinceConnectionMap({ favorites: { names: favorites, cities: collectedCities, recipes: collectedRecipes, dynasties: collectedDynasties }, cities, recipes, dynasties }),
     [favorites, collectedCities, collectedRecipes, collectedDynasties]
   );
-
-  const connectedProvinces = useMemo(() => {
-    const set = new Set();
-
-    const resolveProvince = (item, catalog) => {
-      if (!item) return null;
-      // Prefer fields on the stored favorite; fall back to full catalog entry by id
-      // so older bookmarks without province_id still light the map after data fixes.
-      const full = catalog?.find?.((row) => row.id === item.id) || item;
-      return getProvinceId(full) || getProvinceId(item) || normalizeProvinceId(item.province);
-    };
-
-    // Name favorites rarely have a real province (often "General") — skip noise
-    favorites.forEach((item) => {
-      const provinceId = getProvinceId(item);
-      if (provinceId) set.add(provinceId);
-    });
-    collectedCities.forEach((item) => {
-      const provinceId = resolveProvince(item, cities);
-      if (provinceId) set.add(provinceId);
-    });
-    collectedRecipes.forEach((item) => {
-      const provinceId = resolveProvince(item, recipes);
-      if (provinceId) set.add(provinceId);
-    });
-
-    // Saved dynasties light up their full heartland (intentional collection signal).
-    collectedDynasties.forEach((item) => {
-      const full = dynasties.find((d) => d.id === item?.id) || item;
-      const list = Array.isArray(full?.heartlandProvinces) ? full.heartlandProvinces : [];
-      list.forEach((id) => {
-        const n = normalizeProvinceId(id);
-        if (n) set.add(n);
-      });
-      const capital = getProvinceId(full) || resolveProvince(item, dynasties);
-      if (capital) set.add(capital);
-    });
-
-    // Provinces from intentional views (already scrubbed / normalized on load)
-    exploredProvinceIds.forEach((id) => {
-      const n = normalizeProvinceId(id);
-      if (n) set.add(n);
-    });
-
-    return set;
-  }, [favorites, collectedCities, collectedRecipes, collectedDynasties, exploredProvinceIds]);
 
   async function handleFavorite() {
     if (!generated || isFavorited) return;
@@ -521,48 +459,6 @@ export function PersonaScreen() {
                 </Pressable>
               </View>
             </SectionCard>
-
-            {/* Atlas progress */}
-            <CollapsibleSection
-              icon={MapPin}
-              title="Atlas Progress"
-              titleCn="探索地图"
-              defaultOpen
-              count={connectedProvinces.size}
-              tone="soft"
-            >
-              <View style={styles.connectionCardInner}>
-                <Text style={styles.connectionStory}>
-                  Provinces light up when you save cities, dishes, dynasties, or intentionally open a place/recipe.
-                </Text>
-                <Text style={styles.connectionMeta}>
-                  {connectedProvinces.size} province{connectedProvinces.size === 1 ? '' : 's'} connected
-                </Text>
-                <View style={styles.progressLine}>
-                  <View style={[styles.progressFill, { width: `${Math.max(8, (connectedProvinces.size / 34) * 100)}%` }]} />
-                </View>
-                <View style={styles.mapWrap}>
-                  <ChinaConnectionMap
-                    connectedProvinces={connectedProvinces}
-                    legendActiveLabel="Explored"
-                    legendInactiveLabel="Other"
-                  />
-                  {connectedProvinces.size > 0 ? (
-                    <View style={styles.provincePills}>
-                      {Array.from(connectedProvinces).slice(0, 12).map((provinceId) => (
-                        <View key={provinceId} style={styles.provincePill}>
-                          <Text style={styles.provincePillText}>{provinceId}</Text>
-                        </View>
-                      ))}
-                    </View>
-                  ) : (
-                    <Text style={styles.mapEmptyHint}>
-                      Bookmark a city or dish, or open city stories in Places — provinces will appear here.
-                    </Text>
-                  )}
-                </View>
-              </View>
-            </CollapsibleSection>
 
             {/* Stats row */}
             <View style={styles.badgeRow}>
@@ -849,21 +745,6 @@ const styles = StyleSheet.create({
   traitTextActive: { color: '#FFFFFF' },
   nameDisclaimer: { marginTop: 10, fontSize: 11, letterSpacing: 0.2, lineHeight: 16, textAlign: 'center' },
   nameEmptyState: { marginTop: 18, alignItems: 'center' },
-
-  // Connection card
-  connectionCard: { marginTop: 14, borderRadius: theme.radii.lg, borderWidth: 0.5, borderColor: theme.colors.border, backgroundColor: theme.colors.surface, paddingHorizontal: 16, paddingVertical: 16, shadowColor: '#000', shadowOpacity: 0.02, shadowRadius: 10, shadowOffset: { width: 0, height: 5 }, elevation: 2 },
-  connectionCardInner: { paddingTop: 4 },
-  sectionHeaderInline: { flexDirection: 'row', alignItems: 'baseline', justifyContent: 'space-between', gap: 12 },
-  connectionLabelWrap: { flexDirection: 'row', alignItems: 'center', gap: 6 },
-  connectionLabel: { color: theme.colors.primary, fontSize: 11, letterSpacing: 1.4, textTransform: 'uppercase', fontWeight: '800' },
-  connectionCount: { color: theme.colors.primary, fontWeight: '800', fontSize: 20 },
-  connectionStory: { marginTop: 8, color: theme.colors.mutedText, fontSize: 12, lineHeight: 18, letterSpacing: 0.2 },
-  progressLine: { height: 3, marginTop: 14, backgroundColor: 'rgba(51, 51, 51, 0.08)', overflow: 'hidden', borderRadius: 2 },
-  progressFill: { height: 3, backgroundColor: theme.colors.primary, borderRadius: 2 },
-  mapWrap: { marginTop: 14 },
-  provincePills: { marginTop: 14, flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
-  provincePill: { borderRadius: 999, borderWidth: 0.5, borderColor: 'rgba(51, 51, 51, 0.10)', paddingHorizontal: 12, paddingVertical: 6, backgroundColor: '#F2F0EC' },
-  provincePillText: { color: 'rgba(51, 51, 51, 0.55)', fontSize: 11, fontWeight: '700' },
 
   // Badge row
   badgeRow: { flexDirection: 'row', gap: 10, marginTop: 14, flexWrap: 'wrap' },
