@@ -41,3 +41,6 @@
 - `foshan` : File:Foshan Zu Miao 2012.11.20 15-41-28.jpg | License: CC BY-SA 3.0 | Author: Zhangzhugang
 - `zhaoqing` : File:肇庆七星岩 - panoramio.jpg | License: CC BY 3.0 | Author: gdczjkk
 - `shaoguan` : File:韶关丹霞山 - panoramio (1).jpg | License: CC BY 3.0 | Author: gdczjkk
+- `heyuan` : File:The Wanlv Lake at noon.jpg | License: CC BY-SA 3.0 | Author: Boris1601050607
+- `shanwei` : File:汕尾风光1.jpg | License: CC BY-SA 4.0 | Author: GEO-GZHU
+- `liuan` : File:Panoramic view of a residential area in Lu'an City, Anhui Province.jpg | License: CC0 | Author: HuangWending18072009
