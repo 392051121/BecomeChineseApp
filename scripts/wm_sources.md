@@ -1,0 +1,43 @@
+# Wikimedia Commons source / attribution for local place photos
+- `shangri-la` : (already downloaded before)
+- `yanan` : (already downloaded before)
+- `jincheng` : (already downloaded before)
+- `linfen` : (already downloaded before)
+- `honghe` : (already downloaded before)
+- `dehong` : (already downloaded before)
+- `qiandao` : File:Mt Banner and Thousand Island Lake.jpg | License: CC BY 3.0 | Author: Dcrjsr (talk · contribs)
+- `putuoshan` : (already downloaded before)
+- `wutaishan` : (already downloaded before)
+- `emeishan` : (already downloaded before)
+- `qingchengshan` : (already downloaded before)
+- `longhushan` : (already downloaded before)
+- `zhengzhou` : (already downloaded before)
+- `anyang` : (already downloaded before)
+- `taishan` : File:Jade Emperor Peak of Mount Tai 泰山玉皇顶 2007 075.jpg | License: CC0 | Author: ╬ಠ益ಠ)
+- `qufu` : File:曲阜孔庙.jpg | License: CC BY-SA 4.0 | Author: Acot一杯茶
+- `weifang` : File:第42届潍坊国际风筝会01.jpg | License: CC BY-SA 4.0 | Author: Sprt98
+- `zibo` : File:Zibo montage.jpg | License: CC BY-SA 4.0 | Author: 留守科学家
+- `jinan` : (already downloaded before)
+- `taiyuan` : File:Lingshi Jinci Miao 2013.08.24 16-12-22.jpg | License: CC BY-SA 3.0 | Author: Zhangzhugang
+- `yangzhou` : File:扬州瘦西湖, 2009-01-28 06.jpg | License: CC BY 3.0 | Author: 江上清风1961
+- `huaian` : File:周恩来纪念馆01.jpg | License: CC BY-SA 4.0 | Author: 西安兵马俑
+- `zhenjiang` : File:镇江金山寺.jpg | License: CC BY-SA 4.0 | Author: Cjsy2026
+- `changzhou` : File:ChangzhouOldCityDistrict.jpg | License: CC BY-SA 3.0 | Author: Chen Yihan
+- `wuxi` : File:鼋头渚.jpg | License: CC BY-SA 3.0 | Author: Gisling
+- `macau` : File:澳门大三巴牌坊平安夜.jpg | License: CC0 | Author: Qqhhss
+- `hongkong` : File:Victoria Harbour skyscrapers.jpg | License: CC0 | Author: Wilfredor
+- `zhoushan` : File:SOUTH GATE OF THE CITY OF TING-HAI.jpg | License: Public domain | Author: William Alexander
+- `huanggang` : File:湖北黄冈东坡赤壁.jpg | License: CC0 | Author: Walter Grassroot
+- `jingdezhen` : File:Jingdezhen China Ceramics Museum 20231020 12.jpg | License: CC0 | Author: 沈澄心
+- `yichang` : File:三峡大坝.jpg | License: CC BY-SA 4.0 | Author: 維基小霸王
+- `jingzhou` : File:荆州古城墙.jpg | License: CC BY-SA 4.0 | Author: Kong5579
+- `zhuzhou` : File:Zhuzhou County 20170721 110026.jpg | License: CC BY-SA 4.0 | Author: Qa003qa003
+- `hengyang` : File:HengshanMountains.JPG | License: CC BY-SA 3.0 | Author: User:TheNeon
+- `chengde` : File:承德避暑山庄澹泊敬诚殿2025.11.jpg | License: CC BY-SA 4.0 | Author: ScareCriterion12
+- `qianjiang` : File:Qianjiang Road Station 01.jpg | License: CC BY-SA 4.0 | Author: Huandy618
+- `meizhou` : File:2000-01-15 Meizhou Street.jpg | License: CC BY 2.5 | Author: Petes42 at English Wikipedia
+- `dongguan` : File:东莞 松山湖之查理大桥.jpg | License: CC BY-SA 4.0 | Author: Liuxingy
+- `zhuhai` : File:珠海情侣路 - panoramio.jpg | License: CC BY-SA 3.0 | Author: jiang-wen-jie
+- `foshan` : File:Foshan Zu Miao 2012.11.20 15-41-28.jpg | License: CC BY-SA 3.0 | Author: Zhangzhugang
+- `zhaoqing` : File:肇庆七星岩 - panoramio.jpg | License: CC BY 3.0 | Author: gdczjkk
+- `shaoguan` : File:韶关丹霞山 - panoramio (1).jpg | License: CC BY 3.0 | Author: gdczjkk
